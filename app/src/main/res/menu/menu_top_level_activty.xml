@@ -1,0 +1,59 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context=".TopLevelActivity">
+    <item
+        android:id="@+id/load_active"
+        android:title="@string/action_load_active"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/load_tasted"
+        android:title="@string/action_load_tasted"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="@string/menu_top_level_action_settings"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/logon"
+        android:title="@string/action_logon"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/logout"
+        android:title="@string/action_logout"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/change_location"
+        android:title="@string/action_change_location"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/scan_glass_size"
+        android:title="@string/action_scan_glass_size"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_rate_app"
+        android:orderInCategory="90"
+        android:title="@string/action_rate_app"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_about"
+        android:orderInCategory="100"
+        android:title="@string/action_about"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_check_quiz"
+        android:orderInCategory="110"
+        android:title="Check Quiz"
+        app:showAsAction="never"
+        android:visible="false"/>
+    <item
+        android:id="@+id/action_edit_query"
+        android:orderInCategory="110"
+        android:title="@string/action_edit_query"
+        app:showAsAction="never"
+        android:visible="false"/> <!-- DRS 20181023 SET TRUE TO USE SQL FOR TESTING -->
+
+</menu>

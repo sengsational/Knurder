@@ -1,0 +1,62 @@
+<TwoLineListItem xmlns:android="http://schemas.android.com/apk/res/android"
+                 android:layout_width="match_parent"
+                 android:layout_height="?android:attr/listPreferredItemHeight"
+                 android:paddingTop="2dip"
+                 android:paddingBottom="2dip"
+                 android:paddingStart="8dip"
+                 android:paddingLeft="8dip"
+                 android:mode="twoLine"
+                 android:gravity="center">
+                <!-- DRS 20160617 Replaced these from above
+                        android:paddingStart="?android:attr/expandableListPreferredItemPaddingLeft"
+                        android:paddingLeft="?android:attr/expandableListPreferredItemPaddingLeft"
+                -->
+
+    <!--DRS 20160617 - Added ImageView -->
+    <ImageView
+        android:id="@+id/highlighted_list_item"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ufo_logo1"
+        android:gravity="end"
+        android:foregroundGravity="right"
+        android:visibility="invisible"
+        />
+
+    <TextView android:id="@android:id/text1"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginLeft="48dip"
+              android:layout_marginTop="6dip"
+              android:textAppearance="?android:attr/textAppearanceListItem"
+              android:textAlignment="viewStart"
+              android:layout_gravity="start"
+              android:ellipsize="end"
+              android:singleLine="true"
+        />
+
+    <TextView android:id="@android:id/text2"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_below="@android:id/text1"
+              android:layout_alignStart="@android:id/text1"
+              android:layout_alignLeft="@android:id/text1"
+              android:textAppearance="?android:attr/textAppearanceSmall"
+              android:textAlignment="viewStart"
+              android:layout_gravity="start"
+        />
+
+    <TextView
+        android:id="@+id/database_key_list_item"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+    <TextView
+        android:id="@+id/highlight_state"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+
+</TwoLineListItem>

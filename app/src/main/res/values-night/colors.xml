@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Colors NIGHT-->
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#3199BB</color>
+    <color name="colorSysLtGray">#5A0C0C</color>
+    <color name="colorSysDkGray">#D2D89A</color>
+    <color name="colorSysGray">#DBC48B</color>
+
+    <color name="colorActivePrimary">#FFFFFF</color> <!-- Active beer -->
+    <color name="colorActiveSecondary">#414141</color>
+    <color name="colorNonActiveSecondary">#7f7f7f</color> <!-- ABV and style -->
+    <color name="colorNonActiveTertiary">#888888</color> <!-- Inactive beer -->
+
+    <color name="colorIconNonActiveDark">#444444</color>
+    <color name="colorIconActiveDark">#3199BB</color>
+    <color name="colorIconNonActiveLight">#FFCCCCCC</color>
+    <color name="colorIconActiveLight">#3F51B5</color>
+
+</resources>

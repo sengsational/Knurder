@@ -1,0 +1,271 @@
+<resources>
+    <string name="app_name">Knurder</string>
+    <string name="menu_top_level_action_settings">Settings</string>
+    <string name="ufo_logo">UFO logo</string>
+    <string name="action_load_active">Refresh Active</string>
+    <string name="action_load_tasted">Refresh Tasted</string>
+    <string name="action_logon">Log On</string>
+    <string name="action_logout">Log Out</string>
+    <string name="action_change_location">Change Location</string>
+    <string name="action_scan_glass_size">Scan the Menu</string>
+    <string name="action_rate_app">Rate This App</string>
+    <string name="action_about">About</string>
+    <string name="action_color">Test Color Picker</string>
+    <string name="action_edit_query">Custom Query</string>
+
+    <string name="menu_top_level_action_about">
+        <![CDATA[<p>You are running version %1$s.</p><p>I hope you like it (and rate highly it in the Play Store, if you would).
+        I\'m interested in hearing if you were <b>surprised</b> by anything while using the app.
+        That could mean you were thinking "I wish I could&#8230;", or sometimes means you thought it should work differently or maybe work at all!</p></p>
+        When you report, please include the phone hardware type (ie Samsung xyz) you\'re running on, as much detail as you can (what you were doing at the time),
+        the version number above, and if not obvious, what about it that was \'unexpected\'.  Thanks!  knurder.frog4food@recursor.net or www.facebook.com/ufoknurder<p>]]>
+        </string>
+    <string name="new_feature_alert_title">
+        "QUEUE YOUR FLAGGED BEERS"
+    </string>
+    <string name="new_feature_alert_message">
+        <![CDATA[<p>This version of Knurder lets you push your flagged beer list to \"Brews On Queue\".  Go to <a href=https://beerknurd.com/tapthatapp>tapthatapp</a> to set-up your card number / PIN (it\'s a separate authentication), then use that to queue up your flagged list (use the \"3 dot\" menu).</p>]]>
+        </string>
+
+    <string name="take_picture_title">
+        "Take a Picture and Label Your Beer"
+    </string>
+    <string name="take_picture_instructions">
+        <![CDATA[<p>Do you want to paste this beer description onto a picture of your beer?</p>
+        <p>You select the kind of glassware you\'ll be taking a picture of, take a picture, position the description, and then you can save or share the labeled photo.</p>]]>
+    </string>
+    <string name="rate_beer_title">
+        "Saving Your Ratings"
+    </string>
+    <string name="rate_beer_instructions">
+        <![CDATA[<p>If you\'re a UFO member, by default, your ratings will be saved to the Saucer site next time you update your \'tasted\' list.  Once saved there, they are no longer editable.</p>
+        <p>You can go into Knurder settings and set it so it does not upload, if you\'d like.</p>
+        <p>But if you decide not to upload (or if you are not a UFO member), then the ratings are ONLY on your phone, so could be lost if you get a new phone.</p>
+        <p>I just wanted to be sure you knew the deal.</p>]]>
+    </string>
+    <string name="position_title">
+        "Multi-Touch Gestures"
+    </string>
+    <string name="position_instructions">
+        <![CDATA[<p>You can move, rotate, enlarge, change the geometry, and change the color of the description text so that it looks like the description is actually pasted onto your beer glass.</p>
+        <p>There are probably many combinations of glass shape and camera angle that just don\'t work, so if you\'d like to help make the app better, please find
+        \'ufoknurder\' on FaceBook and share your experience or email me since I might be able to get your situation working better in a future release.</p> ]]>
+    </string>
+    <string name="shaker_title">
+        "Shake For a Random Beer"
+    </string>
+    <string name="shaker_instructions">
+        <![CDATA[<p>When you\'re looking at any list, you can <b>shake your phone</b> and a random beer will be selected for you!</p>]]>
+    </string>
+    <string name="ocr_base_title">
+        "Tap Menu Scanning 101"
+    </string>
+    <string name="ocr_base_instructions">
+        <![CDATA[<p>You scan the QR code that the Saucer has put on the tables.  Knurder then knows where to go to get
+        your Saucer\'s tap lineup details!  It\'s probably not going to be 100% perfect because
+        the menu names aren\'t exactly the same as the web names and the beers in the menu might not align perfectly with the tap wall.</p>
+        <p>If we successfully get menu information now, you\'ll have the opportunity to set it so you pull the menu data automatically in the future.</p>]]>
+    </string>
+    <string name="ocr_menu_title">
+        "Aim at a Column and Hold Still"
+    </string>
+    <string name="ocr_menu_instructions">
+        <![CDATA[<p>You can\'t scan the entire menu at once, so get just one \'column\' on your screen (portrait orientation) and hold it there for a few seconds.</p>
+        <p>You should see text appear on the screen.  If you see a nice looking price along with a slash and a nice looking glass size paired
+        with a reasonably accurate stab at the beer name, then that beer is probably captured, if that beer is on the tap wall.</p>
+        <p>Once you get a few good screens-full of text, you can move to another location, then hold it there for another 10 seconds or so.
+        To go through the whole menu will take a minute or two if you want to capture as much as possible.</p>
+        <p>Don\'t try to scan bottles and cans, it\'s only pulling from taps.</p>
+        <p>Use what you see to gauge your scanning technique.  You might need to aim slightly from the side if you\'re getting a reflection.
+        If you don\'t need the light, click the light bulb in the upper right before you start your scanning.</p>
+        ]]>
+    </string>
+    <string name="ocr_new_title">
+        "Cover Your Cans, Aim and Hold Still"
+    </string>
+    <string name="ocr_new_instructions">
+        <![CDATA[<p>You can scan the entire \'new arrivals\' sheet at one time.  Aim your phone, portrait orientation, and hold it still for a few seconds.
+          Wait until the screen shows recognizable names and prices.</p><p>
+        One minor thing is since the new arrivals sheet has a bottles and cans section, that can be picked-up if here\'s a tap with the same name.
+        You can put your hand over that section if you\'re so inclined.</p>
+        <p>My new arrivals sheet doesn\'t have glass size, so we\'re only picking up the
+        price.  If you see a nice looking price along with a reasonably accurate stab at the beer name,
+        then that beer is probably captured (if that beer is still available on the tap wall and reflected as such on the web site).</p>
+        <p>Once you get a few good screens-full of text, you\'re done.</p>
+        <p>I have no clue as to the format of the \'new arrivals\' sheet at <b>your</b> Saucer, so if it doesn\'t work, find \'ufoknurder\' on Facebook or
+        hit me up via the email address from the application\'s \'About\' page.
+        ]]>
+    </string>
+    <string name="touchless_title">
+        "Point Your Camera Towards the Touchless Menu QR Code"
+    </string>
+    <string name="touchless_instructions">
+        <![CDATA[<p>If you see a QR code on your table at your Saucer, you can point your phone at it, and this app
+        might be able to grab that menu and pull off the glass sizes and prices for tap beers.</p>
+        <p>I can only test at my Saucer, so if it doesn\'t work, find \'ufoknurder\' on Facebook or
+        hit me up via the email address from the application\'s \'About\' page.
+        ]]>
+    </string>
+
+    <string name="title_activity_beer_list">Knurder</string>
+    <string name="title_activity_beer">Knurder</string>
+    <string name="title_activity_list_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <string name="pref_title_dark_mode_setting">Dark Theme</string>
+    <string name="pref_description_dark_mode_setting">Display dark page backgrounds with light lettering rather than white page backgrounds
+    </string>
+
+    <string name="pref_title_hide_mix_setting">Hide Mixes</string>
+    <string name="pref_description_hide_mix_setting">Hide "Mix" items in draught lists
+    </string>
+
+    <string name="pref_title_hide_flight_setting">Hide Flights</string>
+    <string name="pref_description_hide_flight_setting">Hide "Flight" items in draught lists
+    </string>
+
+    <string name="pref_title_save_password_setting">Save Password</string>
+    <string name="pref_description_save_password_setting">Save the password locally for convenience at the minor cost of being less secure
+    </string>
+
+    <string name="pref_title_save_pin_setting">Save PIN</string>
+    <string name="pref_description_save_pin_setting">Save the PIN locally for convenience at the minor cost of being less secure
+    </string>
+
+    <string name="pref_title_legacy_buttons_setting">Hide Legacy Buttons</string>
+    <string name="pref_description_legacy_buttons_setting">Hide the legacy beer list buttons, leaving only the icon-based list button.
+    </string>
+
+    <string name="pref_title_current_beers_setting">Show Current Plate Tasted</string>
+    <string name="pref_description_current_beers_setting">Show only tasted on your current plate, not from older plates.
+    </string>
+
+    <string name="pref_title_allow_pictures_setting">Allow Pictures</string>
+    <string name="pref_description_allow_pictures_setting">Show the camera icon so you can paste beer descriptions on photos and also use the camera to scan the menu.
+    </string>
+
+    <string name="pref_title_synch_reviews_setting">Upload Reviews</string>
+    <string name="pref_description_synch_reviews_setting">Post the reviews you type in here to the UFO site. They are NOT EDITABLE after posting!
+    </string>
+
+    <string name="pref_title_hide_ubereats_setting">Hide Food Delivery Button</string>
+    <string name="pref_description_hide_ubereats_setting">Do not show the button that takes you to the food delivery web page.
+    </string>
+
+    <string name="pref_title_automatic_untappd_setting">Automatically Pull Prices</string>
+    <string name="pref_description_automatic_untappd_setting">Retrieve prices and glass sizes every time the beer list is refreshed.
+    </string>
+
+    <string name="pref_title_reset_tutorials_setting">Reset Help Preferences</string>
+    <string name="pref_description_reset_tutorials_setting">Reset help screen preferences so they show up again.
+    </string>
+
+
+    <!-- Strings related to login -->
+    <string name="title_activity_login">Authenticate</string>
+    <string name="title_activity_login_pin">Authenticate and Send</string>
+    <string name="prompt_username">Username or e-mail address</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in to get your tasted list</string>
+    <string name="action_no_network">Unable to reach the network</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_cardno">This card number is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">Could not authenticate.  Please confirm logon by going to the UFO web site.</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing cardno completions."</string>
+    <string name="store_selection">Your Saucer</string>
+    <string name="pref_alternate_logon_setting">Alternate Logon</string>
+    <string name="pref_title_alternate_logon_setting">Use alternate logon</string>
+    <string name="error_no_network_access">Not able to connect to a network.</string>
+    <string name="error_no_internet_access">Not able to connect to the Internet.</string>
+
+    <string name="activity_select_store">Your Saucer</string>
+    <string name="container_selection">Container Selection</string>
+    <string name="taps">Taps</string>
+    <string name="mixes">Mixes</string>
+    <string name="flights">Flights</string>
+    <string name="bottles">Bottles</string>
+    <string name="all">ALL</string>
+    <string name="region_selection">Region Selection</string>
+    <string name="local">Local</string>
+    <string name="not_local">Not Local</string>
+    <string name="tasted_selection">Tasted Selection</string>
+    <string name="tasted">Tasted</string>
+    <string name="not_tasted">Not Tasted</string>
+    <string name="knurder_favorite_selection">Knurder Favorite Selection</string>
+    <string name="flagged">Flagged</string>
+    <string name="not_flagged">Not Flagged</string>
+    <string name="go">Go</string>
+    <string name="action_share">Share This List</string>
+    <string name="action_sort_name">Sort by Name</string>
+    <string name="action_search_name">Search Name</string>
+    <string name="action_sort_style">Sort by Style</string>
+    <string name="action_sort_abv">Sort by ABV</string>
+    <string name="action_sort_glass">Sort by Glass Size</string>
+    <string name="action_sort_price">Sort by Price</string>
+    <string name="action_push_to_brews_on_queue">Send to Brews on Queue</string>
+
+    <!-- DRS 20171129 - Added 3 for OCR base -->
+    <string name="store_location_name">%1$s</string>
+    <string name="scanned_menu_item_text">%1$s active taps have menu info</string>
+    <string name="added_menu_item_text">%1$s menu items added or updated this time</string>
+
+    <string name="BBB">List All Beers</string>
+    <string name="BBL">List All Local Beers</string>
+    <string name="BBR">List All Imported Beers</string>
+    <string name="BLB">List All Tasted Beers</string>
+    <string name="BLL">List Local Tasted Beers</string>
+    <string name="BLR">List Tasted Imported Beers</string>
+
+    <string name="BRB">List Untasted Beers</string>
+    <string name="BRL">List Untasted Local Beers</string>
+    <string name="BRR">List Untasted Imported Beers</string>
+    <string name="LBB">List All Taps</string>
+    <string name="LBL">List Local Taps</string>
+    <string name="LBR">List Imported Taps</string>
+
+    <string name="LLB">List Tasted Taps</string>
+    <string name="LLL">List Tasted Local Taps</string>
+    <string name="LLR">List Tasted Imported Taps</string>
+    <string name="LRB">List Untasted Taps</string>
+    <string name="LRL">List Untasted Local Taps</string>
+    <string name="LRR">List Untasted Imported Taps</string>
+
+    <string name="RBB">List All Bottles</string>
+    <string name="RBL">List Local Bottles</string>
+    <string name="RBR">List Imported Bottles</string>
+    <string name="RLB">List Tasted Bottles</string>
+    <string name="RLL">List Tasted Local Bottles</string>
+    <string name="RLR">List Tasted Imported Bottles</string>
+
+    <string name="RRB">List Untasted Bottles</string>
+    <string name="RRL">List Untasted Local Bottles</string>
+    <string name="RRR">List Untasted Imported Bottles</string>
+
+    <string name="container_prompt">(select tap, bottle or both)</string>
+    <string name="tasted_prompt">(select tasted, untasted or both)</string>
+    <string name="geography_prompt">(select local, imported, or both)</string>
+    <string name="external_storage_permission_rationale">This app will instruct your camera app to save in a new \'Knurder\' photo album contained in external storage.  That\'s all we do, just put photos in the Knurder album.</string>
+    <string name="camera_permission_rationale">This app will instruct your camera app to save pictures in the \'Knurder\' photo album (under Files > Images).  If your camera app wants/needs location, that\'s all them; I don\'t use location.  We save beer pictures.  That\'s all we do.</string>
+
+    <!--DRS 20171108 - added 12 for ocr -->
+    <string name="ok">OK</string>
+    <string name="permission_camera_rationale">Access to the camera is needed to scan the Saucer menu.</string>
+    <string name="no_camera_permission">Sorry, we can\'t scan because it looks like we don\'t have access to the camera.</string>
+    <string name="low_storage_error">Ocr dependencies cannot be downloaded due to low device storage</string>
+    <string name="title_activity_main">Ocr Detector Sample</string>
+    <string name="ocr_header">Click &quot;Detect Text&quot; to detect text</string>
+    <string name="read_text">Detect Text</string>
+    <string name="auto_focus">Auto Focus</string>
+    <string name="use_flash">Use Flash</string>
+    <string name="ocr_success">Text read successfully</string>
+    <string name="ocr_failure">No text captured</string>
+    <string name="ocr_error">"Error reading text: %1$s"</string>
+    <string name="dollars_prefix">"$%1$s"</string>
+    <string name="prompt_card_number">Enter UFO Card Number</string>
+    <string name="prompt_card_pin">Enter the PIN associated with the UFO card</string>
+    <string name="action_validate_card_credentials">GO</string>
+
+</resources>

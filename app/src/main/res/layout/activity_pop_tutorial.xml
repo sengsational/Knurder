@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ScrollView01"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none" >
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/activity_tutorial_take_picture"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        tools:context="com.sengsational.knurder.PopTutorial">
+        <!-- android:background="#33010079"
+        -->
+
+        <TextView
+            android:text="Take a Picture and Label Your Beer"
+            android:textSize="20sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:gravity="center_horizontal"
+            android:id="@+id/tutorial_title" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tutorial_instructions"
+            >
+            <CheckBox
+                android:text="Don't Show Again"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:textColor="@android:color/secondary_text_light"
+                android:layout_height="wrap_content"
+                android:id="@+id/dont_show_checkbox"
+
+                />
+            <TextView
+                android:text="CANCEL"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorAccent"
+                android:textStyle="bold"
+                android:id="@+id/cancel_pop"
+                android:layout_weight="1"
+                style="?android:attr/panelTextAppearance"
+    />
+
+            <TextView
+                android:text="GOT IT"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorAccent"
+                android:layout_weight="1"
+                android:textStyle="bold"
+                android:id="@+id/got_it"
+                style="?android:attr/panelTextAppearance"
+    />
+        </LinearLayout>
+
+
+
+        <RelativeLayout
+            android:id="@+id/icon_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tutorial_title"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="15dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/iv_ges_zoom"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:src="@drawable/ic_ges_zoom"/>
+
+            <ImageView
+                android:id="@+id/iv_ges_rotate"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/iv_ges_zoom"
+                android:src="@drawable/ic_ges_rotate"/>
+
+            <ImageView
+                android:id="@+id/iv_ges_shove"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/iv_ges_rotate"
+                android:src="@drawable/ic_ges_shove"/>
+
+            <ImageView
+                android:id="@+id/iv_ges_longpress"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/iv_ges_shove"
+                android:src="@drawable/ic_ges_longpress"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Color"
+                android:textSize="15dp"
+                android:paddingLeft="20dp"
+                android:layout_below="@+id/iv_ges_shove"
+                android:layout_toRightOf="@+id/iv_ges_longpress"
+                android:layout_marginTop="11dp">
+            </TextView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Alter Geometry"
+                android:textSize="15dp"
+                android:paddingRight="20dp"
+                android:layout_below="@+id/iv_ges_rotate"
+                android:layout_toLeftOf="@+id/iv_ges_shove"
+                android:layout_marginTop="11dp">
+            </TextView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rotate"
+                android:textSize="15dp"
+                android:paddingLeft="20dp"
+                android:layout_below="@+id/iv_ges_zoom"
+                android:layout_toRightOf="@+id/iv_ges_rotate"
+                android:layout_marginTop="11dp">
+            </TextView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Make Bigger"
+                android:textSize="15dp"
+                android:paddingRight="20dp"
+                android:layout_alignParentTop="true"
+                android:layout_toLeftOf="@+id/iv_ges_zoom"
+                android:layout_toStartOf="@+id/iv_ges_zoom"
+                android:layout_marginTop="11dp">
+            </TextView>
+
+
+
+        </RelativeLayout>
+
+        <TextView
+            android:text="@string/take_picture_instructions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tutorial_instructions"
+            android:layout_below="@+id/icon_layout"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="19dp" />
+
+
+    </RelativeLayout>
+</ScrollView>

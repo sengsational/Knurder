@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:background="@color/colorSysLtGray">
+    <TextView
+        android:id="@+id/beername_glass_edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_horizontal"
+        android:textSize="30dp"
+        android:padding="5dp"
+        tools:text="Highland Early's Hoppy Wheat"
+        />
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@+id/beername_glass_edit"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/glass_icon_bar">
+        <ImageView
+            android:id="@+id/pint_glass_icon"
+            android:layout_width="0dp"
+            android:layout_weight="20"
+            android:layout_height="40dp"
+            android:src="@mipmap/pint_glass"
+            android:contentDescription="pint glass"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            />
+        <ImageView
+            android:id="@+id/snifter_glass_icon"
+            android:layout_width="0dp"
+            android:layout_weight="20"
+            android:layout_height="40dp"
+            android:src="@mipmap/snifter_glass"
+            android:contentDescription="snifter glass"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            />
+        <ImageView
+            android:id="@+id/wine_glass_icon"
+            android:layout_width="0dp"
+            android:layout_weight="20"
+            android:layout_height="40dp"
+            android:src="@mipmap/wine_glass"
+            android:contentDescription="wine glass"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            />
+    </LinearLayout>
+    <NumberPicker
+        android:paddingTop="10dp"
+        android:id="@+id/glass_price_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:descendantFocusability="blocksDescendants"
+        android:layout_below="@id/glass_icon_bar"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/glass_edit_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:textColor="@color/colorAccent"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:text="CANCEL"/>
+        <TextView
+            android:id="@+id/glass_edit_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:textColor="@color/colorAccent"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:text="UPDATE"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

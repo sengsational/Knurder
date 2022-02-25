@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/background_layout"
+    android:background="@drawable/greypix"
+    android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
+    <ImageView
+        android:id="@+id/imageToMove"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:scaleType="matrix"
+        app:srcCompat="@drawable/ufo_logo1" >
+    </ImageView>
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/save_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        app:srcCompat="@drawable/ic_done_black_24dp" />
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/ignore_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="@dimen/fab_margin"
+        app:srcCompat="@drawable/ic_delete_forever_black_24dp" />
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/beerRelativeLayoutInvisible"
+        tools:context="top.sengsational.com.textonpicture.DisplayDescriptionActivity"
+        android:visibility="invisible">
+        <!-- tools:showIn="@layout/activity_beer" -->
+
+
+        <TextView
+            android:id="@+id/beername"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:gravity="center_horizontal"
+            android:paddingTop="40dp"
+            android:textSize="40dp"
+            tools:text="Highland Early's Hoppy Wheat"
+            android:text="Highland Early's Hoppy Wheat"
+            />
+        <LinearLayout
+            android:id="@+id/spring_loaded"
+            android:layout_width="fill_parent"
+            android:layout_height="60dp"
+            android:layout_below="@+id/beername">
+
+            <TextView
+                android:id="@+id/brewery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15dp"
+                android:paddingTop="10dp"
+                tools:text="Highland Brewery Inc."
+                android:text="Highland Brewery Inc."
+                 />
+
+            <ImageView
+                android:layout_width="5dp"
+                android:layout_height="50dp"
+                android:id="@+id/knurder_label"
+                android:layout_weight="1"
+                android:paddingBottom="15dp"
+                android:src="@mipmap/knurder_label"
+                />
+            <TextView
+                android:id="@+id/style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15dp"
+                android:paddingTop="10dp"
+                tools:text="American Wheat"
+                android:text="American Wheat"
+                 />
+
+        </LinearLayout>
+
+        <!-- TextView
+            android:id="@+id/brewery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15dp"
+            android:paddingTop="10dp"
+            android:paddingRight="30dp"
+            tools:text="Highland"
+            android:text="Highland Brewery Inc."
+            android:layout_below="@+id/beername"
+            android:layout_alignParentLeft="true" />
+
+        <ImageView
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:id="@+id/knurder_label"
+            android:gravity="left"
+            android:paddingBottom="25dp"
+            android:src="@mipmap/knurder_label"
+            android:layout_below="@+id/beername"
+            android:layout_toRightOf="@id/brewery"/>
+        <TextView
+            android:id="@+id/style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15dp"
+            android:paddingTop="10dp"
+            tools:text="American Wheat"
+            android:text="American Wheat"
+            android:layout_below="@+id/beername"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" / -->
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:textSize="20dp"
+            android:layout_below="@id/spring_loaded"
+            android:paddingTop="10dp"
+            tools:text="A light bodied wheat beer with a golden haze. Hopped up with Simcoe, Amarillo and Mosaic hops from the Pacific Northwest, this beer bursts with bright tropical andpiney notes over wheat malts. An east, lower gravity beer that appeals to wheat beer fans and hop heads alike."
+            android:text="A light bodied wheat beer with a golden haze. Hopped up with Simcoe, Amarillo and Mosaic hops from the Pacific Northwest, this beer bursts with bright tropical andpiney notes over wheat malts. An east, lower gravity beer that appeals to wheat beer fans and hop heads alike."
+            />
+        <TextView
+            android:id="@+id/new_arrival"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20dp"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/description"
+            android:textStyle="bold|italic"
+            android:paddingTop="5dp"
+            tools:text="New Arrival"
+            android:text="New Arrival"
+            />
+        <TextView
+            android:id="@+id/abv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/description"
+            android:textSize="20dp"
+            android:paddingTop="30dp"
+            tools:text="5.5%"
+            android:text="5.5%"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:id="@+id/database_key"
+            />
+        <TextView
+            android:id="@+id/city"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/description"
+            android:layout_alignParentRight="true"
+            android:textSize="20dp"
+            android:paddingTop="30dp"
+            tools:text="Asheville, NC"
+            android:text="Asheville, NC"
+            />
+        <TextView
+        android:id="@+id/created"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/abv"
+        android:textSize="15dp"
+        tools:text="Tasted 12/31/15"
+        android:text="Tasted 12/31/15"
+        android:paddingTop="20dp"
+        android:layout_centerHorizontal="true"
+        />
+    </RelativeLayout>
+</FrameLayout>

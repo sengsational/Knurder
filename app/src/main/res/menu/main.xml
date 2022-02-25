@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_share"
+        android:orderInCategory="100"
+        android:title="@string/action_share"
+        android:icon="@drawable/ic_action_share"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_sort_name"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_action_sort_2"
+        android:title="@string/action_sort_name"
+        app:showAsAction="never"/>
+    <!-- item
+        android:id="@+id/action_search_name"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_action_search"
+        android:title="@string/action_search_name"
+        app:showAsAction="ifRoom"/ -->
+
+    <item
+        android:id="@+id/action_sort_style"
+        android:orderInCategory="100"
+        android:title="@string/action_sort_style"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_sort_abv"
+        android:orderInCategory="100"
+        android:title="@string/action_sort_abv"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_sort_glass"
+        android:orderInCategory="100"
+        android:title="@string/action_sort_glass"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_sort_price"
+        android:orderInCategory="100"
+        android:title="@string/action_sort_price"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_push_to_brews_on_queue"
+        android:orderInCategory="100"
+        android:title="@string/action_push_to_brews_on_queue"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/menu_search"
+
+        android:icon="@android:drawable/ic_menu_search"
+        app:showAsAction="ifRoom"
+        android:title="FindNow"  /> <!-- android:actionViewClass="android.widget.SearchView" -->
+
+</menu>

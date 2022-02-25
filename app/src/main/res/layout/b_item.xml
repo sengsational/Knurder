@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="?android:attr/listPreferredItemHeight"
+                android:paddingTop="2dip"
+                android:paddingBottom="2dip"
+                android:paddingStart="8dip"
+                android:paddingLeft="8dip"
+                android:id="@+id/b_item_layout">
+
+    <ImageView
+        android:id="@+id/b_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ufo_logo1"
+        android:gravity="end"
+        android:foregroundGravity="right"
+        android:visibility="invisible"
+        tools:visibility="visible"
+        />
+
+    <ImageView
+        android:id="@+id/glass_icon"
+        android:layout_width="40dp"
+        android:layout_height="25dp"
+        android:layout_centerHorizontal="true"
+        android:src="@mipmap/pint_glass"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:paddingRight="10dp"
+        android:paddingTop="10dp"
+        android:visibility="invisible"
+        tools:visibility="visible"
+        />
+
+    <TextView android:id="@+id/b_name"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginLeft="48dip"
+              android:layout_marginTop="6dip"
+              android:layout_marginRight="25dip"
+              android:textAppearance="?android:attr/textAppearanceListItem"
+              android:textAlignment="viewStart"
+              android:layout_gravity="start"
+              android:ellipsize="end"
+              android:singleLine="true"
+              tools:text="Highland Early's Hoppy Wheat"
+        />
+
+
+    <TextView android:id="@+id/b_second_line"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_below="@id/b_name"
+              android:layout_alignStart="@id/b_name"
+              android:layout_alignLeft="@id/b_name"
+              android:textAppearance="?android:attr/textAppearanceSmall"
+              android:textAlignment="viewStart"
+              android:layout_gravity="start"
+              tools:text="5.8% - Barrel Aged Imperial Stout"
+        />
+
+    <TextView android:id="@+id/b_price"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:layout_below="@id/b_name"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:paddingRight="5dp"
+        android:textSize="10sp"
+        android:visibility="invisible"
+        tools:text="$5.50"
+        tools:visibility="visible"
+        />
+
+    <TextView
+        android:id="@+id/b_db_item"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+    <TextView
+        android:id="@+id/b_db_ufo_item"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+    <TextView
+        android:id="@+id/b_highlighted"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+
+    <TextView
+        android:id="@+id/b_description"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+    </RelativeLayout>

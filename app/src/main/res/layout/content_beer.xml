@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools">
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:id="@+id/beerRelativeLayout"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".BeerSlideActivity"
+    tools:showIn="@layout/activity_beer">
+
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ufo_logo1"
+        android:id="@+id/highlighted"
+        android:gravity="left"
+        android:visibility="invisible"
+        android:layout_below="@+id/beername"/>
+
+    <TextView
+        android:id="@+id/beername"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:paddingTop="40dp"
+        android:textSize="40dp"
+        android:gravity="center"
+        tools:text="Highland Early's Hoppy Wheat"
+        />
+    <TextView
+        android:id="@+id/style"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20dp"
+        android:paddingTop="10dp"
+        android:layout_centerHorizontal="true"
+        tools:text="American Wheat"
+        android:layout_below="@+id/beername"/>
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:textSize="20dp"
+        android:layout_below="@id/style"
+        android:paddingTop="10dp"
+        tools:text="A light bodied wheat beer with a golden haze. Hopped up with Simcoe, Amarillo and Mosaic hops from the Pacific Northwest, this beer bursts with bright tropical andpiney notes over wheat malts. An east, lower gravity beer that appeals to wheat beer fans and hop heads alike."
+        />
+    <TextView
+        android:id="@+id/new_arrival"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/description"
+        android:textStyle="bold|italic"
+        android:paddingTop="5dp"
+        tools:text="New Arrival"
+        />
+
+    <TextView
+        android:id="@+id/abv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/description"
+        android:textSize="20dp"
+        android:paddingTop="30dp"
+        tools:text="5.5%"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:id="@+id/database_key"
+        />
+
+    <TextView
+        android:id="@+id/city"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/description"
+        android:layout_alignParentRight="true"
+        android:textSize="20dp"
+        android:paddingTop="30dp"
+        tools:text="Asheville, NC"
+        />
+    <TextView
+        android:id="@+id/created"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/abv"
+        android:textSize="15dp"
+        tools:text="Tasted 12/31/15"
+        android:paddingTop="20dp"
+        android:layout_centerHorizontal="true"
+        />
+
+
+</RelativeLayout>
+</ScrollView>

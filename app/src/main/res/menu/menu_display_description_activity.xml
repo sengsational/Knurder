@@ -1,0 +1,20 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".Temp2">
+    <item
+        android:id="@+id/rate_beer"
+        android:title="RB"
+        android:icon="@drawable/ic_rate"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/take_picture"
+        android:title="TP"
+        android:icon="@drawable/ic_camera"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/use_default"
+        android:title="Use Existing Pic"
+        app:showAsAction="never"
+        android:visible="false"/>
+</menu>
