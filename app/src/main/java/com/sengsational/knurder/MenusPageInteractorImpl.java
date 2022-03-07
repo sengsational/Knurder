@@ -273,9 +273,11 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         buf.append("<html><body>");
         buf.append(untappdData.substring(firstHtmlLoc, lastThingLoc));
         buf.append("</body></html>");
+        //Log.v(TAG, "<<<<<<<<<<<<<<<<<<<<<What Did they change??? >>>>>>>>>>>>>>>>>>>>>>>>>>");
+        //Log.v(TAG, buf.toString());
 
         Document doc = Jsoup.parse(Parser.unescapeEntities(buf.toString(),true));
-        Elements beerList = doc.getElementsByClass("beer");
+        Elements beerList = doc.getElementsByClass("item");
         Log.v(TAG, "There were "  + beerList.size() + " beers pulled from the Untappd data.");
         int maxItems = 999;
         String beerName = "";
@@ -285,7 +287,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         for (Element beer: beerList) {
             int position = 0;
             try {
-                Element beerNameElement = beer.getElementsByClass("beer-name").first(); position++;
+                Element beerNameElement = beer.getElementsByClass("item-name").first(); position++;
                 Element paragraphElement = beerNameElement.getElementsByTag("p").first(); position++;
                 Element anchorElement = paragraphElement.getElementsByTag("a").first(); position++;
                 beerName = anchorElement.text(); position++;
