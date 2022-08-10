@@ -4,13 +4,9 @@ package com.sengsational.ocrreader.camera;
  * Created by Owner on 11/10/2017.
  */
 
-public class Levenshtein
-{
-    public Levenshtein() {
-        super();
-    }
+public class Levenshtein {
 
-    public double compare(final String s1, final String s2) {
+    public static double compare(final String s1, final String s2) {
         double retval = 0.0;
         final int n = s1.length();
         final int m = s2.length();
@@ -24,7 +20,7 @@ public class Levenshtein
         return retval;
     }
 
-    private double compare(final String s1, final int n, final String s2, final int m) {
+    private static double compare(final String s1, final int n, final String s2, final int m) {
         int matrix[][] = new int[n + 1][m + 1];
         for (int i = 0; i <= n; i++) {
             matrix[i][0] = i;
@@ -44,7 +40,7 @@ public class Levenshtein
         return matrix[n][m];
     }
 
-    private int min3(final int a, final int b, final int c) {
+    private static int min3(final int a, final int b, final int c) {
         return Math.min(Math.min(a, b), c);
     }
 }

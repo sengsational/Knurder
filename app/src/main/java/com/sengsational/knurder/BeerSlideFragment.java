@@ -1,13 +1,20 @@
 package com.sengsational.knurder;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +23,11 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import static com.sengsational.knurder.BeerSlideActivity.EXTRA_TUTORIAL_TYPE;
+import static com.sengsational.knurder.PopTutorial.EXTRA_TEXT_RESOURCE;
+import static com.sengsational.knurder.PopTutorial.EXTRA_TITLE_RESOURCE;
+import static com.sengsational.knurder.UfoDatabaseAdapter.fractionTapsWithMenuData;
 
 
 /**
@@ -32,6 +44,7 @@ public class BeerSlideFragment extends Fragment {
     private static int listPosition = -1;
     private static int mLayoutId;
     private String mBeerName;
+    public static final String PREF_DETAILS_TUTORIAL = "prefDetailsTutorial";
 
     //private static Cursor mCursor; // DRS 20161130
 
@@ -84,6 +97,17 @@ public class BeerSlideFragment extends Fragment {
             mCursorRecyclerViewAdapter = new MybCursorRecyclerViewAdapter(getActivity(), KnurderApplication.getCursor(getActivity()), false, false); //Pull cursor from the application class
             mCursorRecyclerViewAdapter.hasStableIds();
         }
+
+        boolean showTutorial =  PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREF_DETAILS_TUTORIAL, true);
+        if (savedInstanceState == null && showTutorial) {
+            Intent popTutorialIntent = new Intent(getContext(), PopTutorial.class);
+            popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.details_instructions);
+            popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.details_title);
+            popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_DETAILS_TUTORIAL);
+            startActivity(popTutorialIntent);
+        }
+
+
     }
 
     @Override
@@ -175,26 +199,6 @@ public class BeerSlideFragment extends Fragment {
 
                 ViewUpdateHelper.updateViewHighlightState(viewToManage, modelItem, false, context);
 
-                /*  This commented section should be covered by the above line
-                if (highlightState == null) highlightState = "F";
-                switch (highlightState) {
-                    case "F":
-                        ViewUpdateHelper.setImage(viewToManage, R.drawable.ufo_logo);
-                        viewToManage.setVisibility(View.VISIBLE);
-                        modelItem.setHighlighted("T");
-                        break;
-                    case "T":
-                        ViewUpdateHelper.setImage(viewToManage, R.drawable.ic_not_interested);
-                        viewToManage.setVisibility(View.VISIBLE);
-                        modelItem.setHighlighted("X");
-                        break;
-                    case "X":
-                        ViewUpdateHelper.setImage(viewToManage, R.drawable.ufo_logo);
-                        viewToManage.setVisibility(View.GONE);
-                        modelItem.setHighlighted("F");
-                        break;
-                }
-                */
                 Log.v(TAG, "updating the database from the changed model with position " + listPosition);
                 UfoDatabaseAdapter.update(modelItem, listPosition, context);
 
@@ -202,25 +206,57 @@ public class BeerSlideFragment extends Fragment {
 
                 boolean longClickConsumed = true;
                 return longClickConsumed;
-
-
-                /* // DRS 20161130 - Commented block
-                View databaseKeyView = ((View)v.getParent()).findViewById(R.id.database_key);
-                if (databaseKeyView != null) {
-                    String keyString = ((TextView)databaseKeyView).getText().toString();
-                    int databaseId = Integer.parseInt(keyString);
-                    toggleFavorite(databaseId, rootView, true);
-                } else {
-                    Log.v("sengsational", "dkv was null. View parent was " + v.getParent());
-                }
-                Log.v("sengsational", "View content was " + ((TextView) v).getText());
-                REFRESH_REQUIRED = true;
-                return true;
-                */
             }
         });
 
+        TextView beerName = (TextView)rootView.findViewById(R.id.beername);
+        beerName.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                boolean longClickConsumed = true;
+                String beerNumber =  modelItem.getUntappdBeer();
+                Log.v(TAG, "long click on beerName.  Untappd beer number: " + beerNumber);
+                if (beerNumber == null) {
+                    Log.v(TAG, "no beer number for " + modelItem.name);
+                    String storeNumber = modelItem.getStore_id();
+                    return informUserAboutMenuScanOrUntappedMatching(storeNumber, v.getContext());
+                }
 
+                // First try to use locally installed untappd app
+                Uri untappdBeerUri = Uri.parse("untappd://beer/" + modelItem.getUntappdBeer());
+                Intent untappdIntent = new Intent(Intent.ACTION_DEFAULT, untappdBeerUri);
+                boolean activityFound = true;
+                try {
+                    startActivity(untappdIntent);
+                } catch (ActivityNotFoundException n) {
+                    Log.v(TAG,  n.getClass().getName() + " " + n.getMessage());
+                    activityFound = false;
+                } catch (Throwable t) {
+                    Log.v(TAG, t.getClass().getName() + " message: " + t.getMessage());
+                    activityFound = false;
+                }
+
+                if (activityFound) return longClickConsumed;
+
+                Log.v(TAG, "Failed to open untappd app.  Trying html.");
+                // If the above fails, try to use browser to get to untapped beer
+                untappdBeerUri = Uri.parse("https://untappd.com/beer/" + modelItem.getUntappdBeer());
+                untappdIntent = new Intent(Intent.ACTION_DEFAULT, untappdBeerUri);
+                try {
+                    startActivity(untappdIntent);
+                    activityFound = true;
+                } catch (ActivityNotFoundException n) {
+                    Log.v(TAG,  n.getClass().getName() + " " + n.getMessage());
+                    activityFound = false;
+                } catch (Throwable t) {
+                    Log.v(TAG, t.getClass().getName() + " message: " + t.getMessage());
+                    activityFound = false;
+                }
+                if (!activityFound) Log.v(TAG, "ERROR: Unable to open untappd app and unable to open browser.");
+
+                return longClickConsumed;
+            }
+        });
 
         return rootView;
     }
@@ -288,6 +324,62 @@ public class BeerSlideFragment extends Fragment {
         db.execSQL("update UFO set HIGHLIGHTED='" + highlightState + "' where _id = " + databaseKey);
         ViewUpdateHelper.setHighlightIconInView(viewToManage, highlightState, context);
     }
+
+    private boolean informUserAboutMenuScanOrUntappedMatching(String storeNumber, Context context) {
+        Log.v("sengsational", "informUserAboutMenuScanOrUntappedMatching");
+        Log.v(TAG, "storeNumber for beer was " + storeNumber);
+        boolean isConsumed = false;
+        if (storeNumber == null || storeNumber.equals("null")) return isConsumed;
+
+        StringBuilder message = new StringBuilder();
+        android.app.AlertDialog.Builder untappdProblemDialog = new android.app.AlertDialog.Builder(context);
+        Float fractionUntappdPopulated = fractionTapsWithMenuData(storeNumber, context);
+        Log.v(TAG, "fractionUnappdPopulated " + fractionUntappdPopulated);
+        boolean untappedUrlPresent = !UntappdHelper.getInstance().getUntappdUrlForCurrentStore("").equals("");
+
+        if (!untappedUrlPresent || fractionUntappdPopulated < 0.1f) {
+            // Probably have never got menu info, so tell them how to scan the touchless QR code, which will populate untappd keys, and then enable untappd.
+            if (!untappedUrlPresent) {
+                message.append("Normally this would open the 'Untappd' page for this beer, but we need to have the Touchless QR code scanned to match up the Saucer list with Untappd.\n\nTo do so, ");
+            } else {
+                message.append("Normally this would open the 'Untappd' page for this beer, but we haven't yet matched up the tap list with Untappd.\n\nTo do so, ");
+            }
+            message.append("click below, or you can go the main page's 3 dot menu, select 'Scan the Menu', then 'Scan the Toucheless Menu'. ");
+            message.append("Finally, point your camera at the Touchless QR code on the table at the restaurant.\n\nThis will enable the link to Untappd ");
+            message.append("and also give you glass size and price.");
+
+            untappdProblemDialog.setMessage(message.toString());
+            untappdProblemDialog.setNegativeButton("OK", null);
+            untappdProblemDialog.setPositiveButton("Scan Touchless QR Code Now", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                    Intent intentOcrBase = new Intent(context, OcrBase.class);
+                    startActivity(intentOcrBase);
+                }
+            });
+            isConsumed = true;
+        } else if (fractionUntappdPopulated < 0.4f) {
+            message.append("Normally this action would open the 'Untappd' page for this beer, but this tap, and quite a few other taps, ");
+            message.append("haven't been matched up with the Saucer's tap list.\n\n");
+            message.append("You can try to re-scan the Touchless QR code that's on the table at the restaurant to get more menu information added.");
+            untappdProblemDialog.setMessage(message.toString());
+            untappdProblemDialog.setNegativeButton("OK", null);
+            isConsumed = true;
+        } else {
+            message.append("Normally this action would open the 'Untappd' page for this beer, but this tap ");
+            message.append("hasn't been matched up with the Saucer's tap list.\n\n");
+            message.append("Unfortunately, the descriptions between The Saucer and Untappd aren't the same or even similar enough ");
+            message.append("at times to guarantee finding a match on the brewery and beer name.");
+            untappdProblemDialog.setMessage(message.toString());
+            isConsumed = false;
+        }
+        if (isConsumed) {
+            Log.v("sengsational", "about to show.");
+            untappdProblemDialog.create().show();
+        }
+        return isConsumed;
+    }
+
 
     private void populateView(int id, View rootView) {
         Cursor cursor = null;

@@ -5,10 +5,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.RecyclerView;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.RecyclerView;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Gravity;
@@ -18,7 +17,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
@@ -214,7 +212,7 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
                             db.execSQL("update UFOLOCAL set GLASS_SIZE='" + mUpdatedGlassSize + "', GLASS_PRICE='" + mUpdatedPrice + "' where _id = " +  databaseKey);
                         } else {
                             // Need to look-up the beer in the main UFO table then insert it into the UFOLOCAL table
-                            String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.ACTIVE, SaucerItem.CONTAINER, SaucerItem.STORE_ID, SaucerItem.BREW_ID};
+                            String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.ACTIVE, SaucerItem.CONTAINER, SaucerItem.STORE_ID, SaucerItem.BREW_ID, SaucerItem.ABV};
                             Calendar cal = Calendar.getInstance();
                             String lastUpdated = NDF.format(cal.getTime());
                             String selectionFields = "_id=?";
@@ -227,7 +225,8 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
                                     String brewer = mainTableCursor.getString(1);
                                     String store_id = mainTableCursor.getString(4);
                                     String brew_id = mainTableCursor.getString(5);
-                                    Log.v(TAG, "For input into other table: [" + beerName + ", " + mUpdatedGlassSize + ", " + brewer + ", " + store_id + ", " + brew_id + ", " + " ]");
+                                    String abv = mainTableCursor.getString(6);
+                                    Log.v(TAG, "For input into other table: [" + beerName + ", " + mUpdatedGlassSize + ", " + brewer + ", " + store_id + ", " + brew_id + ", " + abv + ", " + " ]");
 
                                     // Populate the UFOLOCAL table - up until now, it's been in mFoundResults<String[]>
                                     ContentValues values = new ContentValues();
@@ -238,6 +237,7 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
                                     values.put("GLASS_PRICE", mUpdatedPrice);
                                     values.put("LAST_UPDATED_DATE", lastUpdated);
                                     values.put("ADDED_NOW_FLAG", "Y");
+                                    values.put("ABV", abv); // DRS 20220726
 
                                     db.insert("UFOLOCAL", null, values);
                                     Log.v(TAG, "Inserted record into UFOLOCAL");

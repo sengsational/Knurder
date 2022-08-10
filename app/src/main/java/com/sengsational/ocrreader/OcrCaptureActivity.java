@@ -27,20 +27,16 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.app.ActivityCompat;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.CommonStatusCodes;
-import com.sengsational.knurder.UfoDatabaseAdapter;
 import com.sengsational.ocrreader.camera.CameraSource;
 import com.sengsational.ocrreader.camera.CameraSourcePreview;
 import com.sengsational.ocrreader.camera.GraphicOverlay;
@@ -48,7 +44,6 @@ import com.google.android.gms.vision.text.TextRecognizer;
 import com.sengsational.knurder.R;
 
 import java.io.IOException;
-import java.util.HashSet;
 
 /**
  * Activity for the Ocr Detecting app.  This app detects text and displays the value with the
@@ -228,13 +223,13 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         // DRS 20180103 - Added 'if' - prevent null pointer exception
-        if (OcrScanHelper.getInstance(this).getResults(this).length < 3) {
+        if (OcrScanHelper.getInstance().getResults(this).length < 3) {
             setResult(RESULT_CANCELED, null);
             finish();
             super.onBackPressed();
         }
         // DRS 20171129 - Added 7 - return information to the parent process
-        int[] results = OcrScanHelper.getInstance(this).getResults(this);
+        int[] results = OcrScanHelper.getInstance().getResults(this);
         Log.v(TAG, "about to finish OCR.  Setting extras.");
         Intent data = new Intent();
         data.putExtra("totalItemCount", results[0]);

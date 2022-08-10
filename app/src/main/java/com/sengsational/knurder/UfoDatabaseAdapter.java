@@ -23,7 +23,7 @@ public class UfoDatabaseAdapter {
     private static final String TAG = UfoDatabaseAdapter.class.getSimpleName();
 
     private static final String DB_NAME = "knuder";
-    private static final int DB_VERSION = 12;
+    private static final int DB_VERSION = 14;
     private static Context CONTEXT_LIMIT_USE;
     private static DatabaseHelper DB_HELPER;
     private static SQLiteDatabase SQL_DB;
@@ -275,6 +275,9 @@ public class UfoDatabaseAdapter {
      "GLASS_PRICE TEXT," +
      "LAST_UPDATED_DATE TEXT," +
      "ADDED_NOW_FLAG TEXT" +
+     "ABV TEXT" + // DRS 20220726
+     "UNTAPPD_BEER TEXT" + // DRS 20220730
+     "UNTAPPD_BREWERY TEXT" + // DRS 20220730
      */
 
     public static void copyMenuData(Context context) {
@@ -285,17 +288,26 @@ public class UfoDatabaseAdapter {
             UfoDatabaseAdapter repository = new UfoDatabaseAdapter(context);
             SQLiteDatabase db = repository.openDb(context);
 
+            // Loop through all records in UFOLOCAL table (gathered from Untappd) and add to main UFO table
             int updated = 0;
             int updatedCount = 0;
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-                String glassSize = cursor.getString(cursor.getColumnIndex("GLASS_SIZE"));
-                String glassPrice = cursor.getString(cursor.getColumnIndex("GLASS_PRICE"));
+                // Inputs to find record in the main UFO table
                 String storeId = cursor.getString(cursor.getColumnIndex("STORE_ID"));
                 String brewId = cursor.getString(cursor.getColumnIndex("BREW_ID"));
+
+                // Data to add to the UFO table
+                String glassSize = cursor.getString(cursor.getColumnIndex("GLASS_SIZE"));
+                String glassPrice = cursor.getString(cursor.getColumnIndex("GLASS_PRICE"));
+                String abv = cursor.getString(cursor.getColumnIndex("ABV"));
+                String beerNumber = cursor.getString(cursor.getColumnIndex("UNTAPPD_BEER"));
+                String breweryNumber = cursor.getString(cursor.getColumnIndex("UNTAPPD_BREWERY"));
 
                 ContentValues values = new ContentValues();
                 values.put("GLASS_SIZE", glassSize);
                 values.put("GLASS_PRICE", glassPrice);
+                values.put("UNTAPPD_BEER", beerNumber);
+                values.put("UNTAPPD_BREWERY", breweryNumber);
                 updated = db.update("UFO", values, "STORE_ID=? AND BREW_ID=?", new String[]{storeId, brewId});
                 if (updated == 0) {
                     // This is OK because if the beer is not active, it does not go away...it stays in there 'forever'.  That way, if it comes back, the user will not need to scan it again.
@@ -304,15 +316,41 @@ public class UfoDatabaseAdapter {
                 } else {
                     updatedCount += updated;
                 }
+
+                /* Check to see if ABV is empty and can be updated DRS 20220726 */
+                String[] pullFields = new String[]{SaucerItem.ABV};
+                String selectionFields = "STORE_ID=? AND BREW_ID=?";
+                String[] selectionArgs = new String[]{storeId, brewId};
+
+                Cursor mainTableCursor = db.query("UFO", pullFields, selectionFields, selectionArgs, null, null, null);
+                if (mainTableCursor != null) {
+                    for (mainTableCursor.moveToFirst(); !mainTableCursor.isAfterLast(); mainTableCursor.moveToNext()) {
+                        String abvFromMain = mainTableCursor.getString(0);
+                        //Log.v(TAG, "abvFromMain was " + abvFromMain + " and abv from Untappd was " + abv + " on " + brewId);
+                        if ("0".equals(abvFromMain) && abv != null && !"".equals(abv)) {
+                            values = new ContentValues();
+                            values.put("ABV", abv);
+                            updated = db.update("UFO", values, "STORE_ID=? AND BREW_ID=?", new String[]{storeId, brewId});
+                            if (!(updated == 1)) Log.v(TAG, "Unable to update single brew_id with ABV. " + updated + " records updated.");
+                        }
+                    }
+                }
             }
             repository.close();
             db.close();
-            Log.v(TAG, "There were " + updatedCount + " records updated with glass size and glass price.");
+            Log.v(TAG, "There were " + updatedCount + " records updated with glass size, glass price, untapped beer number and brewery number.");
         } else {
             Log.v(TAG, "The cursor had no records in copyMenuData() method.");
         }
         cursor.close();
         glassDb.close();
+    }
+    public static int countTapItems(String storeNumber, Context context) {
+        SQLiteDatabase db = new UfoDatabaseAdapter(context).openDb(context);
+        SQLiteStatement countTapItems =  db.compileStatement("SELECT COUNT(*) FROM UFO WHERE ACTIVE='T' AND CONTAINER='draught' AND STYLE<>'Mix' AND STYLE<>'Flight' AND STORE_ID='" + storeNumber + "'");
+        int count = (int)countTapItems.simpleQueryForLong();
+        db.close();
+        return count;
     }
 
     public static int countMenuItems(String storeNumber, Context context) {
@@ -321,6 +359,10 @@ public class UfoDatabaseAdapter {
         int count = (int)countMenuItems.simpleQueryForLong();
         db.close();
         return count;
+    }
+
+    public static float fractionTapsWithMenuData(String storeNumber, Context context) {
+        return ((float)countMenuItems(storeNumber, context))/((float)countTapItems(storeNumber, context));
     }
 
     public boolean cursorHasRecords() {
@@ -368,9 +410,10 @@ public class UfoDatabaseAdapter {
         @Override
         public void onCreate(SQLiteDatabase db) {
             Log.v(TAG, "onCreate()");
-            db.execSQL(SaucerItem.getDatabaseTableCreationCommand());
-            db.execSQL(StoreNameHelper.getInstance().getDatabaseTableCreationCommand());
-            db.execSQL(SaucerItem.getDatabaseAppendTableCreationCommand());
+            db.execSQL(SaucerItem.getDatabaseTableCreationCommand()); // 30 columns for UFO as of 20220804
+            db.execSQL(StoreNameHelper.getInstance().getDatabaseTableCreationCommand()); // 4 columns for LOCATIONS as of 20220804
+            db.execSQL(SaucerItem.getDatabaseAppendTableCreationCommand()); // 11 columns for UFOLOCAL as of 20220804
+            Log.v(TAG, "onCreate() - 3 Tables created under version " + DB_VERSION + "\n" + SaucerItem.getDatabaseTableCreationCommand() + "\n" + StoreNameHelper.getInstance().getDatabaseTableCreationCommand() + "\n" + SaucerItem.getDatabaseAppendTableCreationCommand());
         }
 
         @Override
@@ -398,6 +441,13 @@ public class UfoDatabaseAdapter {
                     db.execSQL("ALTER TABLE UFO ADD COLUMN REVIEW_ID TEXT");
                     db.execSQL("ALTER TABLE UFO ADD COLUMN REVIEW_FLAG TEXT");
                     db.execSQL("ALTER TABLE UFO ADD COLUMN TIMESTAMP TEXT");
+                case 12: // DRS 20220726
+                    db.execSQL("ALTER TABLE UFOLOCAL ADD COLUMN ABV TEXT");
+                case 13: // DRS 20220730
+                    db.execSQL("ALTER TABLE UFOLOCAL ADD COLUMN UNTAPPD_BEER TEXT");
+                    db.execSQL("ALTER TABLE UFOLOCAL ADD COLUMN UNTAPPD_BREWERY TEXT");
+                    db.execSQL("ALTER TABLE UFO ADD COLUMN UNTAPPD_BEER TEXT");
+                    db.execSQL("ALTER TABLE UFO ADD COLUMN UNTAPPD_BREWERY TEXT");
             }
 
             Log.v(TAG, "onUpgrade() from " + oldVersion + " to " + newVersion + " complete.");

@@ -1,9 +1,10 @@
 package com.sengsational.knurder;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.Typeface;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +23,7 @@ public class RateBeerActivity extends AppCompatActivity {
     RatingBar mRatingBar;
     Button mSaveButton;
     Button mCancelButton;
+    Context mApplicationContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +31,8 @@ public class RateBeerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_rate_beer);
         int position = 0;
         try { position = (Integer) getIntent().getExtras().get(EXTRA_POSITION); } catch (Throwable t) {Log.e(TAG, "SERIOUS ERROR: unable to get " + EXTRA_POSITION);}
-        if (KnurderApplication.getCursor(getApplicationContext()) != null) {
+        mApplicationContext = getApplicationContext();
+        if (KnurderApplication.getCursor(mApplicationContext) != null) {
             Cursor cursor = KnurderApplication.getCursor(getApplicationContext());
             cursor.moveToPosition(position);
             final SaucerItem modelItem = new SaucerItem(cursor);
@@ -72,6 +75,8 @@ public class RateBeerActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     if ("W".equals(modelItem.getReviewFlag())) {
+                        Context lContext = getContext();
+                        if (lContext == null) lContext = mApplicationContext;
                         Toast.makeText(getContext(), "This review is already on the Saucer web site, so it can't be changed.", Toast.LENGTH_LONG).show();
                     }
                 }
@@ -95,6 +100,9 @@ public class RateBeerActivity extends AppCompatActivity {
                         modelItem.setUserStars("" + (int)ratingFloat);
                         modelItem.setReviewFlag("L");
                     }
+
+                    Context lContext = getContext();
+                    if (lContext == null) lContext = mApplicationContext;
                     UfoDatabaseAdapter.update(modelItem, getContext());
                     KnurderApplication.reQuery(getContext());
                     onBackPressed();

@@ -29,7 +29,6 @@ public class SaucerItem {
     boolean mOverrideTap = false;   //DRS 20160823 - Improve data quality if (CAN) or (BTL) is in the description
     boolean mOverrideFlight = false;
     boolean mOverrideMix = false;
-    //public static final String[] BREWERY_CLEANUP = {"der Trappisten van","Brewing Company","Artisanal Ales","Hard Cider Co.","& Co. Brewing","Craft Brewery","Beer Company","Brasserie d'","and Company","Brewing Co.","Brewing Co","& Son Co.","Brasserie","Brau-haus","Brouwerij","Brauerei","BrewWorks","and Co.","Brewery","Brewing","Company","& Sohn","(Palm)","and Co","Cidery","Ales","Brau","Co.","Ltd","LTD"};
     public static final String[] BREWERY_CLEANUP = {"Winery & Distillery","Beverage Associates","der Trappisten van","Brewing Company","Artisanal Ales","Hard Cider Co.","& Co. Brewing","Craft Brewery","Beer Company","Gosebrauerei","Brasserie d'","and Company","Cooperative","Brewing Co.","Brewing Co","& Son Co.","Brasserir","Brasserie","Brasseurs","Brau-haus","Brouwerji","Brauerei","BrewWorks","Breweries","Brouwerj","and Co.","Brewery","Brewing","Beer Co","Company","& Sohn","(Palm)","and Co","Cidery","& Sons","Beers","& Son","Ales","Brau","GmbH","Co.","Ltd","LTD","& co"};
 
     SaucerItem saucerItem;    //this object
@@ -486,6 +485,14 @@ public class SaucerItem {
     public String getGlassPrice() {return glassPrice;}
     public void setGlassPrice(String glassPrice) {this.glassPrice = glassPrice;}
 
+    //DRS 20220730 - Untapped Menu scan
+    public String getUntappdBeer() {return untappdBeer;}
+    public void setUntappdBeer(String untappdBeer) {this.untappdBeer = untappdBeer;}
+
+    //DRS 20220730 - Untapped Menu scan
+    public String getUntappdBrewery() {return untappdBrewery;}
+    public void setUntappdBrewery(String untappdBrewery) {this.untappdBrewery = untappdBrewery;}
+
     public String toString() {
         return getActive() + getTasted() + getHighlighted() + getNewArrival() + ", " +
                 getName() + ", " +
@@ -512,7 +519,10 @@ public class SaucerItem {
                 getHighlighted() + ", new_arrival:" +
                 getNewArrival() + ", glass_size:" +
                 getGlassSize() + ", glass_price:" +  //DRS 20171128 - Menu scan
-                getGlassPrice();                     //DRS 20171128 - Menu scan
+                getGlassPrice() + ", untappd_beer:" +                      //DRS 20171128 - Menu scan
+                getUntappdBeer() + ", untappd_brewery:" +  //DRS 20220730
+                getUntappdBrewery()                     //DRS 20220730
+                ;
     }
 
 
@@ -746,6 +756,9 @@ public class SaucerItem {
 
         glassSize = null;  //DRS 20171128 - Menu scan
         glassPrice = null; //DRS 20171128 - Menu scan
+
+        untappdBeer = null;  //DRS 20220730
+        untappdBrewery = null; //DRS 20220730
     }
 
     // Normally the only thing that changes (changed by the user) is the highlighted, but we put everything back except null items
@@ -778,6 +791,8 @@ public class SaucerItem {
         values.put("REVIEW_ID", model.getReviewId()); //DRS 20181023
         values.put("REVIEW_FLAG", model.getReviewFlag()); //DRS 20181023
         values.put("TIMESTAMP", model.getTimestamp()); //DRS 20181023
+        values.put("UNTAPPD_BEER", model.getUntappdBeer()); //DRS 20220730
+        values.put("UNTAPPD_BREWERY", model.getUntappdBrewery()); //DRS 20220730
         Iterator<String> iterator = values.keySet().iterator();
         ArrayList<String> removeList = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -813,13 +828,15 @@ public class SaucerItem {
         if (createdDate != null) values.put("CREATED_DATE", createdDate);
         if (newArrival != null) values.put("NEW_ARRIVAL", newArrival);
         if (isImport != null) values.put("IS_IMPORT", isImport);
-        if (glassSize != null) values.put("IS_IMPORT", glassSize); //DRS 20171128 - Menu scan
-        if (glassPrice != null) values.put("IS_IMPORT", glassPrice); //DRS 20171128 - Menu scan
+        if (glassSize != null) values.put("GLASS_SIZE", glassSize); //DRS 20171128 - Menu scan
+        if (glassPrice != null) values.put("GLASS_PRICE", glassPrice); //DRS 20171128 - Menu scan
         if (userReview != null) values.put("USER_REVIEW", userReview); // DRS 20181023
         if (userStars != null) values.put("USER_STARS", userStars); // DRS 20181023
         if (reviewId != null) values.put("REVIEW_ID", reviewId); // DRS 20181023
         if (reviewFlag != null) values.put("REVIEW_FLAG", reviewFlag); // DRS 20181023
         if (timestamp != null) values.put("TIMESTAMP", timestamp); // DRS 20181023
+        if (untappdBeer != null) values.put("UNTAPPD_BEER", untappdBeer); //DRS 20220730
+        if (untappdBrewery != null) values.put("UNTAPPD_BREWERY", untappdBrewery); //DRS 20220730
         return values;
     }
 
@@ -853,8 +870,11 @@ public class SaucerItem {
                 "USER_STARS TEXT, " + // DRS 20181023
                 "REVIEW_ID TEXT, " + // DRS 20181023
                 "REVIEW_FLAG TEXT, " + // DRS 20181023
-                "TIMESTAMP TEXT" + // DRS 20181023
+                "TIMESTAMP TEXT, " + // DRS 20181023
+                "UNTAPPD_BEER TEXT, " +  // DRS 20220730
+                "UNTAPPD_BREWERY TEXT" +  // DRS 20220730
                 ");";
+                // NOTE: MUST HAVE "...TEXT, " <<< note comma and space!!
     }
 
     public static String getDatabaseAppendTableCreationCommand() {
@@ -866,8 +886,12 @@ public class SaucerItem {
                 "GLASS_SIZE TEXT, " +
                 "GLASS_PRICE TEXT, " +
                 "ADDED_NOW_FLAG TEXT, " +
-                "LAST_UPDATED_DATE TEXT" +
+                "LAST_UPDATED_DATE TEXT, " +
+                "ABV TEXT, " +  // DRS 20220726
+                "UNTAPPD_BEER TEXT, " +  // DRS 20220730
+                "UNTAPPD_BREWERY TEXT" +  // DRS 20220730
                 ");";
+                // NOTE: MUST HAVE "...TEXT, " <<< note comma and space!!
     }
 
     /* non-persistant variables */
@@ -906,6 +930,8 @@ public class SaucerItem {
 
     String glassSize;   //added by menu scan process //DRS 20171128 - Menu scan
     String glassPrice;  //added by menu scan process //DRS 20171128 - Menu scan
+    String untappdBeer;     //added by menu scan process //DRS 20220730
+    String untappdBrewery;  //added by menu scan process //DRS 20220730
     /* end database column variables */
 
 
@@ -920,8 +946,8 @@ public class SaucerItem {
     static final String COUNTRY =         "COUNTRY";//  TEXT, " +
     public static final String CONTAINER =         "CONTAINER";//  TEXT, " +
     static final String STYLE =        "STYLE";//  TEXT, " +
-    static final String DESCRIPTION =         "DESCRIPTION";// TEXT, " +
-    static final String ABV =         "ABV";//  TEXT, " +
+    public static final String DESCRIPTION =         "DESCRIPTION";// TEXT, " +
+    public static final String ABV =         "ABV";//  TEXT, " +
     static final String STARS =         "STARS";//  TEXT, " +
     static final String REVIEWS =         "REVIEWS";//  TEXT, " +
     static final String CREATED =         "CREATED";//  TEXT, " +
@@ -938,13 +964,17 @@ public class SaucerItem {
     static final String REVIEW_ID = "REVIEW_ID"; // DRS 20181023
     static final String REVIEW_FLAG = "REVIEW_FLAG"; // DRS 20181023
     static final String TIMESTAMP = "TIMESTAMP"; // DRS 20181023
+    static final String UNTAPPD_BEER = "UNTAPPD_BEER"; // DRS 20181023
+    static final String UNTAPPD_BREWERY = "UNTAPPD_BREWERY"; // DRS 20181023
     /* END database field names */
 
     public SaucerItem populate(Cursor cursor) {
         try {
             clear();
             String[] columnNames = cursor.getColumnNames();
+            //StringBuffer columnNamesStringBuff = new StringBuffer();
             for (String columnName: columnNames) {
+                //columnNamesStringBuff.append(columnName).append(",");
                 switch  (columnName) {
                     case NAME:
                         name = cursor.getString(cursor.getColumnIndex(NAME));
@@ -1026,6 +1056,12 @@ public class SaucerItem {
                         break;
                     case TIMESTAMP:
                         timestamp = cursor.getString(cursor.getColumnIndex(TIMESTAMP)); // DRS 20181023
+                    case UNTAPPD_BEER:
+                        untappdBeer = cursor.getString(cursor.getColumnIndex(UNTAPPD_BEER)); // DRS 20171128 - Menu scan
+                        break;
+                    case UNTAPPD_BREWERY:
+                        untappdBrewery = cursor.getString(cursor.getColumnIndex(UNTAPPD_BREWERY)); // DRS 20171128 - Menu scan
+                        break;
                     case ID:
                         _id = cursor.getLong(cursor.getColumnIndex(ID));
                         break;
@@ -1034,6 +1070,7 @@ public class SaucerItem {
 
                 }
             }
+            //System.out.println("debug column name " + columnNamesStringBuff.toString());
         } catch (Throwable t) {
             Log.v(TAG, "Failed to complete model item from database cursor. " + t.getMessage())    ;
         }

@@ -10,8 +10,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -303,6 +303,11 @@ public class LoginActivity extends AppCompatActivity implements DataView {
 
     @Override public void showMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void showMessage(String message, int toastLength) {
+        Toast.makeText(this, message, toastLength).show();
     }
 
     @Override public void showDialog(String message, long days) {

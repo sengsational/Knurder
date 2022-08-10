@@ -12,8 +12,8 @@ import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
@@ -303,6 +303,11 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
 
     @Override public void showMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void showMessage(String message, int toastLength) {
+        Toast.makeText(this, message, toastLength).show();
     }
 
     @Override public void showDialog(String message, long days) {

@@ -13,14 +13,14 @@
         android:scaleType="matrix"
         app:srcCompat="@drawable/ufo_logo1" >
     </ImageView>
-    <android.support.design.widget.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/save_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
         app:srcCompat="@drawable/ic_done_black_24dp" />
-    <android.support.design.widget.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/ignore_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

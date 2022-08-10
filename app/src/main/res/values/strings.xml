@@ -12,6 +12,7 @@
     <string name="action_about">About</string>
     <string name="action_color">Test Color Picker</string>
     <string name="action_edit_query">Custom Query</string>
+    <string name="action_send_untappd_url">Share Untappd URL</string>
 
     <string name="menu_top_level_action_about">
         <![CDATA[<p>You are running version %1$s.</p><p>I hope you like it (and rate highly it in the Play Store, if you would).
@@ -20,13 +21,24 @@
         When you report, please include the phone hardware type (ie Samsung xyz) you\'re running on, as much detail as you can (what you were doing at the time),
         the version number above, and if not obvious, what about it that was \'unexpected\'.  Thanks!  knurder.frog4food@recursor.net or www.facebook.com/ufoknurder<p>]]>
         </string>
+    <string name="menu_top_level_action_untappd">
+        <![CDATA[<p>It looks like you have scanned the Touchless menu and have quick access to untappd.</p>
+        <p>Since this app is unofficial, I don\'t know what the URL\'s are for all stores.  If you\'d like to help out other patrons of The %1$s, you could
+        share the URL via email with me, then I could build it into the app so the QR code scan would become unnecessary.
+        <p>knurder.frog4food@recursor.net or www.facebook.com/ufoknurder<p>]]>
+        </string>
     <string name="new_feature_alert_title">
-        "QUEUE YOUR FLAGGED BEERS"
+        "EASY UNTAPPD CHECK INS"
     </string>
     <string name="new_feature_alert_message">
-        <![CDATA[<p>This version of Knurder lets you push your flagged beer list to \"Brews On Queue\".  Go to <a href=https://beerknurd.com/tapthatapp>tapthatapp</a> to set-up your card number / PIN (it\'s a separate authentication), then use that to queue up your flagged list (use the \"3 dot\" menu).</p>]]>
-        </string>
-
+        <![CDATA[<p>This version of Knurder lets you pop over to \"Untappd\" to check-in your beer, or just see what members there are saying about the beer.</p><p>To open up Untappd, drill into a beer\'s detail page, if you see a price there, you can <b>long press the beer name.</b></p>]]>
+    </string>
+    <string name="new_feature_alert_title_alt">
+        "NEW FEATURE: UNTAPPD"
+    </string>
+    <string name="new_feature_alert_message_alt">
+        <![CDATA[<p>The Saucer has listed it\'s beers on \"Untappd\".  You get the ability to see price, glass size, and to be able to check-in your beer, or just see what people are saying about the beer.  Just drill into a beer\'s detail page, then <b>long press the beer name.</b></p>]]>
+    </string>
     <string name="take_picture_title">
         "Take a Picture and Label Your Beer"
     </string>
@@ -57,6 +69,15 @@
     <string name="shaker_instructions">
         <![CDATA[<p>When you\'re looking at any list, you can <b>shake your phone</b> and a random beer will be selected for you!</p>]]>
     </string>
+    <string name="onque_title">
+        "Send This List to the Bar"
+    </string>
+    <string name="onque_instructions_with_auth">
+        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>They\'ve got it set up to require a separate authentication:<br>[<b>card number / pin</b>].<br>If you don\'t have that set-up, you can go to <i>www.beerknurd.com/tapthatapp/</i>, and the pin you use will become your pin.</p><p>If you know your credentials, just hit the three dots menu (above) and select \'Send to Brews on Queue\'</p>]]>
+    </string>
+    <string name="onque_instructions">
+        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>It looks like you have the<br>[<b>card number / pin</b>] credentials set already so just hit the three dots menu (above) and select \'Send to Brews on Queue\'</p><p>For authentication issues, get it working on your web browser first at <i>www.beerknurd.com/tapthatapp/</i></p>]]>
+    </string>
     <string name="ocr_base_title">
         "Tap Menu Scanning 101"
     </string>
@@ -65,6 +86,13 @@
         your Saucer\'s tap lineup details!  It\'s probably not going to be 100% perfect because
         the menu names aren\'t exactly the same as the web names and the beers in the menu might not align perfectly with the tap wall.</p>
         <p>If we successfully get menu information now, you\'ll have the opportunity to set it so you pull the menu data automatically in the future.</p>]]>
+    </string>
+    <string name="details_title">
+        "Long Pressing"
+    </string>
+    <string name="details_instructions">
+        <![CDATA[<p>Long press the <b>description text</b>, and you can flag/unflag this beer.  If you see a price, then a long press on the <b>beer name<b>
+        will take you to this beer in Untappd.</p>]]>
     </string>
     <string name="ocr_menu_title">
         "Aim at a Column and Hold Still"
@@ -154,7 +182,7 @@
     </string>
 
     <string name="pref_title_automatic_untappd_setting">Automatically Pull Prices</string>
-    <string name="pref_description_automatic_untappd_setting">Retrieve prices and glass sizes every time the beer list is refreshed.
+    <string name="pref_description_automatic_untappd_setting">Retrieve prices and glass sizes every time the beer list is refreshed. Requires scanning the Touchless QR code on the table at the restaurant.
     </string>
 
     <string name="pref_title_reset_tutorials_setting">Reset Help Preferences</string>

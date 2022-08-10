@@ -1,6 +1,5 @@
 package com.sengsational.knurder;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.SearchManager;
 import android.content.Context;
@@ -13,12 +12,12 @@ import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.content.FileProvider;
-import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SearchView;
+import androidx.core.content.FileProvider;
+import androidx.core.view.MenuItemCompat;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.SearchView;
 import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
@@ -32,10 +31,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
+import java.util.prefs.Preferences;
 
 import static com.sengsational.knurder.BeerSlideActivity.EXTRA_TUTORIAL_TYPE;
 import static com.sengsational.knurder.OcrBase.SCAN_COVERAGE;
@@ -50,6 +49,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     private static final int VALIDATE_CARD = 1957;
 
     public static final String PREF_SHAKER_TUTORIAL = "prefShakerTutorial";
+    public static final String PREF_ON_QUE_TUTORIAL = "prefOnQueTutorial";
 
     //private static QueryPkg queryPackage;
     //private static boolean refreshRequired;
@@ -139,12 +139,25 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
                         recyclerView.setAdapter(cursorRecyclerViewAdapter);
                         recyclerView.hasFixedSize();
                         // Maybe show the help dialog
-                        boolean showTutorial =  PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PREF_SHAKER_TUTORIAL, true);
-                        if (savedInstanceState == null && showTutorial) {
+                        boolean showShakerTutorial =  PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PREF_SHAKER_TUTORIAL, true);
+                        boolean showOnQueTutorial =  PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PREF_ON_QUE_TUTORIAL, true);
+                        if (savedInstanceState == null && showShakerTutorial) {
                             Intent popTutorialIntent = new Intent(RecyclerSqlbListActivity.this, PopTutorial.class);
                             popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.shaker_instructions);
                             popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.shaker_title);
                             popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_SHAKER_TUTORIAL);
+                            startActivity(popTutorialIntent);
+
+                        } else if (savedInstanceState == null && showOnQueTutorial && QueryPkg.includesSelection("HIGHLIGHTED", this)) {
+                            Intent popTutorialIntent = new Intent(RecyclerSqlbListActivity.this, PopTutorial.class);
+                            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                            if ("".equals(prefs.getString(TopLevelActivity.CARD_NUMBER, "")) || "".equals(prefs.getString(TopLevelActivity.CARD_PIN, ""))) {
+                                popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.onque_instructions_with_auth);
+                            } else {
+                                popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.onque_instructions);
+                            }
+                            popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.onque_title);
+                            popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_ON_QUE_TUTORIAL);
                             startActivity(popTutorialIntent);
                         }
 

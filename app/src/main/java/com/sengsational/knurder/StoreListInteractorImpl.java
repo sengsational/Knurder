@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.sengsational.ocrreader.OcrScanHelper;
 
@@ -111,6 +112,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 Log.v(TAG, "doInBackground is accessing web update lock.");
             } while (!KnurderApplication.getWebUpdateLock(TAG)); // if lock unavailable, this will delay 1/2 second up to 10 seconds, then release.
 
+            nListener.sendStatusToast("Getting list from saucer site...", Toast.LENGTH_SHORT);
             // Get the currently active beers from the particular store
             String beersWebPage = pullBeersWebPage(nStoreNumber);
             if(beersWebPage == null){
@@ -118,7 +120,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 nErrorMessage = "Did not get the list of beers from the UFO site.";
                 return false;
             }
-
+            //nListener.sendStatusToast("Got the list.  Loading local table...", Toast.LENGTH_SHORT);
             // Remove everything except the tasted and highlighted records
             if(!flagAllAsActiveStateNotDetermined()) {
                 nListener.onError("database error");
@@ -142,6 +144,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 return false;
             }
 
+            nListener.sendStatusToast("Table loaded.  Checking just landed...", Toast.LENGTH_SHORT);
             String storePage = pullStorePage(nStoreNumber);
             if (storePage == null) {
                 Log.e("sengsational","Store Page not received.") ;
@@ -156,14 +159,13 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             try {
                 Context context = KnurderApplication.getContext();
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-                boolean automaticUntappdSwitch = prefs.getBoolean("automatic_untappd_switch", false);
-                String untappdDataUrlString = prefs.getString("untappd_url","");
-                Log.v(TAG, "Checking to see if we pull from untappd.  Automatic? " + automaticUntappdSwitch + ",  URL: " + untappdDataUrlString);
-                if(automaticUntappdSwitch && !"".equals(untappdDataUrlString)) {
+                String untappdDataUrlString = UntappdHelper.getUntappdUrlForStoreNumber(nStoreNumber);
+                if(!"".equals(untappdDataUrlString)) {
                     boolean skipTheRest = false;
                     // START NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
                     // START NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImple.doInBackground()
                     // Pull the page containing the list of beers
+                    nListener.sendStatusToast("Getting untapped list...", Toast.LENGTH_SHORT);
                     String untappdDataPage = pullUntappedDataPage(untappdDataUrlString, nHttpclient, nCookieStore);
                     if (null == untappdDataPage) {
                         throw new Exception("not able to pull the untappdDataPage from " + untappdDataUrlString);
@@ -172,6 +174,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                         //return false;
                     }
                     // Parse the beers out of the data
+                    //nListener.sendStatusToast("Loading untapped list...", Toast.LENGTH_SHORT);
                     ArrayList<UntappdItem> untappdItems = getUntappdItemsFromData(untappdDataPage);
                     if (untappdItems.size() == 0) {
                         throw new Exception("zero items pulled from untappdDataPage of size " + untappdDataPage.length());
@@ -180,9 +183,10 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                         //return false;
                     }
                     // Match the untappd list with the saucer tap list
-                    OcrScanHelper.getInstance(context).matchUntappdItems(untappdItems);
+                    nListener.sendStatusToast("Matching untappd list with saucer list...", Toast.LENGTH_SHORT);
+                    OcrScanHelper.getInstance().matchUntappdItems(untappdItems, context);
                     // Save the results
-                    int[] results = OcrScanHelper.getInstance(context).getResults(context);
+                    int[] results = OcrScanHelper.getInstance().getResults(context);
                     // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
                     // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImple.doInBackground()
                     menuDataAdded = true;

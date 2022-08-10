@@ -9,11 +9,11 @@ import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatDelegate;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -22,15 +22,18 @@ import static com.sengsational.knurder.BeerSlideActivity.MY_PERMISSIONS_REQUEST_
 import static com.sengsational.knurder.BeerSlideActivity.PREF_RATE_BEER_TUTORIAL;
 import static com.sengsational.knurder.BeerSlideActivity.PREF_TAKE_PICTURE_TUTORIAL;
 import static com.sengsational.knurder.BeerSlideActivity.showSnackBar;
+import static com.sengsational.knurder.BeerSlideFragment.PREF_DETAILS_TUTORIAL;
 import static com.sengsational.knurder.KnurderApplication.reviewUploadWarning;
 import static com.sengsational.knurder.OcrBase.PREF_OCR_BASE_TUTORIAL;
 import static com.sengsational.knurder.OcrBase.PREF_OCR_MENU_TUTORIAL;
 import static com.sengsational.knurder.OcrBase.PREF_OCR_NEW_TUTORIAL;
 import static com.sengsational.knurder.OcrBase.PREF_TOUCHLESS_TUTORIAL;
 import static com.sengsational.knurder.PositionActivity.PREF_POSITION_TUTORIAL;
+import static com.sengsational.knurder.RecyclerSqlbListActivity.PREF_ON_QUE_TUTORIAL;
 import static com.sengsational.knurder.RecyclerSqlbListActivity.PREF_SHAKER_TUTORIAL;
 import static com.sengsational.knurder.TopLevelActivity.NEW_FEATURE_ALERT_MESSAGE;
 import static com.sengsational.knurder.TopLevelActivity.SAVE_PICTURE_EXTERNAL;
+import static com.sengsational.knurder.BeerSlideFragment.PREF_DETAILS_TUTORIAL;
 
 /**
  * Created by Dale Seng on 6/4/2016.
@@ -75,26 +78,6 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
                 }
             });
             builder.create().show();
-        } else if ("automatic_untappd_switch".equals(preference.getKey())) {
-
-            if (((SwitchPreference)preference).isChecked()) { // They are turning it on!!!
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(settingsActivitySimple);
-                if ("".equals(prefs.getString("untappd_url",""))) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Scan QR Code First");
-                    builder.setMessage("Knurder doesn't know where to get the menu data for your Saucer until you scan the Touchless QR code.\n\nScan the Touchless Menu QR code (should be on the table at your Saucer).\n\nGo to the menu (the three dots) then 'Scan the Menu' > 'Scan the Touchless Menu'");
-                    builder.setCancelable(true);
-                    builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dialog.dismiss();
-                        }
-                    });
-                    builder.create().show();
-                    SharedPreferences.Editor prefsEdit = prefs.edit();
-                    prefsEdit.putBoolean("automatic_untappd_switch", false);
-                    prefsEdit.apply();
-                }
-            }
         } else if ("upload_reviews_switch".equals(preference.getKey()) && reviewUploadWarning) {
             reviewUploadWarning = false; // just show once per session
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -187,6 +170,8 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
         prefsEdit.putBoolean(PREF_OCR_NEW_TUTORIAL, true);
         prefsEdit.putBoolean(PREF_TOUCHLESS_TUTORIAL, true);
         prefsEdit.putBoolean(PREF_RATE_BEER_TUTORIAL, true);
+        prefsEdit.putBoolean(PREF_DETAILS_TUTORIAL, true);
+        prefsEdit.putBoolean(PREF_ON_QUE_TUTORIAL, true);
         prefsEdit.remove(NEW_FEATURE_ALERT_MESSAGE);
         prefsEdit.apply();
     }

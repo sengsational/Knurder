@@ -12,6 +12,7 @@ interface DataView {
     void showProgress(final boolean show);
     void onDestroy();
     void showMessage(String message);
+    void showMessage(String message, int toastLength);
     void setUsernameError(String message);
     void setPasswordError(String message);
     void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount);

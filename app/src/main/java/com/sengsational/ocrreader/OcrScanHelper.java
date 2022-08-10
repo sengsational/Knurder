@@ -2,36 +2,22 @@ package com.sengsational.ocrreader;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
-import android.preference.PreferenceManager;
 import android.util.Log;
-import android.util.SparseArray;
-import android.view.View;
-import android.view.ViewParent;
 
 import com.sengsational.knurder.ConcurrentHashSet;
 import com.sengsational.knurder.SaucerItem;
-import com.sengsational.knurder.TopLevelActivity;
 import com.sengsational.knurder.UfoDatabaseAdapter;
 import com.sengsational.knurder.UntappdItem;
-import com.sengsational.ocrreader.camera.GraphicOverlay;
-import com.google.android.gms.vision.Detector;
-import com.google.android.gms.vision.text.Text;
-import com.google.android.gms.vision.text.TextBlock;
-import com.sengsational.ocrreader.camera.Levenshtein;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
 
 import static com.sengsational.knurder.SaucerItem.BREWERY_CLEANUP;
@@ -40,64 +26,86 @@ import static com.sengsational.knurder.TopLevelActivity.prefs;
 
 public class OcrScanHelper {
     private static final String TAG = OcrScanHelper.class.getSimpleName();
-    private final Context mContext;
     private static final SimpleDateFormat NDF = new SimpleDateFormat("yyyy MM dd");
 
     private static ConcurrentHashSet<String[]> mFoundResults;
-    private static Map<String, String> mAllTapsNames;
-    private static Levenshtein fuzzy = new Levenshtein();
-    private static final DecimalFormat df = new DecimalFormat("#.##");
-    //private static final String[] breweryCleanup = {"& Son Co.","Ltd","Brouwerij","& Sohn","& Co. Brewing","(Palm)","Brasserie","Brewing Company","Brewing Co.","Brewing Co","Brewing","Beer Company", "Hard Cider Co.","Craft Brewery","Brewery","Artisanal Ales","Ales","Cidery"};
-    private static final Map<String, String[]> mOcrBreweries = new HashMap<>();
     private static String mStoreNumber = "13888"; // better than nothing
-    private int mPopulatedActiveTapsCount;
     private static OcrScanHelper mOcrScanHelper;
 
-    public static OcrScanHelper getInstance(Context context){
+    public static OcrScanHelper getInstance(){
         if (mOcrScanHelper == null) {
-            mOcrScanHelper = new OcrScanHelper(context);
+            mOcrScanHelper = new OcrScanHelper();
         }
         return mOcrScanHelper;
     }
 
-    private OcrScanHelper(Context context) {
+    private OcrScanHelper() {
         Log.v(TAG, ">>>>>>>>>>>> OcrScanHelperCreated <<<<<<<<<<<<<<< (this should happen once per UI action)");
         mStoreNumber = prefs.getString(STORE_NUMBER,"13888");
-        mContext = context;
-        mAllTapsNames = getAllTaps();
-        populateOcrMispellings();
-        mFoundResults = new ConcurrentHashSet<>(100);
     }
 
     public int[] getResults(Context context) {
         int populatedActiveTapsCount = updateFoundTaps(context);
-        /*
-        Iterator iterator = mFoundResults.iterator();
-        while (iterator.hasNext()) {
-            String[] aTap = (String[])iterator.next();
-            //Log.v(TAG, "#FOUND#" + aTap[0] + "#" + aTap[1]);
-        }
-        */
-        /*
-        // This doesn't really work right.  Not sure why.
-        for (String aTap: mAllTapsNames.keySet()) {
-            Log.v(TAG, "#NOTFOUND#" + aTap + "#");
-        }
-        */
-
         Log.v(TAG, "mPouplatedActiveTapsCount " + populatedActiveTapsCount);
         Log.v(TAG, "mFoundResults.size() " + mFoundResults.size());
-        return new int[] {populatedActiveTapsCount, mFoundResults.size(), mAllTapsNames.size()};
+        return new int[] {populatedActiveTapsCount, mFoundResults.size(), getAllTaps(context).size()};
     }
 
-    public void matchUntappdItems(ArrayList<UntappdItem> items) {
-        Log.v(TAG, "Looking-up all items in matchUntappdItems()");
-        for (UntappdItem item: items) {
-            lookupBeerName(item);
+    public void matchUntappdItems(ArrayList<UntappdItem> items, Context context) {
+        if (!mStoreNumber.equals(prefs.getString(STORE_NUMBER,"13888"))) {
+            mStoreNumber = prefs.getString(STORE_NUMBER,"13888");
         }
-        Log.v(TAG, "All items looked-up in matchUntappdItems()");
-    }
+        /* This is to log the data so that we can perform offline validation
+        boolean logTheSaucerAndUntappdItems = false;
+        if (logTheSaucerAndUntappdItems) {
+            StringBuffer csvBuf = new StringBuffer();
+            for (UntappdItem item: items) {
+                csvBuf.append("#\"").append("UNTAPPD").append("\",").append(item.getMatchingCsv());
+                Log.v(TAG, csvBuf.toString());
+                csvBuf = new StringBuffer();
+            }
+            List<String[]> allTapNames = getAllTapsForMatching();
+            for (int i = 0; i < allTapNames.size(); i++){
+                String[] values = allTapNames.get(i);
+                csvBuf.append("#\"").append("SAUCER").append("\",\"").append(values[0]).append("\",\"").append(values[1]).append("\",\"").append(values[2]).append("\",\"").append(mStoreNumber).append("\"");
+                Log.v(TAG, csvBuf.toString());
+                csvBuf = new StringBuffer();
+            }
+        }
+        */
 
+        MatchGroup matchGroup = new MatchGroup().load(getAllTapsForMatching(context), mStoreNumber).load(items);
+        mFoundResults = matchGroup.match();
+
+        /** THIS IS FOR CURIOSITY ABOUT UNMATCHED ITEMS */
+        ArrayList<MatchItem>leftovers = matchGroup.getLeftoverSaucer();
+        for (MatchItem item: leftovers) {
+            Log.v(TAG, "\"" + item.getNonStyleTextMatch() + "\", " + item);
+        }
+        leftovers = matchGroup.getLeftoverUntappd();
+        for (MatchItem item: leftovers) {
+            Log.v(TAG, "\"" + item.getNonStyleTextMatch() + "\", " + item);
+        }
+
+        /*  THIS IS THE OLD WAY TO DO THE MATCHING
+        Log.v(TAG, "Looking-up all items in matchUntappdItems().  mAllTapNames was " + mAllTapsNames.size() + " items.");
+        ArrayList<UntappdItem> notFoundItems = new ArrayList<UntappdItem>();
+        for (UntappdItem item: items) {
+            String[] foundResult = lookupBeerName(item); // <<<<<<<<<<<<<<<<<  populates mFoundResults
+            if (foundResult == null) notFoundItems.add(item);
+        }
+        Log.v(TAG, notFoundItems.size() + " items not found out of a total of " + items.size() + ".");
+
+        Set<String> unmatchedKeySet = mAllTapsNames.keySet();
+        for (String key: unmatchedKeySet) {
+            Log.v(TAG, "Unmatched Tap: " + key + " " + mAllTapsNames.get(key));
+        }
+        for (int i = 0; i < notFoundItems.size(); i++) {
+            Log.v(TAG, "Untappd not found: " + notFoundItems.get(i));
+        }
+         */
+    }
+    /*
     void scanNewArrivals(TextBlock item) {
         List<? extends Text> lines = item.getComponents();
         for (int j = 0; j < lines.size(); j++) {
@@ -109,12 +117,14 @@ public class OcrScanHelper {
                 String beerName = parseResults[0];
                 String glassSize = parseResults[1]; // <<<<<<<<<<<<<< Probably blank
                 String priceString = parseResults[2];
-                lookupBeerName(beerName, glassSize, priceString); // If found, populates mFoundResults and removes an item from mAllTapsNames
+                String abvString = ""; // Added for compatability with Untappd replacement technique.
+                lookupBeerName(beerName, glassSize, priceString, abvString, "", ""); // If found, populates mFoundResults and removes an item from mAllTapsNames
             }
         }
         Log.v(TAG, "---------");
     }
-
+    */
+    /*
     public void scanTapMenu(TextBlock item) {
         // This technique locks onto the "slash" between the price and the glass size.  'j' is where we're looking for the slash.  The beer name would be in j-1
         List<? extends Text> lines = item.getComponents();
@@ -136,40 +146,52 @@ public class OcrScanHelper {
                 String glassSize = parseResults[1];
                 String priceString = parseResults[2];
                 previousLineString = parseResults[3];
+                String abvString = ""; // Added for compatability with Untappd replacement technique.
 
                 String[] searchNames = {beerName, previousLineString + " " + beerName}; // This is for stacked (two line) beer names
                 int nameCount = ((previousLineString.length() > 0)?2:1); // We either look up one or two names
 
                 for (int m = 0; m < nameCount; m++) {
-                    lookupBeerName(searchNames[m], glassSize, priceString); // If found, populates mFoundResults and removes an item from mAllTapsNames
+                    lookupBeerName(searchNames[m], glassSize, priceString, abvString, "", ""); // If found, populates mFoundResults and removes an item from mAllTapsNames
                 }
             }
         }
     }
+     */
 
-    private void lookupBeerName(UntappdItem item) {
-        lookupBeerName(item.getBreweryPrefixedName(), item.getOuncesNumber(), item.getPriceNumber());
+    /* Below is the old way to match
+    private String[] lookupBeerName(UntappdItem item) {
+        return lookupBeerName(item.getBreweryPrefixedName(), item.getOuncesNumber(), item.getPriceNumber(), item.getAbvNumber(), item.getBeerNumber(), item.getBreweryNumber());
     }
 
-    private void lookupBeerName(String searchName, String glassSize, String priceString) {
+    // Here we populate mFoundResults and use that later in updateFoundTaps()
+    private String[] lookupBeerName(String searchName, String glassSize, String priceString, String abvString, String beerNumber, String breweryNumber) {
+        String[] foundResult = null;
         // first just look-up the beer...might get lucky with an exact match
         if (mAllTapsNames.containsKey(searchName)) {
             Log.v(TAG, "EXACT MATCH!! " + searchName + " " + glassSize);
-            mFoundResults.add(new String[] {searchName, glassSize, priceString});
+            foundResult = new String[] {searchName, glassSize, priceString, abvString, beerNumber, breweryNumber};
+            mFoundResults.add(foundResult);
             mAllTapsNames.remove(searchName);
-            return;
+            Log.v(TAG, "--------- found:" + foundResult[0] + " for " + searchName);
+            return foundResult;
         } else {
             // There was not an exact match.  Look through all taps for a fuzzy match
             Set<String> tapNames = mAllTapsNames.keySet();
             ArrayList<String> tapsToRemove = new ArrayList<String>();
-            for (String aTap: tapNames) {
+            OUT: for (String aTap: tapNames) {
                 Double score = fuzzy.compare(aTap, searchName) ;
-                if (score > 0.40D) {
+                Double scoreNp = fuzzy.compare(aTap.replaceAll("\\p{Punct}",""), searchName.replaceAll("\\p{Punct}",""));
+                //if (searchName.contains("Blueberry")) {
+                //    Log.v(TAG, searchName + " ? " + aTap + " " + score + " " + scoreNp);
+                //}
+                if (score > 0.38D || scoreNp > 0.38D) {
                     if (score > 0.84D || (aTap.length() < 15 && searchName.length() < 15 && score > .65D)) {
                         Log.v(TAG, "FUZZY MATCH!! #" + aTap + "#" + glassSize + "#" + searchName + "#" + df.format(score));
-                        mFoundResults.add(new String[] {aTap, glassSize, priceString});
+                        foundResult = new String[] {aTap, glassSize, priceString, abvString, beerNumber, breweryNumber};
+                        mFoundResults.add(foundResult);
                         tapsToRemove.add(aTap);//mAllTapsNames.remove(aTap);
-                        return;
+                        break;
                     } if (score > 0.45D) { //DRS 20171128 - This was .58D, but I moved it down
                         // Try removing brewery name and check the score again
                         String brewery = mAllTapsNames.get(aTap);
@@ -223,20 +245,22 @@ public class OcrScanHelper {
                             score = fuzzy.compare(libraryNoBreweryBeer, foundNoBreweryBeer);
                             if (score > 0.55D) {
                                 Log.v(TAG, "FUZZY MATCH SPECIAL: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
-                                mFoundResults.add(new String[] {aTap, glassSize, priceString});
+                                foundResult = new String[] {aTap, glassSize, priceString, abvString, beerNumber, breweryNumber};
+                                mFoundResults.add(foundResult);
                                 tapsToRemove.add(aTap);//mAllTapsNames.remove(aTap);mAllTapsNames.remove(aTap);
                                 break;
                             } else {
                                 if (foundNoBreweryBeer.startsWith(libraryNoBreweryBeer) || libraryNoBreweryBeer.startsWith(foundNoBreweryBeer)){
                                     Log.v(TAG, "FUZZY MATCH STARTS WITH: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
-                                    mFoundResults.add(new String[] {aTap, glassSize, priceString});
+                                    foundResult = new String[] {aTap, glassSize, priceString, abvString, beerNumber, breweryNumber};
+                                    mFoundResults.add(foundResult);
                                     tapsToRemove.add(aTap);//mAllTapsNames.remove(aTap);mAllTapsNames.remove(aTap);
                                     break;
                                 } else {
                                     Log.v(TAG, "Low quality match after brewery removal: " + brewery + ":" + libraryNoBreweryBeer + " - " + foundNoBreweryBeer);
                                     Log.v(TAG, "FUZZY SCORE SPECIAL: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
                                     String[] genericWords = {"BROWN ALE", "PILSNER", "PLSNER","ALE", "IPA", "NITRO", "(NITRO)"}; // Sort longest to shortest length
-                                    OUT: for (String styleWord: genericWords) {
+                                    for (String styleWord: genericWords) {
                                         int styleWordLoc = foundNoBreweryBeer.toUpperCase().indexOf(styleWord);
                                         //Log.v(TAG, "styleWordLoc " + styleWordLoc + " in [" + foundNoBreweryBeer.toUpperCase() + "] << [" + styleWord + "]");
                                         if (styleWordLoc > 5) { // make sure style is trailing some beer name
@@ -245,7 +269,8 @@ public class OcrScanHelper {
                                             Log.v(TAG, "*!*FUZZY SCORE SSSPECIAL: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
                                             if (score > 0.55D) {
                                                 Log.v(TAG, "*!*FUZZY MATCH SSSPECIAL: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
-                                                mFoundResults.add(new String[] {aTap, glassSize, priceString});
+                                                foundResult = new String[] {aTap, glassSize, priceString, abvString, beerNumber, breweryNumber};
+                                                mFoundResults.add(foundResult);
                                                 tapsToRemove.add(aTap);//mAllTapsNames.remove(aTap);mAllTapsNames.remove(aTap);
                                                 break OUT;
                                             }
@@ -271,13 +296,15 @@ public class OcrScanHelper {
                                 score = fuzzy.compare(foundNoBreweryBeer, libraryNoBreweryBeer);
                                 if (score > 0.55D) {
                                     Log.v(TAG, "*!*FUZZY MATCH SPECIAL: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
-                                    mFoundResults.add(new String[] {aTap, glassSize, priceString});
+                                    foundResult = new String[] {aTap, glassSize, priceString, abvString, beerNumber, breweryNumber};
+                                    mFoundResults.add(foundResult);
                                     tapsToRemove.add(aTap);//mAllTapsNames.remove(aTap);mAllTapsNames.remove(aTap);
                                     break;
                                 } else {
                                     if (foundNoBreweryBeer.startsWith(libraryNoBreweryBeer) || libraryNoBreweryBeer.startsWith(foundNoBreweryBeer)){
                                         Log.v(TAG, "*!*FUZZY MATCH STARTS WITH: #" + foundNoBreweryBeer + "#" + df.format(score) + "#" + libraryNoBreweryBeer);
-                                        mFoundResults.add(new String[] {aTap, glassSize, priceString});
+                                        foundResult = new String[] {aTap, glassSize, priceString, abvString, beerNumber, breweryNumber};
+                                        mFoundResults.add(foundResult);
                                         tapsToRemove.add(aTap);//mAllTapsNames.remove(aTap);mAllTapsNames.remove(aTap);
                                         break;
                                     } else {
@@ -295,15 +322,19 @@ public class OcrScanHelper {
                             }
                         }
                     } else {
-                        Log.v(TAG, "FUZZY SCORE: #" + searchName + "#" + df.format(score) + "#" + aTap);
+                        Log.v(TAG, "FUZZY SCORE TOO LOW: #" + searchName + "#" + df.format(score) + "#" + aTap);
                     }
                 }
-            }
+            } // END 'for' Loop
             for (String aTap : tapsToRemove) {
                 mAllTapsNames.remove(aTap);
             }
+            if (foundResult != null) Log.v(TAG, "--------- found:" + foundResult[0] + " for " + searchName);
+            else Log.v(TAG, "--------- found:" + foundResult + " for " + searchName);
+            return foundResult;
         }
     }
+    */
 
     // "searchName" should contain a word starting at breweryLocInOcr and of length breweryWordSize.  This method replaces that word/phrase with the contents of "alternate"
     private String replaceByLocation(String searchName, String alternate, int breweryLocInOcr, int breweryWordSize) {
@@ -313,10 +344,10 @@ public class OcrScanHelper {
         return returnStringValue.toString();
     }
 
-
+    /* Uses mFoundResults to add tap menu data */
     private int updateFoundTaps(Context context) {
         UfoDatabaseAdapter repository = new UfoDatabaseAdapter(context);
-        String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.ACTIVE, SaucerItem.CONTAINER, SaucerItem.STORE_ID, SaucerItem.BREW_ID};
+        String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.ACTIVE, SaucerItem.CONTAINER, SaucerItem.STORE_ID, SaucerItem.BREW_ID, SaucerItem.ABV, SaucerItem.DESCRIPTION};
         String selectionFields = "ACTIVE=? AND CONTAINER=? AND STYLE<>? and STYLE<>? and STORE_ID=? and NAME=?";
         String[] selectionArgs = new String[]{"T", "draught", "Mix", "Flight", mStoreNumber, "(beerNamePlaceholder)"};
         SQLiteDatabase db = repository.openDb(context);
@@ -336,6 +367,9 @@ public class OcrScanHelper {
             String aBeerName = aResult[0];
             String aGlassSize = aResult[1];
             String aPriceString = aResult[2];
+            String aAbv = aResult[3]; // may be ""
+            String aBeerNumber = aResult[4]; // may be ""
+            String aBreweryNumber = aResult[5]; // may be ""
             selectionArgs[5] = aBeerName;
 
             // Look-up aBeerName in the main UFO table.  Expect one record (despite the 'for' loop).
@@ -346,7 +380,14 @@ public class OcrScanHelper {
                     String brewer = mainTableCursor.getString(1);
                     String store_id = mainTableCursor.getString(4);
                     String brew_id = mainTableCursor.getString(5);
+                    String abv = mainTableCursor.getString(6);
+                    String description = mainTableCursor.getString(7);
                     //Log.v(TAG, "For input into other table: [" + beerName + ", " + aGlassSize + ", " + brewer + ", " + store_id + ", " + brew_id + ", " + " ]");
+
+                    //this check is done in copyMenuData()
+                    //if ("0".equals(abv) && !"".equals(aAbv)) {
+                        //Log.v(TAG, "The tap list did not have ABV, but the Untappd data did have ABV.\n[" + beerName + ", " + aAbv + ", " + description + "]");
+                    //}
 
                     // Populate the UFOLOCAL table - up until now, it's been in mFoundResults<String[]>
                     ContentValues values = new ContentValues();
@@ -357,6 +398,9 @@ public class OcrScanHelper {
                     values.put("GLASS_PRICE", aPriceString);
                     values.put("LAST_UPDATED_DATE", lastUpdated);
                     values.put("ADDED_NOW_FLAG", "Y");
+                    values.put("ABV", aAbv); // DRS 20220726
+                    values.put("UNTAPPD_BEER", aBeerNumber); // DRS 20220730
+                    values.put("UNTAPPD_BREWERY", aBreweryNumber); // DRS 20220730
 
                     // Update if it's there already, otherwise insert
                     int id = getId(beerName, store_id, db);
@@ -389,23 +433,33 @@ public class OcrScanHelper {
         return resultId;
     }
 
-    private Map getAllTaps() {
-        UfoDatabaseAdapter repository = new UfoDatabaseAdapter(mContext);
-        repository.open(mContext);
-        String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.ACTIVE, SaucerItem.CONTAINER, SaucerItem.STORE_ID, SaucerItem.BREW_ID};
+    private Map getAllTaps(Context context) {
+        HashMap<String, String> allTaps = new HashMap<>(100);
+        List<String[]> allTapsArrays = getAllTapsForMatching(context);
+        for (String[] aTapArray: allTapsArrays) {
+            allTaps.put(aTapArray[0], breweryTextCleanup(aTapArray[1]));
+        }
+        Log.v(TAG, "There were " + allTaps.size() + " taps in the database for " + mStoreNumber);
+        return allTaps;
+    }
+
+    private List<String[]> getAllTapsForMatching(Context context) {
+        UfoDatabaseAdapter repository = new UfoDatabaseAdapter(context);
+        UfoDatabaseAdapter.open(context);
+        String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.BREW_ID};
         String selectionFields = "ACTIVE=? AND CONTAINER=? AND STYLE<>? and STYLE<>? and STORE_ID=?";
         String[] selectionArgs = new String[]{"T", "draught", "Mix", "Flight", mStoreNumber};
-        //                          query(String table, String[] pullFields, String selectionFields, String[] selectionArgs)
         Cursor aCursor = repository.query(       "UFO",          pullFields,        selectionFields,          selectionArgs);
-        HashMap<String, String> allTaps = new HashMap<>(100);
+        ArrayList<String[]> allTaps = new ArrayList<String[]>();
         if (aCursor == null) {
             Log.e(TAG, "NO DATA FROM THE DATABASE - null cursor");
         } else {
             for (aCursor.moveToFirst(); !aCursor.isAfterLast(); aCursor.moveToNext()) {
                 String beerName = aCursor.getString(0);
                 String brewer = aCursor.getString(1);
-                allTaps.put(beerName, breweryTextCleanup(brewer));
-                Log.v(TAG, "Active Tap Beer Name: [" + beerName + ", " + allTaps.get(beerName) + "]");
+                //brewer = breweryTextCleanup(brewer);
+                String brew_id = aCursor.getString(2);
+                allTaps.add(new String[]{beerName, brewer, brew_id});
             }
             aCursor.close();
         }
@@ -413,11 +467,14 @@ public class OcrScanHelper {
         return allTaps;
     }
 
+    // This only removes one word or phrase
     public static String breweryTextCleanup(String brewer) {
+        if (brewer == null) return null;
+        brewer = brewer.replace("The", "").trim();
+        brewer = brewer.replaceAll("'", "").trim();
         for (String companyBrewer: BREWERY_CLEANUP) {
             int wordLoc = brewer.indexOf(companyBrewer);
             if (wordLoc > -1) {
-                //Log.v(TAG, "companyBrewer " + companyBrewer + " --  " + brewer);
                 brewer = brewer.replace(companyBrewer, "").trim();
                 break;
             }
@@ -425,6 +482,7 @@ public class OcrScanHelper {
         return brewer;
     }
 
+    /*
     private void populateOcrMispellings() {
         //The key is what is in the Saucer database.
         //The alternates might be OCR mispellings OR just alternate official names
@@ -448,5 +506,6 @@ public class OcrScanHelper {
         mOcrBreweries.put("21st Amendemnt", new String[]{"21st Amendement","2st Amendment"});
 
     }
+    */
 
 }

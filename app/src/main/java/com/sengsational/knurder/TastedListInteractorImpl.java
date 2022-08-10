@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -141,12 +142,14 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             }
 
             // Get the tasted page
+            nListener.sendStatusToast("Requested your tasted list. Waiting...", Toast.LENGTH_SHORT);
             String tastedWebPage = pullTastedPage(userDataNvp[3]);
             if(tastedWebPage == null) {
                 nListener.onError("tasted data not found");
                 nErrorMessage  = "Problem getting your tasted list.";
                 return false;
             }
+            nListener.sendStatusToast("Got your tasted list.  Logging off...", Toast.LENGTH_SHORT);
 
             // Put a 'D' into all records with Tasted='T' (was: RemoveInactiveTasted (will be reloaded shortly) and set active tasted to untasted (will be updated))
             if(!flagAllAsTastedStateNotDetermined()) {
@@ -198,9 +201,11 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
         } catch (Throwable t) {/* doesnt matter... still works with store number */}
         String beersTastedPage = null;
         try {
-            beersTastedPage = LoadDataHelper.getPageContent(("https://www.beerknurd.com/api/tasted/list_user/" + userNumber), nLastResponse, nHttpclient, nCookieStore);  //<<<<<<<<<<<<<<<<<PULL TASTED<<<<<<<<<<<<<<<<<<<
+            int timeoutSeconds = 40;
+            beersTastedPage = LoadDataHelper.getPageContent(("https://www.beerknurd.com/api/tasted/list_user/" + userNumber), nLastResponse, nHttpclient, nCookieStore, timeoutSeconds);  //<<<<<<<<<<<<<<<<<PULL TASTED<<<<<<<<<<<<<<<<<<<
         } catch (Exception e) {
             Log.e("sengsational", "Could not get tastedListPage. " + e.getMessage());
+            nListener.sendStatusToast(e.getMessage(), Toast.LENGTH_LONG);
             return null;
         }
         return beersTastedPage;
@@ -469,6 +474,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
     private String pullUserStatsPage() {
         String userStatsPage = null;
         try {
+            nListener.sendStatusToast("Going to logon page...", Toast.LENGTH_SHORT);
             //ADDED https
             String loginFormPage = LoadDataHelper.getPageContent("https://www.beerknurd.com/user", null, nHttpclient, nCookieStore);                       //<<<<<<<<<GET INITIAL LOGIN FORM PAGE<<<<<<<<<<<<<<<<<<<
             Log.v("sengsational", "doInBackground() Ran first page"); // Run Order #14
@@ -478,8 +484,10 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 
             Log.v("sengsational", "doInBackground() Got form parameters from first page.  Logging in with " + nAuthenticationName + " " + nPassword + " " + nMou + " " + nStoreNumber); // Run Order #17
             // Added https
+            nListener.sendStatusToast("Request sent.  Waiting for logon...", Toast.LENGTH_SHORT);
             nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/user", postParams, nHttpclient, "logon", nCookieStore);                         //<<<<<<<<<<<<SUBMIT LOGIN FORM PAGE<<<<<<<<<<<<<<<<
             userStatsPage = LoadDataHelper.getResultBuffer(nLastResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
+            nListener.sendStatusToast("Log on completed OK.", Toast.LENGTH_SHORT);
             Log.v("sengsational", "doInBackground() Sent form with fields filled-in.  Should be logged-in now."); // Run Order #22
         } catch (Exception e) {
             Log.e("sengsational", "Could not get userStatsPage. " + e.getMessage());

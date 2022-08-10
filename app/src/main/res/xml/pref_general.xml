@@ -60,12 +60,6 @@
         android:summary="@string/pref_description_hide_ubereats_setting"
         android:title="@string/pref_title_hide_ubereats_setting"/>
 
-    <SwitchPreference
-        android:defaultValue="false"
-        android:key="automatic_untappd_switch"
-        android:summary="@string/pref_description_automatic_untappd_setting"
-        android:title="@string/pref_title_automatic_untappd_setting"/>
-
     <Preference
         android:key="reset_tutorials_button"
         android:summary="@string/pref_description_reset_tutorials_setting"

@@ -7,24 +7,25 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,12 +36,12 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import static com.sengsational.knurder.PopTutorial.EXTRA_TEXT_RESOURCE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TITLE_RESOURCE;
 import static com.sengsational.knurder.PositionActivity.RESULT_FAILED;
 import static com.sengsational.knurder.TopLevelActivity.SAVE_PICTURE_EXTERNAL;
-import static com.sengsational.knurder.TopLevelActivity.prefs;
 
 /**
  * Created by Owner on 5/17/2016.
@@ -236,10 +237,18 @@ public class BeerSlideActivity extends AppCompatActivity {
                     //share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(fileName))); // Line caused android.os.FileUriExposedException
                     File filePassedIn = new File(fileName);
                     Log.v(TAG, "exists: " + filePassedIn.exists() + " canRead: " + filePassedIn.canRead());
-                    share.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", filePassedIn));
+                    Uri uriForFile = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", filePassedIn);
+                    share.putExtra(Intent.EXTRA_STREAM, uriForFile);
                     share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-                    startActivity(Intent.createChooser(share, "Share Image"));
+                    Intent chooser = Intent.createChooser(share, "Share Image");
+                    List<ResolveInfo> resInfoList = this.getPackageManager().queryIntentActivities(chooser, PackageManager.MATCH_DEFAULT_ONLY);
+
+                    for (ResolveInfo resolveInfo : resInfoList) {
+                        String packageName = resolveInfo.activityInfo.packageName;
+                        this.grantUriPermission(packageName, uriForFile, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    }
+                    startActivity(chooser);
                 } else if (resultCode == RESULT_FAILED) {
                     android.app.AlertDialog.Builder noFileDialog = new android.app.AlertDialog.Builder(this);
                     noFileDialog.setMessage("There was a problem saving the image file to storage. ");
@@ -314,7 +323,7 @@ public class BeerSlideActivity extends AppCompatActivity {
             }
         });
         View snackbarView = snackbar.getView();
-        TextView snackTextView = (TextView) snackbarView.findViewById(android.support.design.R.id.snackbar_text);
+        TextView snackTextView = (TextView) snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
         snackTextView.setMaxLines(9);
         snackbar.show();
     }
@@ -344,7 +353,14 @@ public class BeerSlideActivity extends AppCompatActivity {
     private void reallyDoPictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         try {
-            if (takePictureIntent.resolveActivity(getPackageManager()) != null){
+            if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+                File tempPhoto = FileHelper.createTempPhotoFile();
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", tempPhoto));
+                takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                mCurrentFileName = (FileHelper.getFileNameStringForTempPhotoFile(false));
+                Log.v(TAG, "mCurrentFileName = " + mCurrentFileName);
+                KnurderApplication.setContext(this);
+            } else if (takePictureIntent.resolveActivity(getPackageManager()) != null){
                 //takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(FileHelper.createTempPhotoFile())); // DRS 20181026 - Quit working when I targeted API 26
                 File tempPhoto = FileHelper.createTempPhotoFile();
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", tempPhoto));
@@ -354,6 +370,7 @@ public class BeerSlideActivity extends AppCompatActivity {
                 KnurderApplication.setContext(this);
             } else {
                 Log.v(TAG, "no camera available");
+                KnurderApplication.setContext(this);
             }
         } catch (IOException e) {
             e.printStackTrace();

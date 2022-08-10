@@ -5,7 +5,7 @@ package com.sengsational.sephiroth;
  */
 
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Created by alessandro crugnola on 11/20/16.

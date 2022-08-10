@@ -64,6 +64,7 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock>{
     private GraphicOverlay<OcrGraphic> mGraphicOverlay;
 
     public OcrDetectorProcessor(GraphicOverlay<OcrGraphic> ocrGraphicOverlay, String flavor, Context context) {
+        Log.v(TAG, "CLASS NO LONGER USED.");
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(context);
         mGraphicOverlay = ocrGraphicOverlay;
         mFlavor = flavor;
@@ -76,17 +77,19 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock>{
         Log.v(TAG, "parent view:" + aView.getClass().getName());
     }
 
+
     @Override
     public void receiveDetections(Detector.Detections<TextBlock> detections) {
+        Log.v(TAG, "CLASS NO LONGER USED.");
         mGraphicOverlay.clear();
         SparseArray<TextBlock> items = detections.getDetectedItems();
         for (int i = 0; i < items.size(); ++i){
             TextBlock item = items.valueAt(i);
             if (item != null && item.getValue() != null) {
                 if ("newArrivals".equals(mFlavor)) {
-                    OcrScanHelper.getInstance(KnurderApplication.getContext()).scanNewArrivals(item);
+                    //OcrScanHelper.getInstance().scanNewArrivals(item);
                 } else {
-                    OcrScanHelper.getInstance(KnurderApplication.getContext()).scanTapMenu(item);
+                    //OcrScanHelper.getInstance().scanTapMenu(item);
                 }
             }
             OcrGraphic graphic = new OcrGraphic(mGraphicOverlay, item);

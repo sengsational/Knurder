@@ -20,7 +20,7 @@
         <activity
             android:name=".TopLevelActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar3">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -94,7 +94,7 @@
             android:value="ocr" />
 
         <provider
-            android:name="android.support.v4.content.FileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">

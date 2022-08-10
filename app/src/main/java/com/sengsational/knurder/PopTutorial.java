@@ -2,7 +2,7 @@ package com.sengsational.knurder;
 
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
 import android.util.Log;
@@ -21,6 +21,8 @@ import static com.sengsational.knurder.OcrBase.PREF_OCR_NEW_TUTORIAL;
 import static com.sengsational.knurder.OcrBase.PREF_TOUCHLESS_TUTORIAL;
 import static com.sengsational.knurder.PositionActivity.PREF_POSITION_TUTORIAL;
 import static com.sengsational.knurder.RecyclerSqlbListActivity.PREF_SHAKER_TUTORIAL;
+import static com.sengsational.knurder.BeerSlideFragment.PREF_DETAILS_TUTORIAL;
+import static com.sengsational.knurder.RecyclerSqlbListActivity.PREF_ON_QUE_TUTORIAL;
 
 public class PopTutorial extends AppCompatActivity {
     public static String TAG = PopTutorial.class.getName();
@@ -62,32 +64,19 @@ public class PopTutorial extends AppCompatActivity {
                 cancelTextView.setVisibility(View.GONE);
                 break;
             case PREF_TAKE_PICTURE_TUTORIAL:
+            case PREF_OCR_MENU_TUTORIAL:
+            case PREF_OCR_NEW_TUTORIAL:
+            case PREF_TOUCHLESS_TUTORIAL:
+            case PREF_RATE_BEER_TUTORIAL:
                 iconLayout.setVisibility(View.GONE);
                 cancelTextView.setVisibility(View.VISIBLE);
                 break;
             case PREF_OCR_BASE_TUTORIAL:
-                iconLayout.setVisibility(View.GONE);
-                cancelTextView.setVisibility(View.GONE);
-                break;
             case PREF_SHAKER_TUTORIAL:
+            case PREF_DETAILS_TUTORIAL:
+            case PREF_ON_QUE_TUTORIAL:
                 iconLayout.setVisibility(View.GONE);
                 cancelTextView.setVisibility(View.GONE);
-                break;
-            case PREF_OCR_MENU_TUTORIAL:
-                iconLayout.setVisibility(View.GONE);
-                cancelTextView.setVisibility(View.VISIBLE);
-                break;
-            case PREF_OCR_NEW_TUTORIAL:
-                iconLayout.setVisibility(View.GONE);
-                cancelTextView.setVisibility(View.VISIBLE);
-                break;
-            case PREF_TOUCHLESS_TUTORIAL:
-                iconLayout.setVisibility(View.GONE);
-                cancelTextView.setVisibility(View.VISIBLE);
-                break;
-            case PREF_RATE_BEER_TUTORIAL:
-                iconLayout.setVisibility(View.GONE);
-                cancelTextView.setVisibility(View.VISIBLE);
                 break;
         }
         // Listen for a change to the display preference and edit preferences

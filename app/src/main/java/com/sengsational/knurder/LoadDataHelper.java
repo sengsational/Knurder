@@ -60,8 +60,12 @@ public class LoadDataHelper {
     private LoadDataHelper() {
     }
 
-    // GO TO THE LOGIN PAGE AND COLLECT FORM FIELDS
     static String getPageContent(String url, HttpResponse unusedParameter, CloseableHttpClient httpclient, BasicCookieStore cookieStore) throws Exception {
+        return getPageContent(url, unusedParameter, httpclient, cookieStore, 25);
+    }
+
+    // GO TO THE LOGIN PAGE AND COLLECT FORM FIELDS
+    static String getPageContent(String url, HttpResponse unusedParameter, CloseableHttpClient httpclient, BasicCookieStore cookieStore, int timeoutSeconds) throws Exception {
         StringBuffer result = null;
 
         CloseableHttpResponse response = null;
@@ -77,12 +81,12 @@ public class LoadDataHelper {
         Log.v("sengsational", "Sending 'GET' request to URL : " + url); // Run Order #06
         Log.v("sengsational", "httpclient " + httpclient); // Run Order #07
         if (httpclient != null) {
+            int CONNECTION_TIMEOUT_MS = timeoutSeconds * 1000; // Timeout in millis.
             try {
                 //Log.v("sengsational", "enable log on httpclient " + httpclient.log.isDebugEnabled()); // Run Order #08
                 Log.v("sengsational", "request was null? " + (request == null)); // Run Order #09
 
                 //DRS 2016 06 24 - try new method since it hangs on the white phone (Android version 4.4.2)
-                int CONNECTION_TIMEOUT_MS = 25 * 1000; // Timeout in millis.
                 RequestConfig requestConfig = RequestConfig.custom()
                         .setConnectionRequestTimeout(CONNECTION_TIMEOUT_MS)
                         .setConnectTimeout(CONNECTION_TIMEOUT_MS)
@@ -112,6 +116,9 @@ public class LoadDataHelper {
                 Log.e("sengsational", "Something bad in getPageContent " + url + ": " + e.getMessage());
                 e.printStackTrace();
                 result = null;
+                if (e.getMessage().contains("timed out")) {
+                    throw new Exception(e.getMessage() + " after " + (CONNECTION_TIMEOUT_MS/1000) + " seconds. Try again.");
+                }
             }
         }
 

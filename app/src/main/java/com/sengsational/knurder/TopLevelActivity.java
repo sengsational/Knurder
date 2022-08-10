@@ -15,19 +15,21 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AppCompatDelegate;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -81,7 +83,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     public static final String UBER_EATS_LINK = "uberEatsLinkPref";
     public static final String LOGIN_ALERT_MESSAGE = "loginAlertMessagePref";
     public static final String NEW_FEATURE_ALERT_MESSAGE = "newFeatureAlertMessagePref";
-    public static final String NEW_FEATURE_ALERT_DATE = "20210912"; // Change this to trigger the new feature alert
+    public static final String NEW_FEATURE_ALERT_DATE = "20220801"; // TODO: Change this to trigger the new feature alert
     // DRS 20210827 - Added 3 - Card Number Authentication
     public static final String CARD_NUMBER = "cardNumberActualPref";
     public static final String SAVE_CARD_PIN = "saveCardPinPref";
@@ -166,11 +168,16 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             Log.v("sengsational", "onResume() passed test 0");
             String newFeatureAlertPreference = prefs.getString(NEW_FEATURE_ALERT_MESSAGE,""); // newFeatureAlertPreference will be blank, or the DATE of the last new feature alert
             boolean newFeatureAlertPreferenceIsDoneAlready = NEW_FEATURE_ALERT_DATE.equals(newFeatureAlertPreference);
+            boolean useAlternateAlertText = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("").equals(""); // This variable and the 'if' block that uses it can be removed later.
             if (!newFeatureAlertPreferenceIsDoneAlready) {
                 Log.v("sengsational", "onResume() passed test 1");
                 android.app.AlertDialog.Builder logonDialog = new android.app.AlertDialog.Builder(this);
                 //logonDialog.setMessage("DONNIE DARK MODE\n\nI'm a few years late on this feature, but if you find yourself grappling for your blue light filter glasses every time you open Knurder, you're in for a treat.\n\nFrom the starting page, go to the 'three dot' menu, select settings, and you'll find a \"Dark Theme\" switch.\n\nWe'll now return you to your regular drinking.");
                 logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_title) + "</p><p>" + getResources().getString(R.string.new_feature_alert_message) + "</p>"));
+                // override message if they have never scanned the QR code and haven't populated the Untappd URL.
+                if (useAlternateAlertText) {
+                    logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_title_alt) + "</p><p>" + getResources().getString(R.string.new_feature_alert_message_alt) + "</p>"));
+                }
                 logonDialog.setCancelable(true);
                 logonDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
@@ -224,7 +231,9 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 Log.e("sengsational", "ERASING EVERYTHING IN DATABASE NAME FOR DEBUG");
                 UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(context) ;
                 SQLiteDatabase db = ufoDatabaseAdapter.openDb(this);                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
-                db.execSQL("delete from UFO");
+                db.execSQL("drop table if exists UFO");
+                db.execSQL("drop table if exists UFOLOCAL");
+                db.execSQL("drop table if exists LOCATIONS");
                 try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
             }
             boolean forceNewUserStateForTesting = false;
@@ -249,12 +258,14 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             }
 
             // Set to true for TESTING ONLY!
-            boolean wipePreferenceForXXX = false;
+            boolean wipePreferenceForXXX = false; //TODO: Set to false
             if (wipePreferenceForXXX) {
                 SharedPreferences.Editor editor = prefs.edit();
                 //editor.remove(TopLevelActivity.UBER_EATS_LINK);
                 //editor.remove("dark_theme_switch");
-                editor.remove(NEW_FEATURE_ALERT_MESSAGE);
+                //editor.remove(NEW_FEATURE_ALERT_MESSAGE);
+                editor.remove(CARD_NUMBER);
+                editor.remove(CARD_PIN);
                 editor.apply();
             }
         }
@@ -499,7 +510,6 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                         case R.id.action_check_quiz:
                             new QuizInteractor(TopLevelActivity.this).getQuizPageFromWeb(TopLevelActivity.this);
                             break;
-
                     }
                     return false;
                 }
@@ -514,6 +524,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             String loginAlertMessagePreference = prefs.getString(LOGIN_ALERT_MESSAGE,"");
             boolean logonAlertPreferenceFound = !"".equals(loginAlertMessagePreference);
             boolean logonAlertPreferenceIsDoneAlready = "20200601".equals(loginAlertMessagePreference);
+            logonAlertPreferenceIsDoneAlready = true; // DRS 20220805 - This changeover happened a long time ago and it's no longer a worthwhile alert.  But I might want to use it in the future.
             if (!logonAlertPreferenceFound && !logonAlertPreferenceIsDoneAlready) {
                 String presentationMode = prefs.getString(TopLevelActivity.PRESENTATION_MODE,"");
                 if(USER_PRESENTATION.equals(presentationMode)) {
@@ -664,7 +675,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         String queryGeographyKey = prefs.getString(QUERY_GEOGRAPHY, "B");
 
         // Copied this block
-        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID"};
+        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID", "UNTAPPD_BEER", "UNTAPPD_BREWERY", "STORE_ID"};
         String selectionFields = null;
         String selectionArgs[] = null;
         boolean respectHideMixAndFlightFlag = true;
@@ -882,7 +893,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
     // START BEER LIST VIEW WHEN BUTTONS CLICKED (this method is associated with buttons inside the layout)
     public void onClickShowList(View v) {
-        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID"};
+        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID", "UNTAPPD_BEER", "UNTAPPD_BREWERY", "STORE_ID"};
+
         //final String[] selectedItems = {"LocalNotTasted", "Local", "TapsNotTasted", "Taps", "Tasted", "Database"};
         String selectionFields = null;
         String selectionArgs[] = null;
@@ -1368,18 +1380,17 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         //Log.v("TAG", "onPrepareOptionsMenu running!!");
-        MenuItem item = menu.findItem(R.id.scan_glass_size);
-        if (item != null) {
+        MenuItem itemGlass = menu.findItem(R.id.scan_glass_size);
+        if (itemGlass != null) {
             if (!prefs.getBoolean("allow_external_picture_storage_switch", true)) {
-                //Log.v("sengsational", "invisible " + item.getTitle());
-                item.setVisible(false);
+                itemGlass.setVisible(false);
             } else {
-                //Log.v("sengsational", "visible " + item.getTitle());
-                item.setVisible(true);
+                itemGlass.setVisible(true);
             }
         } else {
-            Log.e(TAG, "The Menu item was null");
+            Log.e(TAG, "The Menu item glass size was null");
         }
+
         return true;
     }
 
@@ -1520,6 +1531,11 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
     @Override public void showMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void showMessage(String message, int toastLength) {
+        Toast.makeText(this, message, toastLength).show();
     }
 
     @Override public void showDialog(String message, long daysSinceQuiz) {

@@ -8,9 +8,10 @@ import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -21,8 +22,6 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.sengsational.ocrreader.OcrCaptureActivity;
 import com.sengsational.ocrreader.OcrScanHelper;
-
-import java.util.Date;
 
 import static com.sengsational.knurder.BeerSlideActivity.EXTRA_TUTORIAL_TYPE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TEXT_RESOURCE;
@@ -90,7 +89,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
         mProgressView = findViewById(R.id.touchless_progress);
         mOcrBaseView = findViewById(R.id.ocr_base);
 
-        OcrScanHelper.getInstance(this); // put the context into the mostly static class
+        OcrScanHelper.getInstance(); // putting the context into the mostly static class is not allowed in Android (memory leak)
     }
 
     @Override
@@ -191,42 +190,69 @@ public class OcrBase extends AppCompatActivity implements DataView {
                     addedMenuItemCount.setText(getResources().getString(R.string.added_menu_item_text, "" + mNewItemCount));
 
                     // Optionally save the untappd data URL if it's new or different
-                    final String untappdDataUrlString = intent.getStringExtra("untappdUrl");
-                    if (!untappdDataUrlString.equals(prefs.getString("untappd_url", ""))){
-                        // We have a legit untapped data URL that's new or different from what's in preferences
-                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                        final SharedPreferences.Editor prefsEdit = prefs.edit();
-                        builder.setTitle("New or Changed Menu Data Source");
-                        builder.setMessage("Would you like to automatically add price and glass size information from this data source every time you get an updated beer list?\n\n(you can always change this in 'Settings' if you change your mind)");
-                        builder.setPositiveButton("Yes, Always Update", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                prefsEdit.putString("untappd_url", untappdDataUrlString);
-                                prefsEdit.putBoolean("automatic_untappd_switch", true);
-                                prefsEdit.apply();
-                            }
-                        });
-                        builder.setNegativeButton("No, Don't Automatically Update", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                prefsEdit.putString("untappd_url", untappdDataUrlString);
-                                prefsEdit.putBoolean("automatic_untappd_switch", false);
-                                prefsEdit.apply();
-                            }
-                        });
-                        builder.setNeutralButton("No, And Don't Save This Data Source", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                prefsEdit.putBoolean("automatic_untappd_switch", false);
-                                prefsEdit.apply();
-                            }
-                        });
-                        builder.show();
-                    } else {
-                        // Same untappd data URL... no alert
-                    }
 
-                } else {
+                    // From the recent intent (MenusPageInteractorImpl)
+                    final String untappdDataUrlString = intent.getStringExtra("untappdUrlExtra");
+                    if (untappdDataUrlString != null && !"".equals(untappdDataUrlString)) {
+                        String preferencesUntappdDataUrlString = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("");
+
+                        //DRS 20220802 - Add nag for them to send QR code.  This preference is to only ask once.
+                        String oneTimeNagForQr = prefs.getString("oneTimeNagForQr","");
+                        if (oneTimeNagForQr.equals("") && "".equals(preferencesUntappdDataUrlString)) {
+                            editor.putString("oneTimeNagForQr", "DONE_ONCE");
+                            editor.apply();
+                            new AlertDialog.Builder(OcrBase.this)
+                                    .setTitle("Send Untappd Url")
+                                    .setMessage(Html.fromHtml(getResources().getString(R.string.menu_top_level_action_untappd, StoreNameHelper.getCurrentStoreName())))
+                                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            // do nothing
+                                        }
+                                    })
+                                    .setPositiveButton("Email the Untappd URL", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString);
+                                            Log.v("sengsational", "Email URL requested");
+                                            Intent mailIntent = new Intent(Intent.ACTION_SEND);
+                                            mailIntent.setType("message/rfc822");
+                                            mailIntent.putExtra(Intent.EXTRA_EMAIL, new String[] {"Knurder.frog4food@recursor.net"});
+                                            mailIntent.putExtra(Intent.EXTRA_SUBJECT, "Untappd URL for " + StoreNameHelper.getCurrentStoreName());
+                                            mailIntent.putExtra(Intent.EXTRA_TEXT, "Here is the URL:  [ " + untappdDataUrlString + "].");
+                                            try {
+                                                startActivity(Intent.createChooser(mailIntent, "Send email.."));
+                                            } catch (android.content.ActivityNotFoundException ex) {
+                                                Toast.makeText(OcrBase.this, "NO EMAIL SERVICE AVAILABLE", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+                                    })
+                                    .setIcon(android.R.drawable.ic_dialog_alert)
+                                    .show();
+                        } else if (!untappdDataUrlString.equals(preferencesUntappdDataUrlString)) {  // The previous value can be blank or different
+                            // We have a legit untapped data URL that's new or different from what's in preferences
+                            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                            final SharedPreferences.Editor prefsEdit = prefs.edit();
+                            builder.setTitle("New or Changed Menu Data Source");
+                            builder.setMessage("Would you like to save this data source, using it for " + StoreNameHelper.getCurrentStoreName() + " from now on?");
+                            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString);
+                                }
+                            });
+                            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                }
+                            });
+                            builder.show();
+                        } else { // Same untappd data URL... no alert
+                            Log.v(TAG, "The data URL was unchanged (typical situation).");
+                        }
+                    } else { // URL from web interaction was no good
+                        Log.v(TAG, "The data URL was null or blank.");
+                    }
+                } else { // Intent was null
                     Log.v(TAG, "The intent data was null, so we have nothing to use to update the UI.")   ;
                 }
-            } else {
+            } else { // Result was not OK
                 Log.v(TAG, "Activity Result code " + resultCode + " not `RESULT_OK`.");
                 menuItemCount.setText(getResources().getString(R.string.scanned_menu_item_text, prefs.getString(SCANNED_COUNT, "0")));
                 addedMenuItemCount.setText(getResources().getString(R.string.added_menu_item_text, "?"));
@@ -262,9 +288,11 @@ public class OcrBase extends AppCompatActivity implements DataView {
             if (resultCode == RESULT_OK) {
                 Log.v(TAG, "Post help intent on activity result. GO!!  " + resultCode);
                 IntentIntegrator integrator = new IntentIntegrator(this); // `this` is the current Activity
+                integrator.addExtra("TORCH_ENABLED", prefs.getBoolean(USE_LIGHT_FOR_SCAN, true));
                 integrator.setPrompt("Scan the Touchless Menu QR code");
                 integrator.setTimeout(8000);
                 integrator.setOrientationLocked(true);
+                //integrator.setTorchEnabled(true);
                 integrator.initiateScan();
                 // Note this returns to this method (onActivityResult) with IntentIntegrator.REQUEST_CODE
             } else {
@@ -341,6 +369,11 @@ public class OcrBase extends AppCompatActivity implements DataView {
     @Override
     public void showMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void showMessage(String message, int toastLength) {
+        Toast.makeText(this, message, toastLength).show();
     }
 
     @Override

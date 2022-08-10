@@ -3,9 +3,8 @@ package com.sengsational.knurder;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.TextView;
@@ -23,6 +22,7 @@ public class TouchlessActivity extends AppCompatActivity {
     WebResultListener nListener;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ///******************* OLD CODE *****see:OcrBase **********************///
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_touchless);
         ocrResult = (TextView)findViewById(R.id.scanResultText);

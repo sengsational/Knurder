@@ -1,8 +1,10 @@
 package com.sengsational.knurder;
 
 import android.content.ContentValues;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -15,6 +17,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static com.sengsational.knurder.KnurderApplication.getContext;
+import static com.sengsational.knurder.TopLevelActivity.STORE_NAME;
+import static com.sengsational.knurder.TopLevelActivity.STORE_NUMBER;
 
 /**
  * Created by Owner on 5/23/2016.
@@ -62,7 +66,6 @@ public class StoreNameHelper {
             {"13884","lake"}
     };
 
-
     public static StoreNameHelper getInstance() {
         if (storeNameHelper == null){
             storeNameHelper = new StoreNameHelper();
@@ -83,18 +86,14 @@ public class StoreNameHelper {
             Log.v("sengsational", "there were " + count + " records in the LOCATIONS database");
 
             final String[] storesNvpArray = new String[] {"_none=- Select a Saucer -",
-                    "13887=Addison Flying Saucer",
                     "13888=Charlotte Flying Saucer",
-                    "13878=Columbia Flying Saucer",
                     "13883=Cordova Flying Saucer",
                     "18686214=Cypress Waters Flying Saucer",
                     "18262641=DFW Airport Flying Saucer",
                     "13891=Fort Worth Flying Saucer",
                     "13880=Houston Flying Saucer",
-                    "13892=Kansas City Flying Saucer",
                     "13885=Little Rock Flying Saucer",
                     "13881=Memphis Flying Saucer",
-                    "13886=Nashville Flying Saucer",
                     "13877=Raleigh Flying Saucer",
                     "13882=San Antonio Flying Saucer",
                     "13879=Sugar Land Flying Saucer",
@@ -199,6 +198,15 @@ public class StoreNameHelper {
         return stateHelper;
     }
 
+    public static String getCurrentStoreNumber(String defaultStoreNumber) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        return prefs.getString(STORE_NUMBER,defaultStoreNumber);
+    }
+
+    public static String getCurrentStoreName() {
+        return getInstance().getStoreNameFromNumber(getCurrentStoreNumber("0"),null);
+    }
+
     public void reloadFromPageAndSaveToDatabase(String[] names, String[] numbers) {
         UfoDatabaseAdapter.DatabaseHelper ufoHelper = null;
         boolean openRequired = false;
@@ -286,7 +294,7 @@ public class StoreNameHelper {
         return storeNames;
     }
 
-    public String getStoreNumberFromName(String storeName){
+    public static String getStoreNumberFromName(String storeName){
         String storeNumber = "00000";
         Cursor cursor = null;
         UfoDatabaseAdapter.DatabaseHelper ufoHelper = null;

@@ -2,17 +2,10 @@ package com.sengsational.knurder;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.SparseArray;
 
-import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.text.TextBlock;
-import com.google.android.gms.vision.text.TextRecognizer;
-import com.sengsational.ocrreader.OcrGraphic;
 import com.sengsational.ocrreader.OcrScanHelper;
 
 import org.jsoup.Jsoup;
@@ -21,24 +14,15 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.CookieStore;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
-import cz.msebera.android.httpclient.client.HttpClient;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
 import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
 import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
-
-import static android.app.Activity.RESULT_OK;
 
 /**
  * Created by Dale Seng on 5/12/2021.
@@ -57,7 +41,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
 
     public void getMenuDataFromWeb(final String url, final WebResultListener webResultListener, Context applicationContext) {
         nListener = webResultListener;
-        nMenuUrl = url;
+        nMenuUrl = url.replace("https://","http://");
         nApplicationContext = applicationContext;
         this.execute((Void) null);
     }
@@ -139,8 +123,8 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 nErrorMessage = "Could not find the location for the menu information from the touchless menu page.";
                 return false;
             }
-            // START NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
-            // START NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImple.doInBackground()
+            // START NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImpl.doInBackground()
+            // START NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImpl.doInBackground()
             // Pull the page containing the list of beers
             String untappdDataPage = pullUntappedDataPage(untappdDataUrlString, nHttpclient, nCookieStore);
             if (null == untappdDataPage) {
@@ -156,17 +140,17 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 return false;
             }
             // Match the untappd list with the saucer tap list
-            OcrScanHelper.getInstance(nApplicationContext).matchUntappdItems(untappdItems);
+            OcrScanHelper.getInstance().matchUntappdItems(untappdItems, nApplicationContext);
             // Save the results
-            int[] results = OcrScanHelper.getInstance(nApplicationContext).getResults(nApplicationContext);
-            // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
-            // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImple.doInBackground()
+            int[] results = OcrScanHelper.getInstance().getResults(nApplicationContext);
+            // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImpl.doInBackground()
+            // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImpl.doInBackground()
             Log.v(TAG, "About to finish data parse from untappd.  Setting extras.");
             Intent data = new Intent();
             data.putExtra("totalItemCount", results[0]);
             data.putExtra("newItemCount", results[1]);
             data.putExtra("totalTapCount", results[2]);
-            data.putExtra("untappdUrl", untappdDataUrlString);
+            data.putExtra("untappdUrlExtra", untappdDataUrlString);
             nListener.onOcrScanSuccess(data);
             nListener.onFinished();
 
@@ -273,47 +257,93 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         buf.append("<html><body>");
         buf.append(untappdData.substring(firstHtmlLoc, lastThingLoc));
         buf.append("</body></html>");
-        //Log.v(TAG, "<<<<<<<<<<<<<<<<<<<<<What Did they change??? >>>>>>>>>>>>>>>>>>>>>>>>>>");
-        //Log.v(TAG, buf.toString());
 
         Document doc = Jsoup.parse(Parser.unescapeEntities(buf.toString(),true));
-        Elements beerList = doc.getElementsByClass("item");
+        String changableName = "beer";
+        Elements beerList = doc.getElementsByClass(changableName);
+        if (beerList.size() == 0) {
+            changableName = "item";
+            beerList = doc.getElementsByClass(changableName);
+        }
         Log.v(TAG, "There were "  + beerList.size() + " beers pulled from the Untappd data.");
         int maxItems = 999;
-        String beerName = "";
-        String breweryName = "";
-        String ounces = "";
-        String price = "";
+        int untappdeAddedCount = 0;
         for (Element beer: beerList) {
+            String beerName = "";
+            String breweryName = "";
+            String ounces = "";
+            String price = "";
+            String abv = "";
+            String beerNumber = "";
+            String breweryNumber = "";
             int position = 0;
             try {
-                Element beerNameElement = beer.getElementsByClass("item-name").first(); position++;
-                Element paragraphElement = beerNameElement.getElementsByTag("p").first(); position++;
-                Element anchorElement = paragraphElement.getElementsByTag("a").first(); position++;
-                beerName = anchorElement.text(); position++;
+                position = 1;
+                //System.out.println("DEBUG beer element [" + beer.html() + "]");
+                Element beerNameElement = beer.getElementsByClass(changableName + "-name").first();/*1*/ position=2;
+                if (beerNameElement != null) {
+                    Element paragraphElement = beerNameElement.getElementsByTag("p").first();/*2*/ position=3;
+                    if (paragraphElement != null) {
+                        Element anchorElement = paragraphElement.getElementsByTag("a").first();/*3*/ position=4;
+                        if (anchorElement != null) {
+                            beerName = anchorElement.text();/*4*/ position=5;
+                            beerNumber = getLastNumberFromAnchor(paragraphElement); position=6;
+                        }
+                    }
+                }
 
-                Element breweryNameElement = beer.getElementsByClass("brewery-name-hideable").first(); position++;
-                breweryName = breweryNameElement.text();
+                try {
+                    Element abvElement = beer.getElementsByClass("abv-hideable").first(); position=7;
+                    abv = abvElement.text(); position =8;
+                } catch (Throwable t) {
+                    // non-essential
+                }
 
-                Element typeElement = beer.getElementsByClass("type").first(); position++;
-                ounces = typeElement.text();
+                Element breweryNameElement = beer.getElementsByClass("brewery-name-hideable").first(); position=9;
+                if (breweryNameElement != null) {
+                    breweryName = breweryNameElement.text(); position=10;
+                    breweryNumber = getLastNumberFromAnchor(breweryNameElement);position=11;
+                }
 
-                Element priceElement = beer.getElementsByClass("price").first(); position++;
-                price = priceElement.text().replaceAll("\\\\", "");
+                Element typeElement = beer.getElementsByClass("type").first(); position=12;
+                if (typeElement != null) ounces = typeElement.text(); position=13;
 
-                UntappdItem untappdItem = new UntappdItem(beerName, breweryName, ounces, price);
+                Element priceElement = beer.getElementsByClass("price").first(); position=14;
+                if (priceElement != null) price = priceElement.text().replaceAll("\\\\", ""); position=15;
+
+                UntappdItem untappdItem = new UntappdItem(beerName, breweryName, ounces, price, abv, beerNumber, breweryNumber);
                 untappdItems.add(untappdItem);
+                untappdeAddedCount++;
+                //System.out.println("DEBUG "  +  breweryNumber + " " + beerNumber + " " + beerName + " " + breweryName );
             } catch (Throwable t) {
-                Log.v(TAG, "ERROR: unable to parse: " + position + "   " + t.getMessage());
+                Log.v(TAG, "ERROR: unable to parse: " + position + "   " + t.getMessage() + "\nbeerName:" + beerName + " breweryName:" + breweryName+" ounces:" + ounces + " price:" + price + " abv:" + abv + " beerNumber:" +beerNumber + " breweryNumber:" + breweryNumber + "\n" + beer.html());
                 continue;
             }
 
-           //Log.v(TAG, "beer name [" + breweryName + " " + beerName + "]  [" + price + "] [" + ounces + "]");
+            //Log.v(TAG, "beerName:" + beerName + " breweryName:" + breweryName+" ounces:" + ounces + " price:" + price + " abv:" + abv + " beerNumber:" +beerNumber + " breweryNumber:" + breweryNumber + "\n" + beer.html());
             if (maxItems-- < 0) break;
         }
+        Log.v(TAG, "untappdAddedCount = " + untappdeAddedCount);
         return untappdItems;
     }
 
+    private static String getLastNumberFromAnchor(Element anchorParentElement) {
+        Element anchorElement = anchorParentElement.getElementsByTag("a").first();
+        // <a href="https://untappd.com/b/sierra-nevada-brewing-co-pale-ale/6284" class="item-title-color" target="_blank">
+        // <a href="https://untappd.com/brewery/1142" class="item-title-color" target="_blank">Sierra Nevada Brewing Co.</a>
+        String urlString = anchorElement.attr("href");
+        if (urlString == null) return "";
+        String[] bits = urlString.split("/");
+        try {
+            Integer.parseInt(bits[bits.length-1]);
+            return bits[bits.length-1];
+        } catch (Throwable t) {
+            // never mind
+        }
+        return "";
+    }
+
+    /*
     private String getTextFromBitmap(Bitmap singleColumnBitmap, int pixelRowsPerChunk, int overlapRows) {
         TextRecognizer textRecognizer = new TextRecognizer.Builder(nApplicationContext).build();
 
@@ -363,6 +393,9 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         }
     }
 
+     */
+
+    /*
     private Bitmap singleColomnize(Bitmap downloadedBitmap, float leftMargin, float firstColumn, float secondColumn, float thirdColumn) {
         //test--int testChunk = 400;
         int originalWidth = downloadedBitmap.getWidth();
@@ -395,6 +428,9 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         return singleColumnBitmap;
     }
 
+     */
+
+    /*
     private Bitmap downloadJpgFromWeb(String imageUrl) {
         Bitmap touchlessBeerBitmap = null;
         try {
@@ -404,14 +440,16 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         }
         return touchlessBeerBitmap;
     }
+
+     */
     private String getUntappdDataUrl(String touchlessWebPage) {
         String dataUrlString = null;
-        int linkData = touchlessWebPage.indexOf("{PreloadEmbedMenu(\"menu-container\"");
+        int linkData = touchlessWebPage.indexOf("PreloadEmbedMenu(\"menu-container\"");
         int linkDataEnd = touchlessWebPage.indexOf("}", linkData);
-        if (linkDataEnd > 0) {
+        if (linkDataEnd > 0 && linkData > 0 && linkDataEnd > linkData) {
             String linkDataFound = touchlessWebPage.substring(linkData, linkDataEnd);
-            Log.v("sengsational", "[" + linkDataFound + "]"); //{PreloadEmbedMenu("menu-container",35529,137645)}
-            String[] splitLinkArray = linkDataFound.replace(")", ",").split(",");
+            //Log.v("sengsational", "[" + linkDataFound + "]"); //PreloadEmbedMenu("menu-container",35529,137645)}
+            String[] splitLinkArray = linkDataFound.replace(")", ",").replaceAll(" ","").split(",");
             if (splitLinkArray.length > 2) {
                 dataUrlString = "https://business.untappd.com/locations/" + splitLinkArray[1] + "/themes/" + splitLinkArray[2] + "/js";
                 Log.v(TAG, "Untapped data URL: " + dataUrlString);
@@ -425,7 +463,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         return dataUrlString;
     }
 
-
+    /*
     // Look in page for [src="menus/], and take the one that says "beer-1"
     // Not sure this is good for all locations, but it's the best I have now
     private String getTapImageLocFromHtml(String touchlessWebPage) {
@@ -452,6 +490,8 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         }
         return srcContent;
     }
+
+     */
 
     private String pullTouchlessWebPage(String url) {
         String touchlessPage = null;

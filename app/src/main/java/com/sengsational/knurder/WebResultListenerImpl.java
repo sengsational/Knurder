@@ -1,7 +1,6 @@
 package com.sengsational.knurder;
 
 import android.app.LoaderManager;
-import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -9,12 +8,9 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
-
-import com.sengsational.ocrreader.OcrScanHelper;
 
 import java.util.Date;
 
@@ -227,6 +223,15 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
         handleError(message);
     }
 
+    @Override public void sendStatusToast(String message, int toastLength) {
+        if (aActivity == null || aView == null) return;
+        aActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                aView.showMessage(message, toastLength);
+            }
+        });
+    }
+
     @Override public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         return new CursorLoader(getContext(),
                 // Retrieve data rows for the device user's 'profile' contact.
@@ -253,6 +258,7 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
 
 interface WebResultListener {
     void onError(String message);
+    void sendStatusToast(String message, int toastLength);
     void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount);
     void saveValidStore(String storeNumber);
     void onStoreListSuccess(boolean nResetPresentation, boolean menuDataAdded);
