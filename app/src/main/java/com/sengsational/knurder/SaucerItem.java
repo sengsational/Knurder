@@ -1,6 +1,8 @@
 package com.sengsational.knurder;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
@@ -11,6 +13,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -23,6 +26,7 @@ import static com.sengsational.knurder.StoreNameHelper.getStoreIdsForState;
  */
 public class SaucerItem {
     private static final String TAG = SaucerItem.class.getSimpleName();
+    public static final long FOUR_HOURS = 14400000L;
 
     String mRawInputString;
     String mStoreName;   //set during database population and used in parsing city
@@ -35,6 +39,7 @@ public class SaucerItem {
 
     static final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
     static final SimpleDateFormat ndf = new SimpleDateFormat("yyyy MM dd");
+    static final SimpleDateFormat qdf = new SimpleDateFormat("yyyy MM dd HH mm");
 
     public SaucerItem() {
         setId(0L);
@@ -150,7 +155,7 @@ public class SaucerItem {
     }
 
     public void setCountry(String country) {
-        if(country!=null && !country.trim().equals("UnitedStates") && !country.trim().equals("United States") && !country.trim().equals("None")) {
+        if(country!=null && !country.trim().equals("UnitedStates") && !country.trim().equals("United States") && !country.trim().equals("USA") && !country.trim().equals("None")) {
             this.isImport = "T";
         } else {
             this.isImport = "F";
@@ -182,6 +187,8 @@ public class SaucerItem {
         if (mOverrideMix && "draught".equals(this.container)) this.style = "Mix";
 
     }
+
+
 
     public String getDescription() {
         return description;
@@ -294,7 +301,7 @@ public class SaucerItem {
         try {
             int oneHundredPercentLoc = description.indexOf("100%");
             if (oneHundredPercentLoc > -1) {
-                description.replace("100%", "100pct") ;
+                description = description.replace("100%", "100pct") ;
             }
             int abvLoc = description.toUpperCase().indexOf("ABV");
             this.abv = description.substring(Math.max(0,abvLoc-10), Math.min(abvLoc+3, description.length()));
@@ -493,6 +500,42 @@ public class SaucerItem {
     public String getUntappdBrewery() {return untappdBrewery;}
     public void setUntappdBrewery(String untappdBrewery) {this.untappdBrewery = untappdBrewery;}
 
+    //DRS 20230323 - Show queued beer accepted
+    public String getQueStamp() {return this.queStamp;}
+    //public void setQueStamp(String queStamp) {this.queStamp = queStamp;}
+
+    //public void setCurrentlyQueued(boolean currentlyQueued) {
+    //    this.currentlyQueued = currentlyQueued?"T":"F";
+    //}
+    //public void setCurrentlyQueued(String currentlyQueued) {
+    //    this.currentlyQueued = currentlyQueued;
+    //}
+
+    public String getCurrentlyQueued() { return currentlyQueued; }
+
+    public String getQueText(Context context) {
+        Log.v(TAG, "SaucerItem.getQueText() called");
+        if (queStamp == null) return "";
+        String returnQueText = "";
+        try {
+            long ageInMs = new Date().getTime() - qdf.parse(queStamp).getTime();
+            Log.v(TAG, "ageInMs " + ageInMs + " FOUR_HOURS " + FOUR_HOURS + " queued [" + getCurrentlyQueued() + "] queStamp [" + queStamp + "]");
+            if (ageInMs > 0 && ageInMs < FOUR_HOURS) {
+                if (getCurrentlyQueued().equals("T")) {
+                    returnQueText = "    " + context.getString(R.string.queuedBeerMessage);// [QUEUED]
+                } else {
+                    returnQueText = "    " + context.getString(R.string.droppedFromQueMessage);// [APPLIED]
+                }
+            }
+        } catch (Throwable t) {
+            Log.v(TAG, "unable to parse brews on que timestamp. " + t.getClass().getName() + " " + t.getMessage());
+            // not worth crashing
+        }
+        Log.v(TAG, "SuacerItem.getQueText() returning " + returnQueText);
+        return returnQueText;
+    }
+
+
     public String toString() {
         return getActive() + getTasted() + getHighlighted() + getNewArrival() + ", " +
                 getName() + ", " +
@@ -521,7 +564,9 @@ public class SaucerItem {
                 getGlassSize() + ", glass_price:" +  //DRS 20171128 - Menu scan
                 getGlassPrice() + ", untappd_beer:" +                      //DRS 20171128 - Menu scan
                 getUntappdBeer() + ", untappd_brewery:" +  //DRS 20220730
-                getUntappdBrewery()                     //DRS 20220730
+                getUntappdBrewery() + ", que_stamp:" +  //DRS 20220730
+                getQueStamp() + ", currently_queued:" +  //DRS 20230323
+                getCurrentlyQueued()                     //DRS 20230323
                 ;
     }
 
@@ -759,6 +804,11 @@ public class SaucerItem {
 
         untappdBeer = null;  //DRS 20220730
         untappdBrewery = null; //DRS 20220730
+
+        queStamp = null;  //DRS 20230323
+        currentlyQueued = null; //DRS 20230323
+
+
     }
 
     // Normally the only thing that changes (changed by the user) is the highlighted, but we put everything back except null items
@@ -793,6 +843,8 @@ public class SaucerItem {
         values.put("TIMESTAMP", model.getTimestamp()); //DRS 20181023
         values.put("UNTAPPD_BEER", model.getUntappdBeer()); //DRS 20220730
         values.put("UNTAPPD_BREWERY", model.getUntappdBrewery()); //DRS 20220730
+        values.put("QUE_STAMP", model.getQueStamp()); //DRS 20230323
+        values.put("CURRENTLY_QUEUED", model.getCurrentlyQueued()); //DRS 20230323
         Iterator<String> iterator = values.keySet().iterator();
         ArrayList<String> removeList = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -837,6 +889,8 @@ public class SaucerItem {
         if (timestamp != null) values.put("TIMESTAMP", timestamp); // DRS 20181023
         if (untappdBeer != null) values.put("UNTAPPD_BEER", untappdBeer); //DRS 20220730
         if (untappdBrewery != null) values.put("UNTAPPD_BREWERY", untappdBrewery); //DRS 20220730
+        if (queStamp != null) values.put("QUE_STAMP", queStamp); //DRS 20230323
+        if (currentlyQueued != null) values.put("CURRENTLY_QUEUED", currentlyQueued); //DRS 20230323
         return values;
     }
 
@@ -872,7 +926,9 @@ public class SaucerItem {
                 "REVIEW_FLAG TEXT, " + // DRS 20181023
                 "TIMESTAMP TEXT, " + // DRS 20181023
                 "UNTAPPD_BEER TEXT, " +  // DRS 20220730
-                "UNTAPPD_BREWERY TEXT" +  // DRS 20220730
+                "UNTAPPD_BREWERY TEXT, " +  // DRS 20220730
+                "QUE_STAMP TEXT, " +  // DRS 20230323
+                "CURRENTLY_QUEUED TEXT" + // DRS 20230323
                 ");";
                 // NOTE: MUST HAVE "...TEXT, " <<< note comma and space!!
     }
@@ -932,6 +988,9 @@ public class SaucerItem {
     String glassPrice;  //added by menu scan process //DRS 20171128 - Menu scan
     String untappdBeer;     //added by menu scan process //DRS 20220730
     String untappdBrewery;  //added by menu scan process //DRS 20220730
+    String queStamp;  //added by send to brews on queue //DRS 20230323
+    String currentlyQueued; //added by send to brews on queue //DRS 20230323
+
     /* end database column variables */
 
 
@@ -966,8 +1025,11 @@ public class SaucerItem {
     static final String TIMESTAMP = "TIMESTAMP"; // DRS 20181023
     static final String UNTAPPD_BEER = "UNTAPPD_BEER"; // DRS 20181023
     static final String UNTAPPD_BREWERY = "UNTAPPD_BREWERY"; // DRS 20181023
+    static final String QUE_STAMP = "QUE_STAMP"; // DRS 20230323
+    static final String CURRENTLY_QUEUED = "CURRENTLY_QUEUED"; // DRS 20230323
     /* END database field names */
 
+    @SuppressLint("Range")
     public SaucerItem populate(Cursor cursor) {
         try {
             clear();
@@ -1061,6 +1123,12 @@ public class SaucerItem {
                         break;
                     case UNTAPPD_BREWERY:
                         untappdBrewery = cursor.getString(cursor.getColumnIndex(UNTAPPD_BREWERY)); // DRS 20171128 - Menu scan
+                        break;
+                    case QUE_STAMP:
+                        queStamp = cursor.getString(cursor.getColumnIndex(QUE_STAMP)); // DRS 20230323 - Show queued beers accepted
+                        break;
+                    case CURRENTLY_QUEUED:
+                        currentlyQueued = cursor.getString(cursor.getColumnIndex(CURRENTLY_QUEUED)); // DRS 20230323 - Show queued beers accepted
                         break;
                     case ID:
                         _id = cursor.getLong(cursor.getColumnIndex(ID));

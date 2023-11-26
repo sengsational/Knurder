@@ -34,6 +34,10 @@
         android:title="@string/action_scan_glass_size"
         app:showAsAction="never"/>
     <item
+        android:id="@+id/open_tasted_analytics"
+        android:title="@string/action_open_tasted_analytics"
+        app:showAsAction="never"/>
+    <item
         android:id="@+id/action_rate_app"
         android:orderInCategory="90"
         android:title="@string/action_rate_app"

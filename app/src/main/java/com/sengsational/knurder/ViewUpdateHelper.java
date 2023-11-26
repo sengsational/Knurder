@@ -45,24 +45,14 @@ public class ViewUpdateHelper {
                 viewToManage.setVisibility(View.VISIBLE);
                 break;
             case "13":
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.snifter_glass, mContext);
-                viewToManage.setVisibility(View.VISIBLE);
-                break;
             case "11.5":
                 ViewUpdateHelper.setImage(viewToManage, R.mipmap.snifter_glass, mContext);
                 viewToManage.setVisibility(View.VISIBLE);
                 break;
             case "10":
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.wine_glass, mContext);
-                viewToManage.setVisibility(View.VISIBLE);
-                break;
             case "9":
                 ViewUpdateHelper.setImage(viewToManage, R.mipmap.wine_glass, mContext);
                 viewToManage.setVisibility(View.VISIBLE);
-                break;
-            case "0":
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.pint_glass, mContext);
-                viewToManage.setVisibility(View.GONE);
                 break;
             default:
                 ViewUpdateHelper.setImage(viewToManage, R.mipmap.pint_glass, mContext);
@@ -158,5 +148,20 @@ public class ViewUpdateHelper {
                 tv.setTypeface(null, Typeface.NORMAL);
         }
 
+    }
+
+    public static void setQueuedMessageInView(TextView viewById, String queText, String userName, boolean darkMode, Context context) {
+        if (queText != null && queText.contains(context.getString(R.string.queuedBeerMessage))) {
+            viewById.setText("Queued for\n\"" + userName.toUpperCase() + "\":");
+            if (darkMode) {
+                viewById.setTextColor(ContextCompat.getColor(context, R.color.colorIconActiveDark));
+            } else {
+                viewById.setTextColor(ContextCompat.getColor(context, R.color.colorIconActiveLight));
+            }
+            viewById.setVisibility(View.VISIBLE);
+        } else {
+            viewById.setText("");
+            viewById.setVisibility(View.GONE);
+        }
     }
 }

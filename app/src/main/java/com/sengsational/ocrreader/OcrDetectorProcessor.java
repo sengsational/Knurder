@@ -15,41 +15,16 @@
  */
 package com.sengsational.ocrreader;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.View;
 import android.view.ViewParent;
 
-import com.sengsational.knurder.ConcurrentHashSet;
-import com.sengsational.knurder.KnurderApplication;
-import com.sengsational.knurder.SaucerItem;
-import com.sengsational.knurder.TopLevelActivity;
-import com.sengsational.knurder.UfoDatabaseAdapter;
 import com.sengsational.ocrreader.camera.GraphicOverlay;
 import com.google.android.gms.vision.Detector;
-import com.google.android.gms.vision.text.Text;
 import com.google.android.gms.vision.text.TextBlock;
-import com.sengsational.ocrreader.camera.Levenshtein;
 
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
-
-import static com.sengsational.knurder.SaucerItem.BREWERY_CLEANUP;
-import static com.sengsational.knurder.TopLevelActivity.STORE_NUMBER;
 import static com.sengsational.knurder.TopLevelActivity.prefs;
 
 /**

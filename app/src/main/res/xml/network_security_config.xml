@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config>
+        <domain includeSubdomains="true">www.saucerknurd.com</domain>
+        <trust-anchors>
+            <certificates src="@raw/www_saucerknurd_com"/>
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
+<!-- This certificate is for https://www.saucerknurd.com/glassnite/quiz/ and expires 2029 03 18 -->
+<!-- This isn't the right way to do this, but it was quick -->
+<!-- If the cert is changed, go to the quiz page as a user in a browser (with user parameters),
+    download the certificate (PEM format is fine) and replace the file in the @raw folder -->

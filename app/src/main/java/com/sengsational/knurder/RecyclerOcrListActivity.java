@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 
-import static com.sengsational.knurder.TopLevelActivity.STORE_NUMBER;
+import static com.sengsational.knurder.TopLevelActivity.STORE_NUMBER_LIST;
 
 public class RecyclerOcrListActivity extends AppCompatActivity {
     private static final String TAG = RecyclerOcrListActivity.class.getSimpleName();
@@ -46,7 +46,7 @@ public class RecyclerOcrListActivity extends AppCompatActivity {
         String[] pullFields = new String[]{"UFO._id", "UFO.NAME", "UFOLOCAL.GLASS_SIZE", "UFOLOCAL.LAST_UPDATED_DATE", "UFOLOCAL.ADDED_NOW_FLAG", "UFOLOCAL.GLASS_PRICE", "UFOLOCAL._id"};
         String selectionFields = "ACTIVE=? AND CONTAINER=? AND STYLE<>? and STYLE<>? and UFO.STORE_ID=?";
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String storeId = prefs.getString(STORE_NUMBER,"13888");
+        String storeId = prefs.getString(STORE_NUMBER_LIST,"13888");
         String[] selectionArgs = new String[]{"T", "draught", "Mix", "Flight", storeId};
         return db.query(tableWithJoin, pullFields,selectionFields, selectionArgs,null,null,"UFO.NAME ASC", null);
     }

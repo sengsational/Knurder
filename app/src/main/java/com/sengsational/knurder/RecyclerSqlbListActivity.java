@@ -76,6 +76,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     private String mQueryButtonText;
     private boolean mIsTapQuery;
     private boolean mIsFlaggedBeerQuery;
+    private boolean mIsLoggedIn;
     private ShakeDetector mShakeDetector;
     private static Random mRandom =  new Random();
 
@@ -110,7 +111,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
                 //Log.v(TAG, "pullFields in RecyclerSqlbListActivity " + pullFields);
                 final String orderBy = intent.getStringExtra("orderBy");
                 boolean showDateInList = intent.getBooleanExtra("showDateInList", false);
-                boolean hideMixesAndFlights = intent.getBooleanExtra("hideFlag", true);
+                boolean hideMixesAndFlights = intent.getBooleanExtra("hideMixesAndFlights", true);
                 mQueryButtonText = intent.getStringExtra("queryButtonText");
                 mQueryTextContent = intent.getStringExtra("queryTextContent"); // DRS 20171021 - Will be null the first time, but on screen reorientation will have previous query
                 if (mQueryTextContent == null) mQueryTextContent = "";
@@ -118,7 +119,8 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
 
                 mIsTapQuery = selectionFields.contains("CONTAINER=?"); // sorry for the hack, but this is always matched with "draught"
                 mIsFlaggedBeerQuery = selectionFields.contains("HIGHLIGHTED");
-                Log.v(TAG, "hightlighted found " + mIsFlaggedBeerQuery);
+                mIsLoggedIn = intent.getBooleanExtra("isLoggedIn", false);
+                Log.v(TAG, "hightlighted found " + mIsFlaggedBeerQuery + " isLoggedIn: " + mIsLoggedIn);
 
                 for (int i = 0 ; i < selectionArgs.length; i++){
                     Log.v(TAG, ">>>>>> Selection Args " + selectionArgs[i]);
@@ -181,29 +183,32 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
         Log.v("sengsational", "RecyclerSqlbListActivity.onActivityResult running with requestCode " + requestCode + ", resultCode " + resultCode);
         if (requestCode == VALIDATE_CARD) {
             Log.v(TAG, "Validate Card returned result " + resultCode);
             if (resultCode == 0) {
-                // Probably nothing to do here.
+                // Doing this so that fields changed in the database will be updated.
+                finish();
+                startActivity(getIntent());
             } else {
                 Log.v(TAG, "Unexpected resultCode " + resultCode);
 
             }
-        } else if(requestCode == RecyclerSqlbListActivity.DETAIL_REQUEST){
+        } else if (requestCode == RecyclerSqlbListActivity.DETAIL_REQUEST) {
             Log.v(TAG, "onActivityResult fired <<<<<<<<<< resultCode:" + resultCode);
 
             //Integer[] changedPositions = UfoDatabaseAdapter.getChangedPositions();
             //for (Integer changedPosition : changedPositions) {
             //    Log.v(TAG, "changedPosition " + changedPosition);
-                //SaucerItem aModel = null;
-                //aModel = DbSqlliteAdapter.getById(cursorRecyclerViewAdapter.getItemId(changedPosition) + "");
-                //Log.v(TAG, "Pulled from database and found data: " + aModel);
-                //cursorRecyclerViewAdapter.notifyItemChanged(changedPosition); // <<<<<<<<<< This does not work
-                //    Log.v(TAG, "See if this is really the right way to do this.");
-                //Cursor anotherCursor = repository.fetchAll(null);
-                //cursorRecyclerViewAdapter = new MyCursorRecyclerViewAdapter(this,anotherCursor);
-                //recyclerView.setAdapter(cursorRecyclerViewAdapter);
+            //SaucerItem aModel = null;
+            //aModel = DbSqlliteAdapter.getById(cursorRecyclerViewAdapter.getItemId(changedPosition) + "");
+            //Log.v(TAG, "Pulled from database and found data: " + aModel);
+            //cursorRecyclerViewAdapter.notifyItemChanged(changedPosition); // <<<<<<<<<< This does not work
+            //    Log.v(TAG, "See if this is really the right way to do this.");
+            //Cursor anotherCursor = repository.fetchAll(null);
+            //cursorRecyclerViewAdapter = new MyCursorRecyclerViewAdapter(this,anotherCursor);
+            //recyclerView.setAdapter(cursorRecyclerViewAdapter);
             //}
             // repository.fetch(queryPackage, hideMixesAndFlights, this); No need to do another query since we do one each change.
             cursorRecyclerViewAdapter.changeCursor(KnurderApplication.getCursor(getApplicationContext()));  // DRS 20161201 - Added 1 - Cursors only in application class
@@ -407,7 +412,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
             hideTitle1 = getResources().getString(R.string.action_sort_glass);
             hideTitle2 = getResources().getString(R.string.action_sort_price);
         }
-        if (!mIsFlaggedBeerQuery) {
+        if (!mIsFlaggedBeerQuery || !mIsLoggedIn) {
             hideTitle3 = getResources().getString(R.string.action_push_to_brews_on_queue);
         }
 
@@ -588,7 +593,14 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     private String getBrewIdsListFromCursor() {
         StringBuilder builder = new StringBuilder();
         Cursor cursor = repository.getCursor();
-        if (!cursor.moveToFirst()) return ""; // The list was empty
+        boolean listHasItems = false;
+        try {
+            if (cursor.moveToFirst()) listHasItems = true; // The list was empty
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to get brewIds from the list.");
+            return "";
+        }
+
         do {
             //Log.v(TAG, "cursor type for BREW_ID : " + cursor.getType(QueryPkg.BREW_ID) + " << expect FIELD_TYPE_STRING (3)"); // RETURNED 0
             //Log.v(TAG, "cursor type for BREW_ID:: " + cursor.getType(cursor.getColumnIndex("BREW_ID")) + " << expect FIELD_TYPE_STRING (3)"); // RETURNED 3
@@ -597,7 +609,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
             //Log.v(TAG, "cursor getString brewid " + cursor.getString(QueryPkg.BREW_ID)); // RETURNED null
             //Log.v(TAG, "cursor getString column index brewid " + cursor.getString(cursor.getColumnIndex("BREW_ID"))); // RETURNED THE NUMBER  (GOOD DATA)
 
-            builder.append(cursor.getString(cursor.getColumnIndex("BREW_ID"))).append(",");
+            builder.append(cursor.getString(cursor.getColumnIndexOrThrow("BREW_ID"))).append(",");
         } while (cursor.moveToNext());
         Log.v(TAG, "brewIdsList [" + builder.toString() + "]");
         return builder.toString();

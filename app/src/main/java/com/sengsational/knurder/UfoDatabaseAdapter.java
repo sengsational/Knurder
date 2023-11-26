@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import static com.sengsational.knurder.KnurderApplication.getContext;
+
 /**
  * Created by Owner on 5/13/2016.
  */
@@ -23,7 +25,7 @@ public class UfoDatabaseAdapter {
     private static final String TAG = UfoDatabaseAdapter.class.getSimpleName();
 
     private static final String DB_NAME = "knuder";
-    private static final int DB_VERSION = 14;
+    private static final int DB_VERSION = 17;
     private static Context CONTEXT_LIMIT_USE;
     private static DatabaseHelper DB_HELPER;
     private static SQLiteDatabase SQL_DB;
@@ -41,6 +43,7 @@ public class UfoDatabaseAdapter {
         SQL_DB = DB_HELPER.getWritableDatabase();
         return UFO_DB_ADAPTER;
     }
+
 
     public SQLiteDatabase openDb(Context context) throws SQLException {
         DB_HELPER = DatabaseHelper.getInstance(context);
@@ -293,15 +296,15 @@ public class UfoDatabaseAdapter {
             int updatedCount = 0;
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
                 // Inputs to find record in the main UFO table
-                String storeId = cursor.getString(cursor.getColumnIndex("STORE_ID"));
-                String brewId = cursor.getString(cursor.getColumnIndex("BREW_ID"));
+                String storeId = cursor.getString(cursor.getColumnIndexOrThrow("STORE_ID"));
+                String brewId = cursor.getString(cursor.getColumnIndexOrThrow("BREW_ID"));
 
                 // Data to add to the UFO table
-                String glassSize = cursor.getString(cursor.getColumnIndex("GLASS_SIZE"));
-                String glassPrice = cursor.getString(cursor.getColumnIndex("GLASS_PRICE"));
-                String abv = cursor.getString(cursor.getColumnIndex("ABV"));
-                String beerNumber = cursor.getString(cursor.getColumnIndex("UNTAPPD_BEER"));
-                String breweryNumber = cursor.getString(cursor.getColumnIndex("UNTAPPD_BREWERY"));
+                String glassSize = cursor.getString(cursor.getColumnIndexOrThrow("GLASS_SIZE"));
+                String glassPrice = cursor.getString(cursor.getColumnIndexOrThrow("GLASS_PRICE"));
+                String abv = cursor.getString(cursor.getColumnIndexOrThrow("ABV"));
+                String beerNumber = cursor.getString(cursor.getColumnIndexOrThrow("UNTAPPD_BEER"));
+                String breweryNumber = cursor.getString(cursor.getColumnIndexOrThrow("UNTAPPD_BREWERY"));
 
                 ContentValues values = new ContentValues();
                 values.put("GLASS_SIZE", glassSize);
@@ -312,7 +315,7 @@ public class UfoDatabaseAdapter {
                 if (updated == 0) {
                     // This is OK because if the beer is not active, it does not go away...it stays in there 'forever'.  That way, if it comes back, the user will not need to scan it again.
                 } else if(updated !=1) {
-                    Log.e(TAG, "Expected to update 1 record, but updated " + updated + " records. name [" + cursor.getString(cursor.getColumnIndex("NAME")) + "]");
+                    Log.e(TAG, "Expected to update 1 record, but updated " + updated + " records. name [" + cursor.getString(cursor.getColumnIndexOrThrow("NAME")) + "]");
                 } else {
                     updatedCount += updated;
                 }
@@ -448,6 +451,12 @@ public class UfoDatabaseAdapter {
                     db.execSQL("ALTER TABLE UFOLOCAL ADD COLUMN UNTAPPD_BREWERY TEXT");
                     db.execSQL("ALTER TABLE UFO ADD COLUMN UNTAPPD_BEER TEXT");
                     db.execSQL("ALTER TABLE UFO ADD COLUMN UNTAPPD_BREWERY TEXT");
+                case 14: // DRS 20220826
+                    if (!fieldExists(db, "UFOLOCAL", "ABV")) db.execSQL("ALTER TABLE UFOLOCAL ADD COLUMN ABV TEXT");
+                case 15: // DRS 20230323
+                    db.execSQL("ALTER TABLE UFO ADD COLUMN QUE_STAMP TEXT");
+                case 16: // DRS 20230323
+                    db.execSQL("ALTER TABLE UFO ADD COLUMN CURRENTLY_QUEUED TEXT");
             }
 
             Log.v(TAG, "onUpgrade() from " + oldVersion + " to " + newVersion + " complete.");
@@ -473,7 +482,20 @@ public class UfoDatabaseAdapter {
             cursor.close();
             return count;
         }
+
+        public static boolean fieldExists(SQLiteDatabase db, String tableName, String fieldName) {
+            boolean isExisting = false;
+            Cursor res = null;
+            try {
+                res = db.rawQuery("Select * from "+ tableName +" limit 1", null);
+                int colIndex = res.getColumnIndex(fieldName);
+                if (colIndex!=-1) isExisting = true;
+            } catch (Exception e) {
+                Log.v(TAG,"Failed to ascertain if " + fieldName + " existed in " + tableName + " with error " + e.getClass().getName() + " " + e.getMessage());
+            } finally {
+                try { if (res !=null){ res.close(); } } catch (Exception e1) {}
+            }
+            return isExisting;
+        }
     }
-
-
 }

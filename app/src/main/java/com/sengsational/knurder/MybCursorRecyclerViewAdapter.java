@@ -50,7 +50,12 @@ public class MybCursorRecyclerViewAdapter extends CursorRecyclerViewAdapter<MybC
         } else {
             String pctString = SaucerItem.getPctString(modelItem.getAbv()) + "  -  ";
             pctString = pctString.length()==5?"":pctString;
-            viewHolder.tvSecond.setText(pctString + modelItem.getStyle());
+            String specialTastedMessage = "";
+            if (mSkipGagState) {
+                // This is the flagged beer list.  We need to add a 'tasted' if it is tasted.
+                if ("T".equals(modelItem.getTasted())) specialTastedMessage = "    [TASTED]";
+            }
+            viewHolder.tvSecond.setText(pctString + modelItem.getStyle() + modelItem.getQueText(mContext) + specialTastedMessage);
         }
 
         String newArrivalState = modelItem.getNewArrival();

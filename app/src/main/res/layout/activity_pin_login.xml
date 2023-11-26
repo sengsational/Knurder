@@ -99,7 +99,7 @@
                 android:id="@+id/store_selection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/store_selection"/>
+                android:text="@string/store_selection_card"/>
 
             <Spinner
                 android:layout_width="match_parent"

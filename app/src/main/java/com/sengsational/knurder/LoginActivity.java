@@ -78,14 +78,13 @@ public class LoginActivity extends AppCompatActivity implements DataView {
         // Get defaults and prepare store list from shared preferences
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        mStoreNumber = prefs.getString(TopLevelActivity.STORE_NUMBER, "13888");
         // DRS 20161006 - Add 1 - Allow Change Location while logged-in
         // The logon store number can be different than the active store number
-        mStoreNumber = prefs.getString(TopLevelActivity.STORE_NUMBER_LOGON, mStoreNumber);
+        mStoreNumber = prefs.getString(TopLevelActivity.STORE_NUMBER_LOGON, prefs.getString(TopLevelActivity.STORE_NUMBER_LIST, "13888"));
         mAuthenticationName = prefs.getString(TopLevelActivity.AUTHENTICATION_NAME, "");
         mPassword = prefs.getString(TopLevelActivity.PASSWORD, "");
         mMou = prefs.getString(TopLevelActivity.MOU,"0");
-        mStoreName = prefs.getString(TopLevelActivity.STORE_NAME, "");
+        mStoreName = prefs.getString(TopLevelActivity.STORE_NAME_LIST, "");
 
         mSavePasswordSwitch = prefs.getBoolean("password_switch", true);
 
@@ -211,7 +210,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
         String authenticationName = mUsernameView.getText().toString();
         String password = mPasswordView.getText().toString();
         Object selectedItem = mSpinnerView.getSelectedItem();
-        String storeName = prefs.getString(TopLevelActivity.STORE_NAME, "(undefined)");
+        String storeName = prefs.getString(TopLevelActivity.STORE_NAME_LIST, "(undefined)");
         if (selectedItem != null) storeName = selectedItem.toString();
         Log.v("sengsational", "storeName in attemptLogin: " + storeName);
         String storeNumber = StoreNameHelper.getInstance().getStoreNumberFromName(storeName);
@@ -285,9 +284,10 @@ public class LoginActivity extends AppCompatActivity implements DataView {
         editor.apply();
     }
 
+    // Only called from WebResultListner which is called from StoreListInteractor - The storeNumber is for the list, not the credentials.
     @Override public void saveValidStore(String storeNumber) {
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-        editor.putString(TopLevelActivity.STORE_NUMBER, storeNumber); // DRS 20161006 - Leaving this as STORE_NUMBER, not changing to STORE_NUMBER_LOGON
+        editor.putString(TopLevelActivity.STORE_NUMBER_LIST, storeNumber); // DRS 20161006 - Leaving this as STORE_NUMBER_LIST, not changing to STORE_NUMBER_LOGON
         editor.putLong(TopLevelActivity.LAST_LIST_DATE, new Date().getTime()); // DRS 20160815 - Added 1 - old list reminder
         editor.apply();
     }

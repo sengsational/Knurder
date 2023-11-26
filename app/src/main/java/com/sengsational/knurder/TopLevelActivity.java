@@ -3,12 +3,16 @@ package com.sengsational.knurder;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.BlendMode;
+import android.graphics.BlendModeColorFilter;
+import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -22,14 +26,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.BlendModeColorFilterCompat;
+import androidx.core.graphics.BlendModeCompat;
+
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -67,11 +72,12 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     public static final String SAVE_PASSWORD = "savePasswordPref";
     public static final String PASSWORD = "passwordPref";
     public static final String MOU = "mouPref";
-    public static final String STORE_NUMBER = "storeNumberPref";
+    public static final String STORE_NUMBER_LIST = "storeNumberPref";
     public static final String STORE_NUMBER_LOGON = "storeNumberLogonPref";
     public static final String USER_NAME = "userNamePref";
+    public static final String USER_NUMBER = "userNumberPref";
     public static final String TASTED_COUNT = "tastedCountPref";
-    public static final String STORE_NAME = "storeNamePref";
+    public static final String STORE_NAME_LIST = "storeNamePref";
     public static final String LAST_LIST_DATE = "listDatePref";
     public static final String LAST_TASTED_DATE = "tastedDatePref";
     public static final String UPGRADE_MESSAGE_PRESENTED = "updateMessagePref";
@@ -168,7 +174,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             Log.v("sengsational", "onResume() passed test 0");
             String newFeatureAlertPreference = prefs.getString(NEW_FEATURE_ALERT_MESSAGE,""); // newFeatureAlertPreference will be blank, or the DATE of the last new feature alert
             boolean newFeatureAlertPreferenceIsDoneAlready = NEW_FEATURE_ALERT_DATE.equals(newFeatureAlertPreference);
-            boolean useAlternateAlertText = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("").equals(""); // This variable and the 'if' block that uses it can be removed later.
+            boolean useAlternateAlertText = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("", this).equals(""); // This variable and the 'if' block that uses it can be removed later.
             if (!newFeatureAlertPreferenceIsDoneAlready) {
                 Log.v("sengsational", "onResume() passed test 1");
                 android.app.AlertDialog.Builder logonDialog = new android.app.AlertDialog.Builder(this);
@@ -176,7 +182,9 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_title) + "</p><p>" + getResources().getString(R.string.new_feature_alert_message) + "</p>"));
                 // override message if they have never scanned the QR code and haven't populated the Untappd URL.
                 if (useAlternateAlertText) {
-                    logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_title_alt) + "</p><p>" + getResources().getString(R.string.new_feature_alert_message_alt) + "</p>"));
+                    String storeName = prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME);
+                    logonDialog.setTitle(getResources().getString(R.string.new_feature_alert_title_alt));
+                    logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_message_alt, storeName) + "</p>"));
                 }
                 logonDialog.setCancelable(true);
                 logonDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -194,20 +202,6 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 TextView aView = (TextView)newFeatureAlert.findViewById(android.R.id.message);
                 aView.setMovementMethod(LinkMovementMethod.getInstance());
             }
-        }
-
-        // This is to get dark mode to show after the user makes a change to the setting
-        Log.v("sengsational", AppCompatDelegate.getDefaultNightMode() + " < night mode on resume.");
-        if (prefs.getBoolean("dark_mode_has_changed", false)) {
-            Log.v("sengsational", "<<<<<<<<dark mode change<<<<<<<<<<<");
-            // Clear
-            SharedPreferences.Editor prefsEdit = prefs.edit();
-            prefsEdit.putBoolean("dark_mode_has_changed", false);
-            prefsEdit.apply();
-
-            //Handle color setting
-            setQueryIconColors();
-
         }
         super.onResume();
     }
@@ -275,14 +269,14 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
         // DRS 20161006 - Add 2 - Allow Change Location while logged-in
         locationTextView = ((TextView) findViewById(R.id.location_text));
-        locationTextView.setText(prefs.getString(STORE_NAME, DEFAULT_STORE_NAME));
+        locationTextView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
 
         userNameView = ((TextView) findViewById(R.id.userName));
         userNameView.setText(prefs.getString(USER_NAME, ""));
         tastedCountView = ((TextView) findViewById(R.id.tastedCount));
         tastedCountView.setText("Tasted " + prefs.getString(TASTED_COUNT, "?") + " so far.");
         saucerNameView = ((TextView) findViewById(R.id.saucerName));
-        saucerNameView.setText(prefs.getString(STORE_NAME, DEFAULT_STORE_NAME));
+        saucerNameView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
         localBeersNotTastedButton = ((Button) findViewById(R.id.local_beers_nt_button));
         localTapsNotTastedButton = ((Button) findViewById(R.id.local_taps_nt_button));
         allTapsNotTastedButton = ((Button) findViewById(R.id.all_taps_nt_button));
@@ -333,7 +327,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         }
 
         //Cause store selection pop-up if there is no store defined
-        if(DEFAULT_STORE_NAME.equals(prefs.getString(STORE_NAME,DEFAULT_STORE_NAME))){
+        if(DEFAULT_STORE_NAME.equals(prefs.getString(STORE_NAME_LIST,DEFAULT_STORE_NAME))){
             Intent intent = new Intent(TopLevelActivity.this, SelectStoreActivity.class);
             startActivityForResult(intent, SET_STORE_CALLBACK);
         }
@@ -368,7 +362,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
                 @Override
                 public boolean onMenuItemClick(MenuItem item) {
-                    Log.v(TAG, "Toolbar Item Clicked: " + item.getItemId());
+                    Log.v(TAG, "Toolbar Item Clicked with item: " + item.getItemId());
                     switch (item.getItemId()) {
                         case R.id.action_settings:
                             Intent settingsIntent = new Intent(TopLevelActivity.this, SettingsActivitySimple.class);
@@ -465,6 +459,31 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                         case R.id.change_location:
                             Intent intent = new Intent(TopLevelActivity.this, SelectStoreActivity.class);
                             startActivityForResult(intent, SET_STORE_CALLBACK);
+                            break;
+                        case R.id.open_tasted_analytics:
+                            boolean activityFound = false;
+                            String userNumber = prefs.getString(USER_NUMBER, "");
+                            if ("".equals(userNumber)) {
+                                Toast.makeText(TopLevelActivity.this, "Please refresh your tasted list first.  This is just a one-time thing.", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(TopLevelActivity.this, "Launching browser with your User ID number [" + userNumber + "]", Toast.LENGTH_LONG).show();
+                                Uri analyticsUri = Uri.parse("http://saucer.rechlin.net/analysis?user=" + userNumber);
+                                Intent analyticsIntent = new Intent(Intent.ACTION_DEFAULT, analyticsUri);
+                                try {
+                                    startActivity(analyticsIntent);
+                                    activityFound = true;
+                                } catch (ActivityNotFoundException n) {
+                                    Log.v(TAG,  n.getClass().getName() + " " + n.getMessage());
+                                    activityFound = false;
+                                } catch (Throwable t) {
+                                    Log.v(TAG, t.getClass().getName() + " message: " + t.getMessage());
+                                    activityFound = false;
+                                }
+                                if (!activityFound) {
+                                    Log.v(TAG, "ERROR: Unable to open analytics in browser.");
+                                    Toast.makeText(TopLevelActivity.this, "Unable to launch browser.  Your ID number is " + userNumber, Toast.LENGTH_LONG).show();
+                                }
+                            }
                             break;
                         case R.id.scan_glass_size:
                             long lastListDate = prefs.getLong(TopLevelActivity.LAST_LIST_DATE, 0L);
@@ -673,12 +692,14 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         String queryContainerKey = prefs.getString(QUERY_CONTAINER, "B");
         String queryTastedKey = prefs.getString(QUERY_TASTED, "B");
         String queryGeographyKey = prefs.getString(QUERY_GEOGRAPHY, "B");
+        boolean hideMix = prefs.getBoolean("mix_switch", true);
+        boolean hideFlight = prefs.getBoolean("flight_switch", true);
+        boolean hideMixesAndFlights = hideFlight || hideMix;
 
         // Copied this block
-        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID", "UNTAPPD_BEER", "UNTAPPD_BREWERY", "STORE_ID"};
+        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID", "UNTAPPD_BEER", "UNTAPPD_BREWERY", "STORE_ID", "QUE_STAMP", "CURRENTLY_QUEUED"};
         String selectionFields = null;
         String selectionArgs[] = null;
-        boolean respectHideMixAndFlightFlag = true;
         String orderBy = null;
         boolean showDateInList = false;
         // End copied this block
@@ -691,7 +712,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             selectionArgsArray.add("T");
             orderBy = "CREATED_DATE DESC";
             showDateInList = true;
-            respectHideMixAndFlightFlag = false;
+            hideMixesAndFlights = false;  //Tasted List should include mixes and flights, irrespective of switch setting
 
             if ("L".equals(queryContainerKey)){ // Taps only
                 selectionFieldsBuilder.append("AND CONTAINER=? ");
@@ -746,9 +767,11 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         //beerList.putExtra("selectedItems", selectedItems);
         beerList.putExtra("selectionFields", selectionFields);
         beerList.putExtra("selectionArgs", selectionArgs);
-        beerList.putExtra("respectHideMixAndFlightFlag", respectHideMixAndFlightFlag);
+        beerList.putExtra("hideMixesAndFlights", hideMixesAndFlights);
         beerList.putExtra("orderBy", orderBy);
         beerList.putExtra("showDateInList", showDateInList);
+        Log.v(TAG, "presentation mode: " + prefs.getString(PRESENTATION_MODE, "default") + " compare to " + USER_PRESENTATION);
+        beerList.putExtra("isLoggedIn", USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, STORE_PRESENTATION)));
         beerList.putExtra("refreshRequired",selectionFields.contains("HIGHLIGHTED")?true:false); // Tell the list activity that we must refresh the list when backing out
         beerList.putExtra("queryButtonText", listBeersButton.getText());
         Log.v("sengsational", "going to RecyclerSqlbListActivity");
@@ -864,10 +887,10 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             colorIconActive = ContextCompat.getColor(context, R.color.colorIconActiveLight);
             colorIconNonActive = ContextCompat.getColor(context, R.color.colorIconNonActiveLight);
         }
-        ContextCompat.getDrawable(this, R.drawable.spacer).setColorFilter(colorIconNonActive, PorterDuff.Mode.SRC_ATOP);
         String queryContainerKey = prefs.getString(QUERY_CONTAINER, "B");
         String queryTastedKey = prefs.getString(QUERY_TASTED, "B");
         String queryGeographyKey = prefs.getString(QUERY_GEOGRAPHY, "B");
+        ContextCompat.getDrawable(this, R.drawable.spacer).setColorFilter(BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colorIconNonActive, BlendModeCompat.SRC_ATOP));
         setQueryIconColors(queryContainerKey, ContextCompat.getDrawable(this, R.drawable.tap) ,ContextCompat.getDrawable(this, R.drawable.bottle));
         setQueryIconColors(queryTastedKey, ContextCompat.getDrawable(this, R.drawable.tasted) ,ContextCompat.getDrawable(this, R.drawable.untasted));
         setQueryIconColors(queryGeographyKey, ContextCompat.getDrawable(this, R.drawable.local) ,ContextCompat.getDrawable(this, R.drawable.world));
@@ -875,25 +898,27 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     }
 
     private void setQueryIconColors(String key, Drawable leftIcon, Drawable rightIcon) {
+        ColorFilter activeColorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colorIconActive, BlendModeCompat.SRC_ATOP);
+        ColorFilter inActiveColorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colorIconNonActive, BlendModeCompat.SRC_ATOP);
         if ("B".equals(key)) { // Both selected
-            leftIcon.setColorFilter(colorIconActive, PorterDuff.Mode.SRC_ATOP);
-            rightIcon.setColorFilter(colorIconActive, PorterDuff.Mode.SRC_ATOP);
+            leftIcon.setColorFilter(activeColorFilter);
+            rightIcon.setColorFilter(activeColorFilter);
         } else if ("R".equals(key)) { // Right selected
-            leftIcon.setColorFilter(colorIconNonActive, PorterDuff.Mode.SRC_ATOP);
-            rightIcon.setColorFilter(colorIconActive, PorterDuff.Mode.SRC_ATOP);
+            leftIcon.setColorFilter(inActiveColorFilter);
+            rightIcon.setColorFilter(activeColorFilter);
         } else if ("L".equals(key)){  // Left selected
-            leftIcon.setColorFilter(colorIconActive, PorterDuff.Mode.SRC_ATOP);
-            rightIcon.setColorFilter(colorIconNonActive, PorterDuff.Mode.SRC_ATOP);
+            leftIcon.setColorFilter(activeColorFilter);
+            rightIcon.setColorFilter(inActiveColorFilter);
         } else { // Only for no-store presentation
-            leftIcon.setColorFilter(colorIconNonActive, PorterDuff.Mode.SRC_ATOP);
-            rightIcon.setColorFilter(colorIconNonActive, PorterDuff.Mode.SRC_ATOP);
+            leftIcon.setColorFilter(inActiveColorFilter);
+            rightIcon.setColorFilter(inActiveColorFilter);
         }
     }
 
 
     // START BEER LIST VIEW WHEN BUTTONS CLICKED (this method is associated with buttons inside the layout)
     public void onClickShowList(View v) {
-        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID", "UNTAPPD_BEER", "UNTAPPD_BREWERY", "STORE_ID"};
+        String[] pullFields = new String[]{"_id", "NAME", "DESCRIPTION", "CITY", "ABV", "STYLE", "CREATED", "HIGHLIGHTED","NEW_ARRIVAL", "ACTIVE", "IS_IMPORT", "TASTED", "BREWER", "GLASS_SIZE", "GLASS_PRICE", "USER_REVIEW", "USER_STARS", "REVIEW_FLAG", "BREW_ID", "UNTAPPD_BEER", "UNTAPPD_BREWERY", "STORE_ID", "QUE_STAMP", "CURRENTLY_QUEUED"};
 
         //final String[] selectedItems = {"LocalNotTasted", "Local", "TapsNotTasted", "Taps", "Tasted", "Database"};
         String selectionFields = null;
@@ -964,6 +989,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             beerList.putExtra("respectHideMixAndFlightFlag", respectHideMixAndFlightFlag);
             beerList.putExtra("orderBy", orderBy);
             beerList.putExtra("showDateInList", showDateInList);
+            beerList.putExtra("isLoggedIn", USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, STORE_PRESENTATION)));
             beerList.putExtra("refreshRequired",selectionFields.contains("HIGHLIGHTED")?true:false); // Tell the list activity that we must refresh the list when backing out
             Log.v("sengsational", "going to BeerListActivity");
             startActivity(beerList);
@@ -1023,7 +1049,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         } else if (requestCode  == UPDATE_GLASS_CALLBACK) {
             // Nothing to do here?
         }
-
+        super.onActivityResult(requestCode, resultCode, data);
     }//onActivityResult
 
     // CONTROL VISIBILITY DEPENDING ON MODE
@@ -1037,13 +1063,13 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             // this installation has never logged-on with updated version.  Make the STORE_NUMBER and STORE_NUMBER_LOGON match
             Log.v("sengsational","STORE_NUMBER_LOGON not defined.  Now setting it to the STORE_NUMBER");
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-            editor.putString(STORE_NUMBER_LOGON, prefs.getString(STORE_NUMBER,DEFAULT_STORE_NAME));
+            editor.putString(STORE_NUMBER_LOGON, prefs.getString(STORE_NUMBER_LIST,"13888"));
             editor.apply();
         }
 
         // DRS 20161006 - Added 'if' - Allow Change Location while logged-in
         // If the loginStoreName is different than the STORE_NAME, display the store name so the user knows they are displaying a different list
-        if(!prefs.getString(STORE_NUMBER_LOGON,DEFAULT_STORE_NAME).equals(prefs.getString(STORE_NUMBER,DEFAULT_STORE_NAME))) {
+        if(!prefs.getString(STORE_NUMBER_LOGON,DEFAULT_STORE_NAME).equals(prefs.getString(STORE_NUMBER_LIST,DEFAULT_STORE_NAME))) {
             locationTextView.setVisibility(View.VISIBLE);
         } else {
             locationTextView.setVisibility(View.INVISIBLE);
@@ -1105,7 +1131,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         locationTextView.setVisibility(View.INVISIBLE);
 
         userNameView.setText("");
-        saucerNameView.setText(prefs.getString(STORE_NAME, DEFAULT_STORE_NAME));
+        saucerNameView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
         saucerNameView.setVisibility(View.VISIBLE);
         tastedCountView.setVisibility(View.INVISIBLE);
 
@@ -1374,7 +1400,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 disableMenuItems(new String[] {"Log On"});
                 break;
         }
-        return true;
+        Log.v(TAG, "previous version just returned 'true' to onCreateOptionsMenu(menu)");
+        return super.onCreateOptionsMenu(menu);
     } // Options Menu Support
 
     @Override
@@ -1391,26 +1418,37 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             Log.e(TAG, "The Menu item glass size was null");
         }
 
-        return true;
+        MenuItem itemAnalytics = menu.findItem(R.id.open_tasted_analytics);
+        if (itemAnalytics != null) {
+            if (USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, STORE_PRESENTATION))) {
+                itemAnalytics.setVisible(true);
+            } else {
+                itemAnalytics.setVisible(false); // Don't show go to analytics if not logged in
+            }
+        } else {
+            Log.e(TAG, "The Menu item open analytics was null");
+        }
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (item.getItemId() == R.id.action_settings) {
+            Log.v(TAG, "previously this start activity was NOT here!!!");
+            startActivity(new Intent(this, SettingsActivitySimple.class));
             return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
 
-        return super.onOptionsItemSelected(item);
     } // Options Menu Support
 
     //////////////////////////////////////////////Methods I call on user action /////////////////////////////////////
     @Override public void getStoreList(boolean resetPresentation, boolean checkForQuiz) {
-        storeListPresenter.getStoreList(prefs.getString(STORE_NUMBER, "13888"), resetPresentation);
+        storeListPresenter.getStoreList(prefs.getString(STORE_NUMBER_LIST, "13888"), resetPresentation, this);
 
         // If this person is logged in (in user presentation mode), hit the quiz interactor to see if there's a quiz
         if (prefs.getString(PRESENTATION_MODE, "").equals(USER_PRESENTATION) && checkForQuiz) {
@@ -1440,23 +1478,20 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     @Override public void saveValidStore(String storeNumber) {
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
 
-        // THIS CODE IS BOGUS AND NEEDS TO BE REMOVED AFTER SOME MORE DIGGING - I think that clearUserData is NEVER done.
-        boolean currentStoreNumberIsAlwaysTheSameAsStoreNumber = true;
-        if (currentStoreNumberIsAlwaysTheSameAsStoreNumber) {
-            String currentStoreNumber = prefs.getString(STORE_NUMBER,storeNumber);
+        String currentStoreNumber = prefs.getString(STORE_NUMBER_LIST,storeNumber);
 
-            // if the store number is NOT the same, wipe user data
-            // this (should be) the only place where old store / new store are compared and action taken
-            Log.v("sengsational", "Store number change from " + currentStoreNumber + " to " + storeNumber);
-            if (!currentStoreNumber.equals(storeNumber) && !"".equals(currentStoreNumber)){
-                Log.v("sengsational", "Store number change from " + currentStoreNumber + " to " + storeNumber + " User data getting wiped.");
-                clearUserData(currentStoreNumber);
-            }
+        // if the store number is NOT the same, wipe user data
+        // this (should be) the only place where old store / new store are compared and action taken
+        if (!currentStoreNumber.equals(storeNumber) && !"".equals(currentStoreNumber)){
+            Log.v("sengsational", "Store number change from " + currentStoreNumber + " to " + storeNumber + " User data getting wiped.");
+            clearUserData(currentStoreNumber);
+        } else {
+            Log.v("sengsational", "Store number not changed: " + currentStoreNumber);
         }
 
-        editor.putString(STORE_NUMBER, storeNumber);//kK3yy7hs
+        editor.putString(STORE_NUMBER_LIST, storeNumber);//kK3yy7hs
         Log.v("sengsational", "TLA.saveValidStore " + StoreNameHelper.getInstance().getStoreNameFromNumber(storeNumber, null));
-        editor.putString(STORE_NAME, StoreNameHelper.getInstance().getStoreNameFromNumber(storeNumber, null));
+        editor.putString(STORE_NAME_LIST, StoreNameHelper.getInstance().getStoreNameFromNumber(storeNumber, null));
         editor.apply();
 
         // DRS 20161006 - Add 1 + 'if/else' - Allow Change Location while logged-in
@@ -1464,7 +1499,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         // If the loginStoreName is different than the STORE_NAME, display the store name so the user knows they are displaying a different list
         // DRS 20161006 - Add 'if' - Allow Change Location while logged-in
         // If the loginStoreName is different than the STORE_NAME, display the store name so the user knows they are displaying a different list
-        if(!prefs.getString(STORE_NUMBER_LOGON,DEFAULT_STORE_NAME).equals(prefs.getString(STORE_NUMBER,DEFAULT_STORE_NAME))) {
+        if(!prefs.getString(STORE_NUMBER_LOGON,"13888").equals(prefs.getString(STORE_NUMBER_LIST,"13888"))) {
             locationTextView.setVisibility(View.VISIBLE);
         } else {
             locationTextView.setVisibility(View.INVISIBLE);
@@ -1549,7 +1584,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 dialog.dismiss();
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW);
                 browserIntent.setData(Uri.parse("http://www.saucerknurd.com/glassnite/beerknurd-glassnite.php?" +
-                                "homestore=" + prefs.getString(STORE_NAME, "Charlotte Flying Saucer") +
+                                "homestore=" + prefs.getString(STORE_NAME_LIST, "Charlotte Flying Saucer") +
                                 "&email=" + prefs.getString(EMAIL_ADDRESS, "unknown@unknown.com") +
                                 "&UFO=" + prefs.getString(AUTHENTICATION_NAME, "106011") +
                                 "&FirstName=" + prefs.getString(FIRST_NAME, "Joe") +

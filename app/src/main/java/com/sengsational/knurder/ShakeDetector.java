@@ -66,8 +66,8 @@ public class ShakeDetector implements SensorEventListener {
         // If this phone has an accelerometer, listen to it.
         if (accelerometer != null) {
             this.sensorManager = sensorManager;
-            sensorManager.registerListener(this, accelerometer,
-                    SensorManager.SENSOR_DELAY_FASTEST);
+            //sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
         }
         return accelerometer != null;
     }

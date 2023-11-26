@@ -4,9 +4,13 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import androidx.appcompat.app.AppCompatDelegate;
 import android.util.Log;
+
+import java.util.concurrent.Semaphore;
 
 /**
  * Created by Dale Seng on 8/15/2016.
@@ -17,6 +21,8 @@ public class KnurderApplication extends Application {
     public static boolean oldListCheck = true;
     public static boolean reviewUploadWarning = true;
     private static Cursor mCursor;
+
+    private static final Semaphore tutorialLock = new Semaphore(1,true);
 
     private static String mPresentationMode;
     private static Context mContext;
@@ -30,6 +36,7 @@ public class KnurderApplication extends Application {
     public static void setContext(Context context) {
         mContext = context;
     }
+    private static boolean firstTime = true;
 
     public static boolean checkContext() {
         return mContext != null;
@@ -68,6 +75,12 @@ public class KnurderApplication extends Application {
         mWebUpdateLocked =  false;      // Release the lock
     }
 
+    public static boolean isFirstTime() {
+        boolean returnValue = firstTime;
+        firstTime = false;
+        return returnValue;
+    }
+
     @Override
     public void onTerminate() {
         Log.v(TAG, "onTerminate() has been called.");
@@ -86,6 +99,21 @@ public class KnurderApplication extends Application {
         }
 
         Log.v(TAG, "KnurderApplication onCreate.");
+    }
+
+    // Get the lock and release after 1 second. Prevents multiple tutorials from starting on multi-loaded fragment.
+    public static boolean getTutorialLock() {
+        if (!tutorialLock.tryAcquire()) return false;
+        else {
+            final Handler handler = new Handler(Looper.getMainLooper());
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    tutorialLock.release();
+                }
+            }, 1000);
+            return true;
+        }
     }
 
     public static void setCursor(Cursor cursor) {

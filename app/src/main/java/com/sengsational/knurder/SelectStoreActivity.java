@@ -59,7 +59,7 @@ public class SelectStoreActivity extends ListActivity {
 
         String selectedItem = (String)getListView().getItemAtPosition(position);
         String selectedNumber = StoreNameHelper.getInstance().getStoreNumberFromName(selectedItem);
-        String previousStoreName = prefs.getString(TopLevelActivity.STORE_NAME, TopLevelActivity.DEFAULT_STORE_NAME);
+        String previousStoreName = prefs.getString(TopLevelActivity.STORE_NAME_LIST, TopLevelActivity.DEFAULT_STORE_NAME);
         Log.v("sengsational", "selectedItem: " + selectedItem + "  existingItem: " + previousStoreName);
         if (previousStoreName.equals(selectedItem)){
             Toast.makeText(this, "Same Location!", Toast.LENGTH_SHORT);
@@ -67,8 +67,8 @@ public class SelectStoreActivity extends ListActivity {
         } else {
             SharedPreferences.Editor edit = prefs.edit();
             Log.v("sengsational","store name put " + selectedItem);
-            edit.putString(TopLevelActivity.STORE_NAME, selectedItem);
-            edit.putString(TopLevelActivity.STORE_NUMBER, selectedNumber);
+            edit.putString(TopLevelActivity.STORE_NAME_LIST, selectedItem);
+            edit.putString(TopLevelActivity.STORE_NUMBER_LIST, selectedNumber);
             edit.apply();
             mIntent.putExtra("store_name", selectedItem);
             mIntent.putExtra("store_number", selectedNumber);

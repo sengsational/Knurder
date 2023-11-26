@@ -72,10 +72,8 @@ public class LoadDataHelper {
 
         HttpGet request = new HttpGet(url);
 
-        //request.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0");
-        //request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        request.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0");
-        request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        request.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0");
+        request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         request.setHeader("Accept-Language", "en-US,en;q=0.5");
 
         Log.v("sengsational", "Sending 'GET' request to URL : " + url); // Run Order #06
@@ -136,8 +134,8 @@ public class LoadDataHelper {
 
         HttpGet request = new HttpGet(imageUrl);
 
-        request.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0");
-        request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        request.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0");
+        request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         request.setHeader("Accept-Language", "en-US,en;q=0.5");
 
         Log.v("sengsational", "Sending 'GET' request to URL : " + imageUrl); // Run Order #06
@@ -384,7 +382,7 @@ public class LoadDataHelper {
 
 
     // POST THE FORM TO THE SERVER
-    HttpResponse sendPost(String url, List<NameValuePair> postParams, CloseableHttpClient httpclient, String postType, BasicCookieStore cookieStore) throws Exception {
+    HttpResponse sendPost(String url, List<NameValuePair> postParams, CloseableHttpClient httpclient, String postType, BasicCookieStore cookieStore, int timeoutSeconds) throws Exception {
 
         CloseableHttpResponse response = null;
 
@@ -413,8 +411,8 @@ public class LoadDataHelper {
 
         // add header
         post.setHeader("Host", "www.beerknurd.com");
-        post.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0");
-        post.setHeader("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        post.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0");
+        post.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         post.setHeader("Accept-Language", "en-US,en;q=0.5");
         post.setHeader("Cookie", cookieNvp.toString());
         post.setHeader("Connection", "keep-alive");
@@ -467,15 +465,22 @@ public class LoadDataHelper {
                 Log.v("sengsational", "No cookies! !"); // Run Order #13
             } else {
                 for (int i = 0; i < cookiesList.size(); i++) {
-                    Log.v("sengsational", "->" + cookiesList.get(i).toString());
+                    Log.v("sengsational", "Cookie->" + cookiesList.get(i).toString());
                 }
             }
         }
 
         Log.v("sengsational", "\nSending 'POST' request to URL : " + url);
 
+        int connectionTimeoutMs = timeoutSeconds * 1000;
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(connectionTimeoutMs)
+                .setConnectTimeout(connectionTimeoutMs)
+                .setSocketTimeout(connectionTimeoutMs)
+                .build();
+        post.setConfig(requestConfig);
 
-        response = httpclient.execute(post);
+        response = httpclient.execute(post); //Blocks and throws exception if it times-out
 
         int responseCode = response.getStatusLine().getStatusCode();
 
@@ -485,6 +490,17 @@ public class LoadDataHelper {
 
         if (responseCode == 302) {
             manage302(responseCode, response, postParams, httpclient);
+        }
+
+        boolean printEntirePageForDebug = false;
+        if (printEntirePageForDebug) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+            String read = null;
+            StringBuffer sb = new StringBuffer();
+            while((read = br.readLine()) != null) {
+                sb.append(read);
+            }
+            Log.v("sengsational","\n\n\nHTTP\n\n\n" + sb.toString() + "\n\n\nHTTPEND");
         }
 
         return response;
@@ -505,8 +521,8 @@ public class LoadDataHelper {
 
         // add header
         post.setHeader("Host", "www.saucerknurd.com");
-        post.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0");
-        post.setHeader("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        post.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0");
+        post.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         post.setHeader("Accept-Language", "en-US,en;q=0.5");
         post.setHeader("Accept-Encoding", "gzip, deflate");
         post.setHeader("Connection", "keep-alive");

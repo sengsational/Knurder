@@ -28,8 +28,10 @@ import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
 
 import static com.sengsational.knurder.KnurderApplication.getContext;
 import static com.sengsational.knurder.TopLevelActivity.DEFAULT_STORE_NAME;
-import static com.sengsational.knurder.TopLevelActivity.STORE_NAME;
+import static com.sengsational.knurder.TopLevelActivity.STORE_NAME_LIST;
 import static com.sengsational.knurder.TopLevelActivity.USER_NAME;
+import static com.sengsational.knurder.TopLevelActivity.USER_NUMBER;
+import static com.sengsational.knurder.TopLevelActivity.prefs;
 
 /**
  * Created by Dale Seng on 5/30/2016.
@@ -48,13 +50,20 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
     private HttpResponse nLastResponse = null;
     private String nErrorMessage = null;
 
-    @Override public void getTastedListFromWeb(final String authenticationName, String password, String mou, String savePassword, final String storeNumber, final WebResultListener listener) {
+    public void getTastedListFromWeb(final String authenticationName, String password, String mou, String savePassword, final String storeNumber, final WebResultListener listener, final DataView dataView) {
             nStoreNumber = storeNumber;
             nAuthenticationName = authenticationName;
             nPassword = password;
             nMou = mou;
             nSavePassword = savePassword;
             nListener = listener;
+
+            if (dataView != null) {
+                Log.v(TAG, "dataView:" + dataView.getClass().getName());
+                dataView.showProgress(true);
+            } else {
+                Log.v("sengsational", "TastedListPresenterImpl.getTastedList() dataView was null");
+            }
             this.execute((Void) null);
     }
 
@@ -121,29 +130,43 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 Log.v(TAG, "doInBackground is accessing web update lock.");
             } while (!KnurderApplication.getWebUpdateLock(TAG)); // if lock unavailable, this will delay 1/2 second up to 10 seconds, then release.
 
-            // >>>Log in<<<< and get the user's statistics page
-            String statsWebPage = pullUserStatsPage();
-            if(statsWebPage == null){
-                nListener.onError("login data not found");
-                nErrorMessage = "Did not get logged into the UFO site.";
-                return false;
-            }
+            String[] userDataNvp = null;
+            String userNumberFromPrefs = prefs.getString(USER_NUMBER, "");
 
-            String[] userDataNvp = getUserDataNvp(statsWebPage); //  userName (what they called themselves), tastedCount, cardValue, loadedUser (the 5 digit key for this user)
-            if(userDataNvp == null || nLastResponse == null) {
-                nListener.onError("user data not found.");
-                nErrorMessage = "Not able to get logged into the UFO site.  Use a web browser to validate you've got the right card number, password, matching saucer location, and appropriate MOU setting.";
-                if ("1".equals(nMou)) nErrorMessage += " Are you really MOU??";
-                return false;
-            }else {
-                String userName = userDataNvp[0].split("=")[1];
-                String tastedCount = userDataNvp[1].split("=")[1];
-                nListener.saveValidCredentials(nAuthenticationName, nPassword, nSavePassword, nMou, nStoreNumber, userName, tastedCount);
+            boolean includeLogon = true; //When I took this out, it was faster, but the user stats were not populated.  This is bad: total tasted was not populated, nor was user name.
+            if (includeLogon) {
+                // >>>Log in<<<< and get the user's statistics page
+                // BLOCKS and returns null if it timed-out
+                // ------     ----------------------------
+                String statsWebPage = pullUserStatsPage();
+                if(statsWebPage == null){
+                    nListener.onError("login data not found");
+                    nErrorMessage = "Did not get logged into the UFO site.";
+                    return false;
+                }
+                userDataNvp = getUserDataNvp(statsWebPage); //  userName (what they called themselves), tastedCount, cardValue, loadedUser (the 5 digit key for this user)
+                if(userDataNvp == null || nLastResponse == null) {
+                    nListener.onError("user data not found.");
+                    nErrorMessage = "Not able to get logged into the UFO site.  Use a web browser to validate you've got the right card number, password, matching saucer location, and appropriate MOU setting.";
+                    if ("1".equals(nMou)) nErrorMessage += " Are you really MOU??";
+                    return false;
+                }else {
+                    String userName = userDataNvp[0].split("=")[1];
+                    String tastedCount = userDataNvp[1].split("=")[1];
+                    nListener.saveValidCredentials(nAuthenticationName, nPassword, nSavePassword, nMou, nStoreNumber, userName, tastedCount);
+                }
             }
 
             // Get the tasted page
             nListener.sendStatusToast("Requested your tasted list. Waiting...", Toast.LENGTH_SHORT);
-            String tastedWebPage = pullTastedPage(userDataNvp[3]);
+            String tastedWebPage = null;
+            if (userDataNvp != null) {
+                tastedWebPage = pullTastedPage(userDataNvp); // this method with String[] parameter will access index 3 to get the userNumber
+            } else {
+                if (!"".equals(userNumberFromPrefs)) {
+                    tastedWebPage = pullTastedPage(userNumberFromPrefs); // this method with String parameter will use userNumber directly
+                }
+            }
             if(tastedWebPage == null) {
                 nListener.onError("tasted data not found");
                 nErrorMessage  = "Problem getting your tasted list.";
@@ -193,16 +216,24 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
         return true;
     }
 
-    private String pullTastedPage(String userNumberNvp) {
+    private String pullTastedPage(String[] userDataNvp) {
         String userNumber = nStoreNumber;
-        try {
-            String[] nvp = userNumberNvp.split("=");
-            userNumber = nvp[1].trim();
-        } catch (Throwable t) {/* doesnt matter... still works with store number */}
+        if (userDataNvp != null) {
+            String userNumberNvp = userDataNvp[3];
+            try {
+                String[] nvp = userNumberNvp.split("=");
+                userNumber = nvp[1].trim();
+            } catch (Throwable t) {/* doesnt matter... still works with store number IF logged in */}
+        }
+        return pullTastedPage(userNumber);
+    }
+
+    private String pullTastedPage(String userNumber) {
         String beersTastedPage = null;
         try {
-            int timeoutSeconds = 40;
+            int timeoutSeconds = 90;
             beersTastedPage = LoadDataHelper.getPageContent(("https://www.beerknurd.com/api/tasted/list_user/" + userNumber), nLastResponse, nHttpclient, nCookieStore, timeoutSeconds);  //<<<<<<<<<<<<<<<<<PULL TASTED<<<<<<<<<<<<<<<<<<<
+            prefs.edit().putString(USER_NUMBER, userNumber).apply();
         } catch (Exception e) {
             Log.e("sengsational", "Could not get tastedListPage. " + e.getMessage());
             nListener.sendStatusToast(e.getMessage(), Toast.LENGTH_LONG);
@@ -389,7 +420,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 String reviewText = cursor.getString(2);
                 String timestamp = cursor.getString(3);
                 String beerName = cursor.getString(4);
-                String saucerName = prefs.getString(STORE_NAME, DEFAULT_STORE_NAME);
+                String saucerName = prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME);
                 String userName = prefs.getString(USER_NAME, "");
 
 
@@ -484,8 +515,12 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 
             Log.v("sengsational", "doInBackground() Got form parameters from first page.  Logging in with " + nAuthenticationName + " " + nPassword + " " + nMou + " " + nStoreNumber); // Run Order #17
             // Added https
-            nListener.sendStatusToast("Request sent.  Waiting for logon...", Toast.LENGTH_SHORT);
-            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/user", postParams, nHttpclient, "logon", nCookieStore);                         //<<<<<<<<<<<<SUBMIT LOGIN FORM PAGE<<<<<<<<<<<<<<<<
+            nListener.sendStatusToast("Request sent.  Might take a LONG time!!! Waiting for logon...", Toast.LENGTH_LONG);
+
+            // The following sendPost() BLOCKS and THROWS an exception if the page times-out
+            //                          ------     -----------------------------------------
+            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/user", postParams, nHttpclient, "logon", nCookieStore, 240);                         //<<<<<<<<<<<<SUBMIT LOGIN FORM PAGE<<<<<<<<<<<<<<<<
+
             userStatsPage = LoadDataHelper.getResultBuffer(nLastResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
             nListener.sendStatusToast("Log on completed OK.", Toast.LENGTH_SHORT);
             Log.v("sengsational", "doInBackground() Sent form with fields filled-in.  Should be logged-in now."); // Run Order #22
@@ -505,7 +540,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             List<NameValuePair> postParams = LoadDataHelper.getInstance().getReviewFormParams(reviewFormPage, stars, reviewText, timestamp, saucerName, beerName, userName);
             Log.v(TAG, "got " + postParams.size() + " params from review form page.");
             //try {Log.v(TAG, "Sleeping 5 seconds to see if this helps the post process."); Thread.sleep(5000);} catch (Exception e) {}
-            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/node/" + reviewId + "/edit", postParams, nHttpclient, "review", nCookieStore);
+            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/node/" + reviewId + "/edit", postParams, nHttpclient, "review", nCookieStore, 45);
             afterPostPage = LoadDataHelper.getResultBuffer(nLastResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
             successful = !afterPostPage.contains("Error message");
             if (!successful) {
@@ -623,5 +658,5 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 }
 
 interface TastedListInteractor {
-    void getTastedListFromWeb(final String authenticationName, final String password, final String savePassword, final String mou,  final String storeNumber, final WebResultListener listener);
+    void getTastedListFromWeb(final String authenticationName, final String password, final String savePassword, final String mou,  final String storeNumber, final WebResultListener listener, final DataView dataView);
 }

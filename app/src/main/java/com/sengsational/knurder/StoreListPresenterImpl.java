@@ -1,5 +1,6 @@
 package com.sengsational.knurder;
 
+import android.content.Context;
 import android.util.Log;
 
 /**
@@ -17,11 +18,11 @@ public class StoreListPresenterImpl implements StoreListPresenter {
 
     // Implementations for StoreListPresenter
     @Override
-    public void getStoreList(String storeNumber, boolean resetPresentation) {
+    public void getStoreList(String storeNumber, boolean resetPresentation, Context context) {
         boolean fieldsAreValid = true; // TODO: implement this
         if (fieldsAreValid) {
             // Run Async Task (does not block)
-            new StoreListInteractorImpl().getStoreListFromWeb(storeNumber, webResultListener, resetPresentation);
+            new StoreListInteractorImpl().getStoreListFromWeb(storeNumber, webResultListener, resetPresentation, context);
 
             // Call show progress in the view object
             if (dataView != null) dataView.showProgress(true);
@@ -39,7 +40,7 @@ public class StoreListPresenterImpl implements StoreListPresenter {
 }
 
 interface StoreListPresenter {
-    void getStoreList(String storeNumber, boolean resetPresentation);
+    void getStoreList(String storeNumber, boolean resetPresentation, Context context);
     void onDestroy();
 }
 

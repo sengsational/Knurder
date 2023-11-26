@@ -155,11 +155,11 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
         paramList.add(new BasicNameValuePair("UFO", TopLevelActivity.prefs.getString(TopLevelActivity.AUTHENTICATION_NAME, "")));
         paramList.add(new BasicNameValuePair("FirstName", TopLevelActivity.prefs.getString(TopLevelActivity.FIRST_NAME, "")));
         paramList.add(new BasicNameValuePair("LastName", TopLevelActivity.prefs.getString(TopLevelActivity.LAST_NAME, "")));
-        paramList.add(new BasicNameValuePair("homestore", TopLevelActivity.prefs.getString(TopLevelActivity.STORE_NAME, "")));
+        paramList.add(new BasicNameValuePair("homestore", TopLevelActivity.prefs.getString(TopLevelActivity.STORE_NAME_LIST, "")));
 
         String quizPage = null;
         try {
-            HttpResponse quizResponse = LoadDataHelper.getInstance().sendQuizPost("http://www.saucerknurd.com/glassnite/quiz/", paramList, nHttpclient);
+            HttpResponse quizResponse = LoadDataHelper.getInstance().sendQuizPost("https://www.saucerknurd.com/glassnite/quiz/", paramList, nHttpclient);
             quizPage = LoadDataHelper.getResultBuffer(quizResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
         } catch (Exception e) {
             Log.e("sengsational", "Could not get quizPage. " + e.getMessage());

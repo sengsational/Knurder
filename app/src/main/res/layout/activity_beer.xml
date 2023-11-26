@@ -19,25 +19,37 @@
             tools:context=".BeerSlideActivity"
             tools:showIn="@layout/activity_beer">
 
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ufo_logo1"
-                android:id="@+id/highlighted"
-                android:gravity="left"
-                android:visibility="invisible"
-                android:layout_below="@+id/beername"/>
-
             <TextView
-                android:id="@+id/beername"
+                android:id="@+id/queuedMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
                 android:gravity="center_horizontal"
                 android:textSize="40dp"
-                tools:text="Highland Early's Hoppy Wheat"
-                />
+                android:visibility="gone"
+                android:textStyle="bold"
+                android:textColor="@color/colorIconActiveLight"
+                tools:text="Queued for\n'SENGSATIONAL':" />
+
+            <TextView
+                android:id="@+id/beername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/queuedMessage"
+                android:gravity="center_horizontal"
+                android:textSize="40dp"
+                tools:text="Highland Early's Hoppy Wheat" />
+
+            <ImageView
+                android:id="@+id/highlighted"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_below="@+id/beername"
+                android:gravity="left"
+                android:src="@drawable/ufo_logo1"
+                android:visibility="invisible" />
+
             <RelativeLayout
                 android:id="@+id/size_price_area"
                 android:layout_width="40dp"

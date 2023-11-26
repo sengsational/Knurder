@@ -17,9 +17,6 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
 import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
@@ -42,11 +39,13 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
     private boolean nResetPresentation;
     private String nErrorMessage = null;
     private boolean mWebUpdateLock;
+    private Context nContext;
 
-    @Override public void getStoreListFromWeb(final String storeNumber, final WebResultListener listener, boolean resetPresentation) {
+    @Override public void getStoreListFromWeb(final String storeNumber, final WebResultListener listener, boolean resetPresentation, Context context) {
             nStoreNumber = storeNumber;
             nListener = listener;
             nResetPresentation = resetPresentation;
+            nContext = context;
             this.execute((Void) null);
     }
 
@@ -154,12 +153,11 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 }
             }
 
-            /************* START: THIS IS TO PULL MENU DATA FROM UNTAPPD ***************/
+            /* START: THIS IS TO PULL MENU DATA FROM UNTAPPD ************** */
             boolean menuDataAdded = false;
             try {
-                Context context = KnurderApplication.getContext();
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-                String untappdDataUrlString = UntappdHelper.getUntappdUrlForStoreNumber(nStoreNumber);
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(nContext);
+                String untappdDataUrlString = UntappdHelper.getUntappdUrlForStoreNumber(nStoreNumber, nContext);
                 if(!"".equals(untappdDataUrlString)) {
                     boolean skipTheRest = false;
                     // START NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
@@ -184,9 +182,9 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                     }
                     // Match the untappd list with the saucer tap list
                     nListener.sendStatusToast("Matching untappd list with saucer list...", Toast.LENGTH_SHORT);
-                    OcrScanHelper.getInstance().matchUntappdItems(untappdItems, context);
+                    OcrScanHelper.getInstance().matchUntappdItems(untappdItems, nContext);
                     // Save the results
-                    int[] results = OcrScanHelper.getInstance().getResults(context);
+                    int[] results = OcrScanHelper.getInstance().getResults(nContext);
                     // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
                     // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImple.doInBackground()
                     menuDataAdded = true;
@@ -352,6 +350,11 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
     private boolean manageEntriesNotJustRefreshed(String nStoreNumber) {
         // All currently active beers from this store now have ACTIVE set to 'T'
         // This method seeks to disposition those entries still remaining in the ACTIVE = 'D' state.
+
+        // Active T == entry has just validated as active
+        // ACTIVE D == not determined
+        // ACTIVE F == not active
+
         SQLiteDatabase db = null;
         try {
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
@@ -361,6 +364,13 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             // First, Prevent inactive tasted from getting deleted (we never delete tasted in the store list process).
             // Remove the 'D' from tasted beers that are not active.  This will prevent them from getting deleted, below.
             db.execSQL("update UFO set ACTIVE = 'F' where TASTED = 'T' and ACTIVE='D'");
+
+            // First "part B": as an additional first step, manage the transition to using Untappd.
+            // Users may have tasted with glass size and price, but no untappd beer number.
+            // Because glass size and price has been declared as indicator for going to untappd,
+            // we must remove glass size and price if untappd number not populated.
+            db.execSQL("update UFO set GLASS_SIZE = null where TASTED = 'T' and ACTIVE = 'F' and UNTAPPD_BEER is null");
+            db.execSQL("update UFO set GLASS_PRICE = null where TASTED = 'T' and ACTIVE = 'F' and UNTAPPD_BEER is null");
 
             // Second, Prevent inactive flagged from getting deleted.  If the user has something flagged, let them remove it instead of the process of updating.
             // Remove the 'D' from flagged beers that are not active.  This will prevent them from getting deleted, below.
@@ -462,6 +472,6 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
 }
 
 interface StoreListInteractor {
-    void getStoreListFromWeb(String storeNumber, WebResultListener listener, boolean resetPresentation);
+    void getStoreListFromWeb(String storeNumber, WebResultListener listener, boolean resetPresentation, Context context);
 }
 

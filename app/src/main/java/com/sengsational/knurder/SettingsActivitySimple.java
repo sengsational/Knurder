@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
@@ -17,6 +18,9 @@ import androidx.appcompat.app.AppCompatDelegate;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 import static com.sengsational.knurder.BeerSlideActivity.MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE;
 import static com.sengsational.knurder.BeerSlideActivity.PREF_RATE_BEER_TUTORIAL;
@@ -33,7 +37,7 @@ import static com.sengsational.knurder.RecyclerSqlbListActivity.PREF_ON_QUE_TUTO
 import static com.sengsational.knurder.RecyclerSqlbListActivity.PREF_SHAKER_TUTORIAL;
 import static com.sengsational.knurder.TopLevelActivity.NEW_FEATURE_ALERT_MESSAGE;
 import static com.sengsational.knurder.TopLevelActivity.SAVE_PICTURE_EXTERNAL;
-import static com.sengsational.knurder.BeerSlideFragment.PREF_DETAILS_TUTORIAL;
+
 
 /**
  * Created by Dale Seng on 6/4/2016.
@@ -43,26 +47,40 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
 
     private final SettingsActivitySimple settingsActivitySimple = this;
     private SwitchPreference mAllowPicturesSwitchPreference;
-    private boolean mOriginalDarkModeSetting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-
         addPreferencesFromResource(R.xml.pref_general);
-        mOriginalDarkModeSetting = PreferenceManager.getDefaultSharedPreferences(settingsActivitySimple).getBoolean("dark_mode_switch", false);
+        Log.v(TAG, "onCreate()");
+
+        // the first time the settings comes up, it does not apply dark mode - this is a hack, yes.
+        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        //if (prefs.getBoolean("dark_mode_switch", false) && KnurderApplication.isFirstTime()){
+        //    setTheme(R.style.AppTheme_MaterialDark);
+        //    Log.v(TAG, "dark applied");
+        //}
 
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        Log.v(TAG, "onPause()");
+    }
+
+    @Override
     protected void onStop() {
-        if (PreferenceManager.getDefaultSharedPreferences(settingsActivitySimple).getBoolean("dark_mode_switch", false) != mOriginalDarkModeSetting) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(settingsActivitySimple);
-            SharedPreferences.Editor prefsEdit = prefs.edit();
-            prefsEdit.putBoolean("dark_mode_has_changed", true);
-            prefsEdit.apply();
-        }
+        Log.v(TAG, "onStop()");
         super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.v(TAG, "onResume()");
+        // Fix for situation where the very first time a user in dark mode goes to settings, it's light mode.
+        if (KnurderApplication.isFirstTime()) new Handler().postDelayed(this::recreate, 1);
     }
 
     @Override
@@ -92,12 +110,15 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
             builder.create().show();
         }else if ("dark_mode_switch".equals(preference.getKey())) {
             if (((SwitchPreference)preference).isChecked()) { //They are turning it on
+                Log.v("sengsational", "dark mode switch pressed Night YES.");
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
             } else{ //They are turning it off
+                Log.v("sengsational", "dark mode switch pressed Night NO.");
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             }
-            Log.v("sengsational", "dark mode switch pressed.");
-            boolean newSetting = PreferenceManager.getDefaultSharedPreferences(settingsActivitySimple).getBoolean(preference.getKey(), false);
+            // DRS20230325 - make it show on the settings page immediately
+            startActivity(getIntent());
+            finish();
         } else if ("allow_external_picture_storage_switch".equals(preference.getKey())) {
             mAllowPicturesSwitchPreference = (SwitchPreference)preference;
             //Log.v(TAG, "The preference thing was: " + mAllowPicturesSwitchPreference.isChecked() + "... " + preference.getClass().getName() + " ... " + preference.toString());

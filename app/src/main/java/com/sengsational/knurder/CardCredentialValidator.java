@@ -15,11 +15,11 @@ public class CardCredentialValidator {
         this.webResultListener = new WebResultListenerImpl((DataView) dataView);
     }
 
-    public void validateCredentials(String cardNumber, String cardPin, String mou, String savePin, String storeNumber, String brewIds) {
+    public void validateCredentials(String cardNumber, String cardPin, String mou, String savePin, String storeNumber, String storeNumberOfList, String brewIds) {
         boolean fieldsAreValid = true; // TODO: implement this
         if (fieldsAreValid) {
             // Run Async Task (does not block)
-            new CardnumberCredentialInteractor().validateCardnumberCredentialsFromWeb(cardNumber, cardPin, mou, savePin, storeNumber, brewIds, webResultListener);
+            new CardnumberCredentialInteractor().validateCardnumberCredentialsFromWeb(cardNumber, cardPin, mou, savePin, storeNumber, storeNumberOfList, brewIds, webResultListener);
 
             // Call show progress in the view object
             if (dataView != null) dataView.showProgress(true);

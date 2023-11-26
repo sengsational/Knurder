@@ -21,11 +21,11 @@ public class TastedListPresenterImpl implements TastedListPresenter {
         boolean fieldsAreValid = true; // TODO: implement this
         if (fieldsAreValid) {
             // Run Async Task (does not block)
-            new TastedListInteractorImpl().getTastedListFromWeb(authenticationName, password, mou, savePassword, storeNumber, webResultListener);
+            new TastedListInteractorImpl().getTastedListFromWeb(authenticationName, password, mou, savePassword, storeNumber, webResultListener, dataView);
 
-            // Call show progress in the view object
-            if (dataView != null) dataView.showProgress(true);
-            else Log.v("sengsational", "TastedListPresenterImpl.getTastedList() dataView was null");
+            // MOVED TO INTERACTOR Call show progress in the view object
+            //if (dataView != null) dataView.showProgress(true);
+            //else Log.v("sengsational", "TastedListPresenterImpl.getTastedList() dataView was null");
         } else {
             dataView.showProgress(false);
         }

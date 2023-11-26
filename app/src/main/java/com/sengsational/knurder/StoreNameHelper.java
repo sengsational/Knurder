@@ -17,8 +17,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static com.sengsational.knurder.KnurderApplication.getContext;
-import static com.sengsational.knurder.TopLevelActivity.STORE_NAME;
-import static com.sengsational.knurder.TopLevelActivity.STORE_NUMBER;
+import static com.sengsational.knurder.TopLevelActivity.STORE_NUMBER_LIST;
 
 /**
  * Created by Owner on 5/23/2016.
@@ -200,7 +199,7 @@ public class StoreNameHelper {
 
     public static String getCurrentStoreNumber(String defaultStoreNumber) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-        return prefs.getString(STORE_NUMBER,defaultStoreNumber);
+        return prefs.getString(STORE_NUMBER_LIST,defaultStoreNumber);
     }
 
     public static String getCurrentStoreName() {

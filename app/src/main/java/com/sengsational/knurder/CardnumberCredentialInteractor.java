@@ -1,23 +1,26 @@
 package com.sengsational.knurder;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 //import android.support.annotation.NonNull;
 //import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Date;
 import java.util.List;
-import java.util.ListIterator;
 
 import cz.msebera.android.httpclient.HttpResponse;
 import cz.msebera.android.httpclient.NameValuePair;
-import cz.msebera.android.httpclient.cookie.Cookie;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
 import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
@@ -34,6 +37,7 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
     private BasicCookieStore nCookieStore = null;
     private WebResultListener nListener;
     private String nStoreNumber = null;
+    private String nStoreNumberOfList = null; // If they're not at the store that issued their card, the destination for brews on que needs to be different.
     private String nCardnumber = null;
     private String nCardPin = null;
     private String nMou = null;
@@ -42,8 +46,9 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
     private HttpResponse nLastResponse = null;
     private String nErrorMessage = null;
 
-    public void validateCardnumberCredentialsFromWeb(final String cardNumber, String cardPin, String mou, String savePin, final String storeNumber, final String brewIds, final WebResultListener listener) {
+    public void validateCardnumberCredentialsFromWeb(final String cardNumber, String cardPin, String mou, String savePin, final String storeNumber, final String storeNumberOfList, final String brewIds, final WebResultListener listener) {
             nStoreNumber = storeNumber;
+            nStoreNumberOfList = storeNumberOfList;
             nCardnumber = cardNumber;
             nCardPin = cardPin;
             nMou = mou;
@@ -116,30 +121,54 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
             do { // This is here to prevent tasted and store lists from updating at the same time.  One will queue behind the other
                 Log.v(TAG, "doInBackground is accessing web update lock.");
             } while (!KnurderApplication.getWebUpdateLock(TAG)); // if lock unavailable, this will delay 1/2 second up to 10 seconds, then release.
-
             // >>>Attempt to validate card number with pin
             String kioskLoggedInPage = validateCardCredentials();
             if(kioskLoggedInPage == null || !kioskLoggedInPage.contains("member-header")){
                 nListener.onError("card number login data not found");
-                nErrorMessage = "Card number not authenciated.";
+                nErrorMessage = "Card number not authenticated.";
                 return false;
             }
 
             if (nBrewIds != null && nBrewIds.contains(",")) {
                 String currentQueuePage = LoadDataHelper.getPageContent("https://www.beerknurd.com/tapthatapp/memberQueue.php", null, nHttpclient, nCookieStore);
-                String currentQueuedBeerIds = LoadDataHelper.getCurrentQueuedBeerNamesFromHtml(currentQueuePage);
-                Log.v(TAG, "currentQueuedBeerIds [" + currentQueuedBeerIds + "]");
-                String[] brewIdArray = nBrewIds.split(",");
-                for (String brewId : brewIdArray) {
-                    if (currentQueuedBeerIds.contains(brewId)) continue;
+                String beerIdsCurrentlyOnTheWebQueue = LoadDataHelper.getCurrentQueuedBeerNamesFromHtml(currentQueuePage);
+                Log.v(TAG, "beerIdsCurrentlyOnTheWebQueue [" + beerIdsCurrentlyOnTheWebQueue + "]");
+                // 1) Set all database items to queued = 'F',
+                // 2) set ONLY those in beerIdsCurrentlyOnTheWebQueue as queued = 'T'
+                String[] brewIdsFlaggedInTheApp = nBrewIds.split(",");
+                resetQueued(beerIdsCurrentlyOnTheWebQueue);  // After this, our CURRENTLY_QUEUED is aligned with the web.
+
+                String storeName = StoreNameHelper.getInstance().getStoreNameFromNumber(nStoreNumberOfList, null);
+                StringBuffer brewIdsNeedingTimestamps = new StringBuffer();
+                int sentCount = 0;
+                for (String appFlaggedBrewId : brewIdsFlaggedInTheApp) {
+                    // appFlagBrewId might be already tasted.  The saucer does not allow already tasted to be queued.
+                    if (brewIdIsTasted(appFlaggedBrewId)) {
+                        continue;
+                    }
+                    // appFlaggedBrewId's can exist on the web or not.
+                    // If the web list contains one that is in our list (item is in both), we do nothing with it here.
+                    if (beerIdsCurrentlyOnTheWebQueue.contains(appFlaggedBrewId)) {
+                        continue;
+                    }
+                    // appFlaggedBrewId is NOT on in the web que.  It's missing on the web.
+                    // But we only add it if it doesn't have a current time stamp.
+                    if (hasCurrentTimestamp(appFlaggedBrewId)) {
+                        continue;
+                    }
+
+                    brewIdsNeedingTimestamps.append(appFlaggedBrewId).append(",");
                     try {
-                        String queueUrl = "https://www.beerknurd.com/tapthatapp/queue-up-brew.php?action=member&brewID=" + brewId + "&storeID=" + nStoreNumber;
+                        String queueUrl = "https://www.beerknurd.com/tapthatapp/queue-up-brew.php?action=member&brewID=" + appFlaggedBrewId + "&storeID=" + nStoreNumberOfList;
                         String queueitupResultPage = LoadDataHelper.getPageContent(queueUrl, null, nHttpclient, nCookieStore);
                         Thread.sleep(500); // Try not to overdrive the saucer web site
+                        sentCount++;
                     } catch (Throwable t) {
                         Log.v(TAG, "ERROR: Failed to post brew ID " + t.getMessage());
                     }
                 }
+                nListener.sendStatusToast("Sent " + sentCount + (sentCount>1?" untasted beers to ":" untasted beer to ") + storeName + " queue.", Toast.LENGTH_SHORT);
+                setQueuedTimestamp(brewIdsNeedingTimestamps.toString());
             } else {
                 Log.v(TAG, "No BrewIds found " + nBrewIds);
             }
@@ -154,6 +183,116 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
         }
         Log.v(TAG, "Returning " + true + " from doInBackground");
         return true;
+    }
+
+    private boolean hasCurrentTimestamp(String appFlaggedBrewId) {
+        boolean hasCurrentTimeStamp = false;
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
+        Context context = KnurderApplication.getContext();
+        if (context == null) return false;
+
+        String queStamp = ""; //""1970 01 01 01 01";
+        try {
+            UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(context) ;
+            db = ufoDatabaseAdapter.openDb(context);                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
+            cursor = db.query("UFO", new String[] {"QUE_STAMP"}, "BREW_ID = ?", new String[] {appFlaggedBrewId}, null, null, null);
+            if (cursor.moveToFirst()) {
+                queStamp = cursor.getString(0);
+            }
+            cursor.close();
+            Log.v(TAG, "queStamp: " + queStamp);
+
+        } catch (SQLiteException e) {
+            Log.v(TAG, "Failed to access database " + e.getClass().getName() + " " + e.getMessage());
+        } finally {
+            try {cursor.close();} catch (Throwable t) {}
+            try {db.close();} catch (Throwable t) {}
+        }
+        if (queStamp != null && queStamp.length() > 0) {
+            try {
+                long ageInMs = new Date().getTime() - SaucerItem.qdf.parse(queStamp).getTime();
+                Log.v(TAG, "ageInMs " + ageInMs + " FOUR_HOURS " + SaucerItem.FOUR_HOURS + " queued [" + appFlaggedBrewId + "] queStamp [" + queStamp + "]");
+                if (ageInMs > 0 && ageInMs < SaucerItem.FOUR_HOURS) {
+                    Log.v(TAG, "Has current timestamp.");
+                    hasCurrentTimeStamp = true;
+                } else {
+                    Log.v(TAG, "Has older timestamp.");
+                }
+            } catch (Throwable t) {
+                Log.v(TAG, "ERROR: Failed to parse timestamp " + t.getClass().getName() + " " + t.getMessage());
+            }
+        } else {
+            Log.v(TAG, "Item " + appFlaggedBrewId + " had no timestamp.");
+        }
+        return hasCurrentTimeStamp;
+    }
+
+    private void resetQueued(String currentQueuedBeerIds) {
+        SQLiteDatabase db = null;
+        Context context = KnurderApplication.getContext();
+        if (context == null) return;
+        try {
+            UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(context) ;
+            db = ufoDatabaseAdapter.openDb(context);                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
+            // first clear the queued
+            db.execSQL("UPDATE UFO SET CURRENTLY_QUEUED = 'F'");
+            String[] brewIdArray = currentQueuedBeerIds.split(",");
+            for (String brewId: brewIdArray) {
+                Log.v(TAG, "updating [" + brewId + "] as queued" );
+                db.execSQL("UPDATE UFO SET CURRENTLY_QUEUED = 'T' WHERE BREW_ID ='" + brewId.trim() +"'");
+            }
+        } catch (SQLiteException e) {
+            Log.v(TAG, "Database error. " + e.getClass().getName() + e.getMessage());
+        } finally {
+            try {db.close();} catch (Throwable t) {}
+        }
+    }
+
+    private void setQueuedTimestamp(String brewIdsNeedingTimestamp) {
+        String dateString = SaucerItem.qdf.format(new Date());
+        SQLiteDatabase db = null;
+        Context context = KnurderApplication.getContext();
+        if (context == null) return;
+        try {
+            UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(context) ;
+            db = ufoDatabaseAdapter.openDb(context);                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
+            String[] brewIdArray = brewIdsNeedingTimestamp.split(",");
+            for (String brewId: brewIdArray) {
+                Log.v(TAG, "updating [" + brewId + "] with timestamp." );
+                db.execSQL("UPDATE UFO SET QUE_STAMP = '" + dateString + "' WHERE BREW_ID ='" + brewId.trim() +"'");
+                Log.v(TAG, "updating [" + brewId + "] as queued." );
+                db.execSQL("UPDATE UFO SET CURRENTLY_QUEUED = 'T' WHERE BREW_ID ='" + brewId.trim() +"'");
+            }
+        } catch (SQLiteException e) {
+            Log.v(TAG, "Database error. " + e.getClass().getName() + e.getMessage());
+        } finally {
+            try {db.close();} catch (Throwable t) {}
+        }
+    }
+
+    private boolean brewIdIsTasted(String appFlaggedBrewId) {
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
+        Context context = KnurderApplication.getContext();
+        if (context == null) return false;
+        String tasted = "?";
+        try {
+            UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(context) ;
+            db = ufoDatabaseAdapter.openDb(context);                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
+            cursor = db.query("UFO", new String[] {"TASTED"}, "BREW_ID = ?", new String[] {appFlaggedBrewId}, null, null, null);
+            if (cursor.moveToFirst()) {
+                tasted = cursor.getString(0);
+            }
+            cursor.close();
+            Log.v(TAG, "tasted: " + tasted);
+        } catch (SQLiteException e) {
+            Log.v(TAG, "Failed to access database " + e.getClass().getName() + " " + e.getMessage());
+        } finally {
+            try {cursor.close();} catch (Throwable t) {}
+            try {db.close();} catch (Throwable t) {}
+        }
+        return "T".equals(tasted);
     }
 
 
@@ -196,7 +335,7 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
             firstPostParms.add(new BasicNameValuePair("cardNum","%" + localStoreIdString + nCardnumber + "=?"));
 
             // Submitting the form with card number on it from the visitorMember page:
-            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/tapthatapp/kiosk.php", firstPostParms, nHttpclient, "cardnumber", nCookieStore);
+            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/tapthatapp/kiosk.php", firstPostParms, nHttpclient, "cardnumber", nCookieStore, 45);
 
             //String enterYourPinPage = LoadDataHelper.getResultBuffer(nLastResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
             //Log.v(TAG, "Should be 'Enter Your Pin' page\n" + enterYourPinPage);
@@ -210,7 +349,11 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
 
             // ? = %3F
             // % = %25
-            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/tapthatapp/signin.php?cd=%25" + localStoreIdString + nCardnumber + "=%3F", postParams, nHttpclient, "cardnumber", nCookieStore);                         //<<<<<<<<<<<<SUBMIT LOGIN FORM PAGE<<<<<<<<<<<<<<<<
+            String goodWay = "=%3F";
+            String appleWay = "%3D?&no=0";
+            String emptyWay = "";
+            nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/tapthatapp/signin.php?cd=%25" + localStoreIdString + nCardnumber + appleWay, postParams, nHttpclient, "cardnumber", nCookieStore, 45);                         //<<<<<<<<<<<<SUBMIT LOGIN FORM PAGE<<<<<<<<<<<<<<<<
+            //nLastResponse = LoadDataHelper.getInstance().sendPost("https://www.beerknurd.com/tapthatapp/signin.php", postParams, nHttpclient, "cardnumber", nCookieStore, 45);                         //<<<<<<<<<<<<SUBMIT LOGIN FORM PAGE<<<<<<<<<<<<<<<<
             credentialOkPage = LoadDataHelper.getResultBuffer(nLastResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
             Log.v("sengsational", "doInBackground() Sent form with fields filled-in.  Should be logged-in now."); // Run Order #22
             // Log.v(TAG, "response page from the post:\n" + credentialOkPage);

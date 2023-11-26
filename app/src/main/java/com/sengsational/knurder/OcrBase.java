@@ -2,6 +2,7 @@ package com.sengsational.knurder;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -27,7 +28,7 @@ import static com.sengsational.knurder.BeerSlideActivity.EXTRA_TUTORIAL_TYPE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TEXT_RESOURCE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TITLE_RESOURCE;
 import static com.sengsational.knurder.R.color.colorActivePrimary;
-import static com.sengsational.knurder.TopLevelActivity.STORE_NAME;
+import static com.sengsational.knurder.TopLevelActivity.STORE_NAME_LIST;
 
 public class OcrBase extends AppCompatActivity implements DataView {
     private static final String TAG = OcrBase.class.getSimpleName();
@@ -70,7 +71,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
         lightbulbSwitchView.getDrawable().setColorFilter(getResources().getColor(colorActivePrimary), PorterDuff.Mode.SRC_ATOP);
 
         locationTextView = (TextView)findViewById(R.id.location_text);
-        locationTextView.setText(getResources().getString(R.string.store_location_name, prefs.getString(STORE_NAME, "")));
+        locationTextView.setText(getResources().getString(R.string.store_location_name, prefs.getString(STORE_NAME_LIST, "")));
 
         menuItemCount = (TextView)findViewById(R.id.menu_item_count);
         menuItemCount.setText(getResources().getString(R.string.scanned_menu_item_text, prefs.getString(SCANNED_COUNT, "0")));
@@ -164,6 +165,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.v(TAG, "--------- OcrBase.onActivityResult with requestCode " + requestCode + " and resultCode " + resultCode);
+        Context listenerContext = getApplicationContext();
         if (requestCode == OCR_REQUEST) {
             Log.v(TAG, "Activity Result code " + resultCode + " being handled.  intent: " + intent);
 
@@ -194,7 +196,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
                     // From the recent intent (MenusPageInteractorImpl)
                     final String untappdDataUrlString = intent.getStringExtra("untappdUrlExtra");
                     if (untappdDataUrlString != null && !"".equals(untappdDataUrlString)) {
-                        String preferencesUntappdDataUrlString = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("");
+                        String preferencesUntappdDataUrlString = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("", this);
 
                         //DRS 20220802 - Add nag for them to send QR code.  This preference is to only ask once.
                         String oneTimeNagForQr = prefs.getString("oneTimeNagForQr","");
@@ -211,7 +213,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
                                     })
                                     .setPositiveButton("Email the Untappd URL", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int which) {
-                                            UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString);
+                                            UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString, listenerContext);
                                             Log.v("sengsational", "Email URL requested");
                                             Intent mailIntent = new Intent(Intent.ACTION_SEND);
                                             mailIntent.setType("message/rfc822");
@@ -235,7 +237,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
                             builder.setMessage("Would you like to save this data source, using it for " + StoreNameHelper.getCurrentStoreName() + " from now on?");
                             builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int id) {
-                                    UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString);
+                                    UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString, listenerContext);
                                 }
                             });
                             builder.setNegativeButton("No", new DialogInterface.OnClickListener() {

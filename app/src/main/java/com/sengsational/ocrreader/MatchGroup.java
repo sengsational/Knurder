@@ -4,6 +4,8 @@
  */
 package com.sengsational.ocrreader;
 
+import android.util.Log;
+
 import com.sengsational.knurder.ConcurrentHashSet;
 import com.sengsational.knurder.UntappdItem;
 
@@ -20,6 +22,7 @@ public class MatchGroup {
     private final ArrayList<MatchItem> mSaucerMatchItems = new ArrayList<>();
     private final ArrayList<MatchItem> mUntappdMatchItems = new ArrayList<>();
     private final ConcurrentHashSet<String[]> mFoundResults = new ConcurrentHashSet<>(100);
+    private static final String TAG = MatchGroup.class.getSimpleName();
 
     public MatchGroup load(List<String[]> allTapsNames, String storeNumber) {
         for (int i = 0; i < allTapsNames.size(); i++){
@@ -70,7 +73,7 @@ public class MatchGroup {
             while (matchIterator.hasNext()) {
                 MatchItem untappdItem = matchIterator.next();
                 comparer = new MatchComparer(saucerItem, untappdItem);
-                if (comparer.isFullyContained()) {
+                if (comparer.isFullyContained() || comparer.isHardMatch()) {
                     saucerItemsFound.add(saucerItem);
                     untappdItemsFound.add(untappdItem);
                     //System.out.println("MatchGroup.match() Found match " + comparer.getLastTechnique() + " : " +  saucerItem.getOriginal() + " <> " + untappdItem.getOriginal());
@@ -96,6 +99,7 @@ public class MatchGroup {
                     double score = fuzzyComparer.getFuzzyMatchScore();
                     if (score > highestScore) {
                         highestMatchComparer = fuzzyComparer;
+                        highestScore =score;
                     }
                 }
                 if (highestMatchComparer != null) {
@@ -122,9 +126,11 @@ public class MatchGroup {
     }
 
     ArrayList<MatchItem> getLeftoverSaucer() {
+        Log.v(TAG, "There were " + this.mSaucerMatchItems.size() + " saucer items not matched.");
         return this.mSaucerMatchItems;
     }
     ArrayList<MatchItem> getLeftoverUntappd() {
+        Log.v(TAG, "There were " + this.mUntappdMatchItems.size() + " intappd items not matched.");
         return this.mUntappdMatchItems;
     }
 

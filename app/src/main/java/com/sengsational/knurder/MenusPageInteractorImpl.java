@@ -282,24 +282,22 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 //System.out.println("DEBUG beer element [" + beer.html() + "]");
                 Element beerNameElement = beer.getElementsByClass(changableName + "-name").first();/*1*/ position=2;
                 if (beerNameElement != null) {
-                    Element paragraphElement = beerNameElement.getElementsByTag("p").first();/*2*/ position=3;
-                    if (paragraphElement != null) {
-                        Element anchorElement = paragraphElement.getElementsByTag("a").first();/*3*/ position=4;
-                        if (anchorElement != null) {
-                            beerName = anchorElement.text();/*4*/ position=5;
-                            beerNumber = getLastNumberFromAnchor(paragraphElement); position=6;
-                        }
+                    Element anchorElement = beerNameElement.getElementsByTag("a").first();/*3*/ position=4;
+                    if (anchorElement != null) {
+                        beerName = anchorElement.text();/*4*/ position=5;
+                        beerNumber = getLastNumberFromAnchor(beerNameElement); position=6;
                     }
                 }
 
                 try {
-                    Element abvElement = beer.getElementsByClass("abv-hideable").first(); position=7;
+                    Element metaElement = beer.getElementsByClass(changableName + "-meta").first();/*1*/ position=107;
+                    Element abvElement = metaElement.getElementsByClass(changableName + "-abv").first(); position=7;
                     abv = abvElement.text(); position =8;
                 } catch (Throwable t) {
                     // non-essential
                 }
 
-                Element breweryNameElement = beer.getElementsByClass("brewery-name-hideable").first(); position=9;
+                Element breweryNameElement = beer.getElementsByClass("brewery").first(); position=9;
                 if (breweryNameElement != null) {
                     breweryName = breweryNameElement.text(); position=10;
                     breweryNumber = getLastNumberFromAnchor(breweryNameElement);position=11;

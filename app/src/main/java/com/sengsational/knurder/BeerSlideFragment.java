@@ -24,9 +24,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.Date;
+
 import static com.sengsational.knurder.BeerSlideActivity.EXTRA_TUTORIAL_TYPE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TEXT_RESOURCE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TITLE_RESOURCE;
+import static com.sengsational.knurder.TopLevelActivity.ONE_DAY_IN_MS;
+import static com.sengsational.knurder.TopLevelActivity.USER_NAME;
 import static com.sengsational.knurder.UfoDatabaseAdapter.fractionTapsWithMenuData;
 
 
@@ -97,17 +101,25 @@ public class BeerSlideFragment extends Fragment {
             mCursorRecyclerViewAdapter = new MybCursorRecyclerViewAdapter(getActivity(), KnurderApplication.getCursor(getActivity()), false, false); //Pull cursor from the application class
             mCursorRecyclerViewAdapter.hasStableIds();
         }
+        if (KnurderApplication.getTutorialLock()) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+            boolean showTutorial =  prefs.getBoolean(PREF_DETAILS_TUTORIAL, true);
+            boolean hasUntappdUrl = !"".equals(UntappdHelper.getInstance().getUntappdUrlForCurrentStore("", getContext()));
+            if (savedInstanceState == null && hasUntappdUrl && showTutorial) {
 
-        boolean showTutorial =  PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREF_DETAILS_TUTORIAL, true);
-        if (savedInstanceState == null && showTutorial) {
-            Intent popTutorialIntent = new Intent(getContext(), PopTutorial.class);
-            popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.details_instructions);
-            popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.details_title);
-            popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_DETAILS_TUTORIAL);
-            startActivity(popTutorialIntent);
+                long lastListDate = prefs.getLong(TopLevelActivity.LAST_LIST_DATE, 0L);
+                long msSinceRefreshList = new Date().getTime() - lastListDate;
+                Intent popTutorialIntent = new Intent(getContext(), PopTutorial.class);
+                if (msSinceRefreshList > 3600000L) { // refresh older than one hour ago, so tell them to refresh
+                    popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.details_instructions_refresh_needed);
+                } else {
+                    popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.details_instructions);
+                }
+                popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.details_title);
+                popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_DETAILS_TUTORIAL);
+                startActivity(popTutorialIntent);
+            }
         }
-
-
     }
 
     @Override
@@ -182,6 +194,11 @@ public class BeerSlideFragment extends Fragment {
         String tastedState = modelItem.getTasted();
         String fontDeterminer = (newArrivalState!=null?newArrivalState:"F") + (tastedState!=null?tastedState:"F");
         ViewUpdateHelper.setNameTextStyle(fontDeterminer, (TextView)rootView.findViewById(R.id.beername));
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        String userName = prefs.getString(USER_NAME, "");
+        boolean darkMode = prefs.getBoolean("dark_mode_switch", false);
+        ViewUpdateHelper.setQueuedMessageInView((TextView)rootView.findViewById(R.id.queuedMessage), modelItem.getQueText(getContext()), userName, darkMode, getContext());
 
         final Context context = this.getContext();
         TextView description = (TextView)rootView.findViewById(R.id.description);
@@ -335,7 +352,7 @@ public class BeerSlideFragment extends Fragment {
         android.app.AlertDialog.Builder untappdProblemDialog = new android.app.AlertDialog.Builder(context);
         Float fractionUntappdPopulated = fractionTapsWithMenuData(storeNumber, context);
         Log.v(TAG, "fractionUnappdPopulated " + fractionUntappdPopulated);
-        boolean untappedUrlPresent = !UntappdHelper.getInstance().getUntappdUrlForCurrentStore("").equals("");
+        boolean untappedUrlPresent = !UntappdHelper.getInstance().getUntappdUrlForCurrentStore("", context).equals("");
 
         if (!untappedUrlPresent || fractionUntappdPopulated < 0.1f) {
             // Probably have never got menu info, so tell them how to scan the touchless QR code, which will populate untappd keys, and then enable untappd.
@@ -387,12 +404,13 @@ public class BeerSlideFragment extends Fragment {
         //Create a cursor to read the one record by database _id, passed here by EXTRA_ID
         try {
             Log.v("sengsational","Running query with id: " + id);
-            Log.v(TAG, "IS THIS METHOD UNUSED?");
-            Log.v(TAG, "IS THIS METHOD UNUSED?");
-            Log.v(TAG, "IS THIS METHOD UNUSED?");
-            Log.v(TAG, "IS THIS METHOD UNUSED?");
-            Log.v(TAG, "IS THIS METHOD UNUSED?");
-            Log.v(TAG, "IS THIS METHOD UNUSED?");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
+            Log.v(TAG, "THIS METHOD UNUSED!!!");
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
             db = ufoDatabaseAdapter.openDb(getActivity());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
             cursor = db.query("UFO", new String[] {"NAME", "DESCRIPTION", "ABV", "CITY", "STYLE", "CREATED", "HIGHLIGHTED", "NEW_ARRIVAL", "USER_REVIEW"}, "_id = ?", new String[] {Integer.toString(id)}, null, null, null);
@@ -460,6 +478,7 @@ public class BeerSlideFragment extends Fragment {
                     name.setTypeface(null, Typeface.NORMAL);
                     newArrivalView.setVisibility(View.GONE);
                 }
+
             }
         } catch (SQLiteException e) {
             Toast toast = Toast.makeText(this.getContext(), "Database unavailable. "+ e.getMessage(), Toast.LENGTH_LONG)   ;

@@ -8,6 +8,7 @@
     <string name="action_logout">Log Out</string>
     <string name="action_change_location">Change Location</string>
     <string name="action_scan_glass_size">Scan the Menu</string>
+    <string name="action_open_tasted_analytics">Tasted Analytics</string>
     <string name="action_rate_app">Rate This App</string>
     <string name="action_about">About</string>
     <string name="action_color">Test Color Picker</string>
@@ -37,7 +38,7 @@
         "NEW FEATURE: UNTAPPD"
     </string>
     <string name="new_feature_alert_message_alt">
-        <![CDATA[<p>The Saucer has listed it\'s beers on \"Untappd\".  You get the ability to see price, glass size, and to be able to check-in your beer, or just see what people are saying about the beer.  Just drill into a beer\'s detail page, then <b>long press the beer name.</b></p>]]>
+        <![CDATA[<p>Some Saucer locations have listed their beer offerings on \"Untappd\", but the URL for the %1$s store isn\'t currently set.  You can try to scan the \'Touchless\' QR code (on the table at the pub) to get the ability to open the beer in Untappd, and also see price, glass size.</p>]]>
     </string>
     <string name="take_picture_title">
         "Take a Picture and Label Your Beer"
@@ -70,13 +71,13 @@
         <![CDATA[<p>When you\'re looking at any list, you can <b>shake your phone</b> and a random beer will be selected for you!</p>]]>
     </string>
     <string name="onque_title">
-        "Send This List to the Bar"
+        "Send Untasted in this List to the Bar"
     </string>
     <string name="onque_instructions_with_auth">
-        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>They\'ve got it set up to require a separate authentication:<br>[<b>card number / pin</b>].<br>If you don\'t have that set-up, you can go to <i>www.beerknurd.com/tapthatapp/</i>, and the pin you use will become your pin.</p><p>If you know your credentials, just hit the three dots menu (above) and select \'Send to Brews on Queue\'</p>]]>
+        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>They\'ve got it set up to require a separate authentication:<br>[<b>card number / pin</b>].<br>If you don\'t have that set-up, you can go to <i>www.beerknurd.com/tapthatapp/</i>, and the pin you use will become your pin.</p><p>If you know your credentials, just hit the three dots menu (above) and select \'Send/Refresh Brews on Queue\'</p>]]>
     </string>
     <string name="onque_instructions">
-        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>It looks like you have the<br>[<b>card number / pin</b>] credentials set already so just hit the three dots menu (above) and select \'Send to Brews on Queue\'</p><p>For authentication issues, get it working on your web browser first at <i>www.beerknurd.com/tapthatapp/</i></p>]]>
+        <![CDATA[<p>If you\'d like, you can send the untasted in this list to \`Brews-On-Queue\`.</p><p>It looks like you have the<br>[<b>card number / pin</b>] credentials set already so just hit the three dots menu (above) and select \'Send/Refresh Brews on Queue\'</p><p>For authentication issues, get it working on your web browser first at <i>www.beerknurd.com/tapthatapp/</i></p>]]>
     </string>
     <string name="ocr_base_title">
         "Tap Menu Scanning 101"
@@ -91,8 +92,12 @@
         "Long Pressing"
     </string>
     <string name="details_instructions">
-        <![CDATA[<p>Long press the <b>description text</b>, and you can flag/unflag this beer.  If you see a price, then a long press on the <b>beer name<b>
-        will take you to this beer in Untappd.</p>]]>
+        <![CDATA[<p>Long press the <b>description text</b>, and you can flag/unflag this beer.</p><p>Long press the <b>beer name</b>,
+        and you will be taken to this beer in Untappd (for tap beers where you see a glass size and price).</p>]]>
+    </string>
+    <string name="details_instructions_refresh_needed">
+        <![CDATA[<p>Long press the <b>description text</b>, and you can flag/unflag this beer.</p><p>Long press the <b>beer name</b>,
+        and you will be taken to this beer in Untappd (for tap beers where you see a glass size and price).</p><p>Kegs kick, so use <b>REFRESH ACTIVE</b> in settings or when you open the app. This matches the tap wall with Untappd.  Taps with a link to Untappd will show glass size and price.</p>]]>
     </string>
     <string name="ocr_menu_title">
         "Aim at a Column and Hold Still"
@@ -204,6 +209,7 @@
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing cardno completions."</string>
     <string name="store_selection">Your Saucer</string>
+    <string name="store_selection_card">Choose the Saucer Location That Issued The Card</string>
     <string name="pref_alternate_logon_setting">Alternate Logon</string>
     <string name="pref_title_alternate_logon_setting">Use alternate logon</string>
     <string name="error_no_network_access">Not able to connect to a network.</string>
@@ -233,7 +239,7 @@
     <string name="action_sort_abv">Sort by ABV</string>
     <string name="action_sort_glass">Sort by Glass Size</string>
     <string name="action_sort_price">Sort by Price</string>
-    <string name="action_push_to_brews_on_queue">Send to Brews on Queue</string>
+    <string name="action_push_to_brews_on_queue">Send/Refresh Brews on Queue</string>
 
     <!-- DRS 20171129 - Added 3 for OCR base -->
     <string name="store_location_name">%1$s</string>
@@ -296,4 +302,10 @@
     <string name="prompt_card_pin">Enter the PIN associated with the UFO card</string>
     <string name="action_validate_card_credentials">GO</string>
 
+    <!--DRS 20230323 - added 2 for queued beer messages -->
+    <string name="queuedBeerMessage">[QUEUED]</string>
+    <string name="droppedFromQueMessage">[APPLIED]</string>
+
+    <string name="dark_mode">Dark Mode</string>
+    <string name="dark_mode_def_value">MODE_NIGHT_FOLLOW_SYSTEM</string>
 </resources>
