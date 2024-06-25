@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.Preference;
@@ -123,9 +124,10 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
             mAllowPicturesSwitchPreference = (SwitchPreference)preference;
             //Log.v(TAG, "The preference thing was: " + mAllowPicturesSwitchPreference.isChecked() + "... " + preference.getClass().getName() + " ... " + preference.toString());
             if (mAllowPicturesSwitchPreference.isChecked()) { // They are turning it on!!!
-                final String[] permissionStringArray = new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
+                String imagePermissionByApi = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)?Manifest.permission.READ_MEDIA_IMAGES:Manifest.permission.READ_EXTERNAL_STORAGE;
+                final String[] permissionStringArray = new String[] {imagePermissionByApi, Manifest.permission.CAMERA};
                 boolean permissionsBoolean = false;
-                int storageCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                int storageCheck = ContextCompat.checkSelfPermission(this, imagePermissionByApi);
                 int cameraCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
 
                 if (storageCheck == PackageManager.PERMISSION_GRANTED && cameraCheck == PackageManager.PERMISSION_GRANTED) {
@@ -139,7 +141,7 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
                     ActivityCompat.requestPermissions(this, permissionStringArray,MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
                 }
 
-                storageCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                storageCheck = ContextCompat.checkSelfPermission(this, imagePermissionByApi);
                 cameraCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
 
                 if (permissionsBoolean || (storageCheck == PackageManager.PERMISSION_GRANTED && cameraCheck == PackageManager.PERMISSION_GRANTED)) {
