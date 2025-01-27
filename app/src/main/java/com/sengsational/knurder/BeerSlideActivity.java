@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -187,6 +188,7 @@ public class BeerSlideActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         Log.v(TAG, "onActivityResult");
         switch (requestCode) {
             case POST_PICTURE_INTENT:
@@ -277,10 +279,10 @@ public class BeerSlideActivity extends AppCompatActivity {
     }
 
     private void runPermissionsForPictureIntent() {
-        final String[] permissionStringArray = new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
-        boolean permissionsBoolean;
-        //final String storagePermission =  Manifest.permission.WRITE_EXTERNAL_STORAGE;
-        int storageCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        String imagePermissionByApi = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)?Manifest.permission.READ_MEDIA_IMAGES:Manifest.permission.READ_EXTERNAL_STORAGE;
+        final String[] permissionStringArray = new String[] {imagePermissionByApi, Manifest.permission.CAMERA};
+        boolean permissionsBoolean = false;
+        int storageCheck = ContextCompat.checkSelfPermission(this, imagePermissionByApi);
         int cameraCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
 
         if (storageCheck == PackageManager.PERMISSION_GRANTED && cameraCheck == PackageManager.PERMISSION_GRANTED) {
@@ -289,18 +291,6 @@ public class BeerSlideActivity extends AppCompatActivity {
         } else if (ActivityCompat.shouldShowRequestPermissionRationale(this,  permissionStringArray[0]) || ActivityCompat.shouldShowRequestPermissionRationale(this,  permissionStringArray[1])) {
             Log.v(TAG, "At least one permission should show rationale");
             showSnackBar(this, R.string.external_storage_permission_rationale, permissionStringArray);
-            /*
-            final Activity anActivity = this;
-            Snackbar.make(new CoordinatorLayout(this),
-                    R.string.external_storage_permission_rationale,
-                    Snackbar.LENGTH_INDEFINITE)
-                    .setAction(android.R.string.ok, new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            ActivityCompat.requestPermissions(anActivity, permissionStringArray,MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
-                        }
-                    }).show();
-                    */
             permissionsBoolean = false;
         }  else {
             Log.v(TAG, "storageCheck was " + storageCheck + " and cameraCheck was " + cameraCheck + ".  Now requesting permissions.");
@@ -323,8 +313,8 @@ public class BeerSlideActivity extends AppCompatActivity {
             }
         });
         View snackbarView = snackbar.getView();
-        TextView snackTextView = (TextView) snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
-        snackTextView.setMaxLines(9);
+        //TextView snackTextView = (TextView) snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        //snackTextView.setMaxLines(9);
         snackbar.show();
     }
 
