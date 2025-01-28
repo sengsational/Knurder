@@ -14,6 +14,7 @@ import com.sengsational.knurder.UntappdItem;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,14 +44,14 @@ public class OcrScanHelper {
         mStoreNumber = prefs.getString(STORE_NUMBER_LIST,"13888");
     }
 
-    public int[] getResults(Context context) {
-        int populatedActiveTapsCount = updateFoundTaps(context);
-        Log.v(TAG, "mPouplatedActiveTapsCount " + populatedActiveTapsCount);
+    public int[] getResults(String tapsOrBottles, Context context) {
+        int populatedActiveItemsCount = updateFoundItems(tapsOrBottles, context);
+        Log.v(TAG, "mPouplatedActiveTapsCount " + populatedActiveItemsCount);
         Log.v(TAG, "mFoundResults.size() " + mFoundResults.size());
-        return new int[] {populatedActiveTapsCount, mFoundResults.size(), getAllTaps(context).size()};
+        return new int[] {populatedActiveItemsCount, mFoundResults.size(), getAllItems(tapsOrBottles, context).size()};
     }
 
-    public void matchUntappdItems(ArrayList<UntappdItem> items, Context context) {
+    public void matchUntappdItems(ArrayList<UntappdItem> items, String tapsOrBottles, Context context) {
         if (!mStoreNumber.equals(prefs.getString(STORE_NUMBER_LIST,"13888"))) {
             mStoreNumber = prefs.getString(STORE_NUMBER_LIST,"13888");
         }
@@ -73,9 +74,15 @@ public class OcrScanHelper {
             }
         }
         */
-
-        MatchGroup matchGroup = new MatchGroup().load(getAllTapsForMatching(context), mStoreNumber).load(items);
-        mFoundResults = matchGroup.match();
+        MatchGroup matchGroup = null;
+        if (tapsOrBottles.contains("taps")) {
+            matchGroup = new MatchGroup().load(getAllItemsForMatching("taps", context), mStoreNumber).load(items);
+        } else {
+            matchGroup = new MatchGroup().load(getAllItemsForMatching("bottles", context), mStoreNumber).load(items);
+        }
+        long startTime = new Date().getTime();
+        mFoundResults = matchGroup.match(); // <=========LONG RUNNING METHOD
+        Log.v(TAG, "match() took " + Math.round((new Date().getTime() - startTime)/1000) + " seconds for " + tapsOrBottles);
 
         /** THIS IS FOR CURIOSITY ABOUT UNMATCHED ITEMS */
         ArrayList<MatchItem>leftovers = matchGroup.getLeftoverSaucer();
@@ -97,13 +104,18 @@ public class OcrScanHelper {
         returnStringValue.replace(breweryLocInOcr, breweryLocInOcr + breweryWordSize, alternate);
         return returnStringValue.toString();
     }
-
+    /////////////////////////////////////////////
     /* Uses mFoundResults to add tap menu data */
-    private int updateFoundTaps(Context context) {
+    /////////////////////////////////////////////
+    private int updateFoundItems(String tapsOrBottles, Context context) {
         UfoDatabaseAdapter repository = new UfoDatabaseAdapter(context);
         String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.ACTIVE, SaucerItem.CONTAINER, SaucerItem.STORE_ID, SaucerItem.BREW_ID, SaucerItem.ABV, SaucerItem.DESCRIPTION};
         String selectionFields = "ACTIVE=? AND CONTAINER=? AND STYLE<>? and STYLE<>? and STORE_ID=? and NAME=?";
         String[] selectionArgs = new String[]{"T", "draught", "Mix", "Flight", mStoreNumber, "(beerNamePlaceholder)"};
+        if (!tapsOrBottles.contains("taps")) {
+            selectionFields = "ACTIVE=? AND CONTAINER<>? AND STYLE<>? and STYLE<>? and STORE_ID=? and (NAME=? or NAME=? or Name=?)";
+            selectionArgs = new String[]{"T", "draught", "Mix", "Flight", mStoreNumber, "(beerNamePlaceholder)", "(beerNamePlaceholder)", "(beerNamePlaceholder)"};
+        }
         SQLiteDatabase db = repository.openDb(context);
 
         db.execSQL("UPDATE UFOLOCAL SET ADDED_NOW_FLAG = ''");
@@ -125,11 +137,17 @@ public class OcrScanHelper {
             String aBeerNumber = aResult[4]; // may be ""
             String aBreweryNumber = aResult[5]; // may be ""
             selectionArgs[5] = aBeerName;
+            if (!tapsOrBottles.contains("taps")) {
+                selectionArgs[6] = aBeerName + " (CAN)";
+                selectionArgs[7] = aBeerName + " (BTL)";
+            }
 
             // Look-up aBeerName in the main UFO table.  Expect one record (despite the 'for' loop).
             Cursor mainTableCursor = repository.query(       "UFO",          pullFields,        selectionFields,          selectionArgs);
             if (mainTableCursor != null) {
+                //if (!tapsOrBottles.contains("taps")) Log.v(TAG, "DEBUG [" + selectionArgs[7] + "]");
                 for (mainTableCursor.moveToFirst(); !mainTableCursor.isAfterLast(); mainTableCursor.moveToNext()) {
+                    //Log.v(TAG, "DEBUG --------------------");
                     String beerName = mainTableCursor.getString(0);
                     String brewer = mainTableCursor.getString(1);
                     String store_id = mainTableCursor.getString(4);
@@ -160,7 +178,7 @@ public class OcrScanHelper {
                     int id = getId(beerName, store_id, db);
                     if (id == -1) {
                         db.insert("UFOLOCAL", null, values);
-                        Log.v(TAG, "Inserted record into UFOLOCAL");
+                        //Log.v(TAG, "Inserted record into UFOLOCAL");
                     } else {
                         db.update("UFOLOCAL", values, "_id=?", new String[]{Integer.toString(id)});
                         //Log.v(TAG, "Updated record in UFOLOCAL");
@@ -187,9 +205,9 @@ public class OcrScanHelper {
         return resultId;
     }
 
-    private Map getAllTaps(Context context) {
+    private Map getAllItems(String tapsOrBottles, Context context) {
         HashMap<String, String> allTaps = new HashMap<>(100);
-        List<String[]> allTapsArrays = getAllTapsForMatching(context);
+        List<String[]> allTapsArrays = getAllItemsForMatching(tapsOrBottles, context);
         for (String[] aTapArray: allTapsArrays) {
             allTaps.put(aTapArray[0], breweryTextCleanup(aTapArray[1]));
         }
@@ -197,28 +215,34 @@ public class OcrScanHelper {
         return allTaps;
     }
 
-    private List<String[]> getAllTapsForMatching(Context context) {
+    private List<String[]> getAllItemsForMatching(String tapsOrBottles, Context context) {
         UfoDatabaseAdapter repository = new UfoDatabaseAdapter(context);
         UfoDatabaseAdapter.open(context);
         String[] pullFields = new String[]{SaucerItem.NAME, SaucerItem.BREWER, SaucerItem.BREW_ID};
         String selectionFields = "ACTIVE=? AND CONTAINER=? AND STYLE<>? and STYLE<>? and STORE_ID=?";
+        if (!tapsOrBottles.contains("taps")) selectionFields = "ACTIVE=? AND CONTAINER<>? AND STYLE<>? and STYLE<>? and STORE_ID=?";
         String[] selectionArgs = new String[]{"T", "draught", "Mix", "Flight", mStoreNumber};
         Cursor aCursor = repository.query(       "UFO",          pullFields,        selectionFields,          selectionArgs);
-        ArrayList<String[]> allTaps = new ArrayList<String[]>();
+        ArrayList<String[]> allItems = new ArrayList<String[]>();
         if (aCursor == null) {
             Log.e(TAG, "NO DATA FROM THE DATABASE - null cursor");
         } else {
             for (aCursor.moveToFirst(); !aCursor.isAfterLast(); aCursor.moveToNext()) {
                 String beerName = aCursor.getString(0);
+                if (!tapsOrBottles.contains("taps")) {
+                    beerName = beerName.replace(" (CAN)", "");
+                    beerName = beerName.replace(" (BTL)", "");
+                }
                 String brewer = aCursor.getString(1);
                 //brewer = breweryTextCleanup(brewer);
                 String brew_id = aCursor.getString(2);
-                allTaps.add(new String[]{beerName, brewer, brew_id});
+                allItems.add(new String[]{beerName, brewer, brew_id});
             }
             aCursor.close();
         }
         repository.close();
-        return allTaps;
+        Log.v(TAG, "There were " + allItems.size() + " Saucer items pulled from the database for matching.");
+        return allItems;
     }
 
     // This only removes one word or phrase

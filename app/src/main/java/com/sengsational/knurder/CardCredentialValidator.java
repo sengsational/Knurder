@@ -6,6 +6,7 @@ import android.util.Log;
  * Created by Dale Seng on 8/27/2021.
  */
 public class CardCredentialValidator {
+    private static final String TAG = "CardCredentialValidator";
 
     private DataView dataView;
     private WebResultListener webResultListener;
@@ -15,15 +16,16 @@ public class CardCredentialValidator {
         this.webResultListener = new WebResultListenerImpl((DataView) dataView);
     }
 
-    public void validateCredentials(String cardNumber, String cardPin, String mou, String savePin, String storeNumber, String storeNumberOfList, String brewIds) {
+    public void validateCredentials(String cardNumber, String cardPin, String mou, String savePin, String storeNumber, String storeNumberOfList, String brewIds, String storeId, String brewNames) {
         boolean fieldsAreValid = true; // TODO: implement this
         if (fieldsAreValid) {
             // Run Async Task (does not block)
-            new CardnumberCredentialInteractor().validateCardnumberCredentialsFromWeb(cardNumber, cardPin, mou, savePin, storeNumber, storeNumberOfList, brewIds, webResultListener);
+            Log.v(TAG, "nStoreId: " + storeId + " validateCredentials.");
+            new CardnumberCredentialInteractor().validateCardnumberCredentialsFromWeb(cardNumber, cardPin, mou, savePin, storeNumber, storeNumberOfList, brewIds, brewNames, storeId, webResultListener);
 
             // Call show progress in the view object
             if (dataView != null) dataView.showProgress(true);
-            else Log.v("sengsational", "TastedListPresenterImpl.getTastedList() dataView was null");
+            else Log.v(TAG, "TastedListPresenterImpl.getTastedList() dataView was null");
         } else {
             dataView.showProgress(false);
         }
@@ -50,7 +52,7 @@ public class CardCredentialValidator {
 
     public void onSuccess() {
         if (dataView != null) {
-            Log.v("sengsational", "TLPI.onSuccess()");
+            Log.v(TAG, "TLPI.onSuccess()");
             dataView.showProgress(false);
             dataView.navigateToHome();
         }

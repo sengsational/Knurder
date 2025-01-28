@@ -7,6 +7,7 @@ import android.util.Log;
  * Created by Dale Seng on 5/30/2016.
  */
 public class StoreListPresenterImpl implements StoreListPresenter {
+    private static final String TAG = "StoreListPresenterImpl";
 
     private DataView dataView;
     private WebResultListener webResultListener;
@@ -26,7 +27,7 @@ public class StoreListPresenterImpl implements StoreListPresenter {
 
             // Call show progress in the view object
             if (dataView != null) dataView.showProgress(true);
-            else Log.v("sengsational", "TastedListPresenterImpl.getTastedList() tastedListView was null");
+            else Log.v(TAG, "TastedListPresenterImpl.getTastedList() tastedListView was null");
         } else {
             if (dataView != null) dataView.showProgress(false);
         }

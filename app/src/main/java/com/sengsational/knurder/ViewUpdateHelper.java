@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import androidx.core.content.ContextCompat;
+
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,28 +37,48 @@ public class ViewUpdateHelper {
                 break;
         }
     }
+    public static void setGlassShapeIconInView(ImageView imageViewToManage, String glassSize, Context mContext) {
+        Log.v(TAG, "DEBUG: Using old method to set view.");
+        setGlassShapeIconInView(imageViewToManage, null, glassSize, null, mContext);
+    }
 
-    public static void setGlassShapeIconInView(ImageView viewToManage, String glassSize, Context mContext) {
-        if (viewToManage == null) return;
+    public static void setGlassShapeIconInView(ImageView imageViewToManage, TextView textViewToManage, String glassSize, String container, Context mContext) {
+        if (imageViewToManage == null) return;
         if(glassSize == null) glassSize = "0";
-        switch (glassSize) {
-            case "16":
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.pint_glass, mContext);
-                viewToManage.setVisibility(View.VISIBLE);
-                break;
-            case "13":
-            case "11.5":
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.snifter_glass, mContext);
-                viewToManage.setVisibility(View.VISIBLE);
-                break;
-            case "10":
-            case "9":
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.wine_glass, mContext);
-                viewToManage.setVisibility(View.VISIBLE);
-                break;
-            default:
-                ViewUpdateHelper.setImage(viewToManage, R.mipmap.pint_glass, mContext);
-                viewToManage.setVisibility(View.GONE);
+        //Log.v(TAG, "DEBUG: container [" + container +"]");
+        if (container == null) container = "draught";
+        if ("draught".equals(container)) {
+            if (textViewToManage != null) textViewToManage.setVisibility(View.GONE);
+            switch (glassSize) {
+                case "16":
+                    ViewUpdateHelper.setImage(imageViewToManage, R.mipmap.pint_glass, mContext);
+                    imageViewToManage.setVisibility(View.VISIBLE);
+                    break;
+                case "13":
+                case "11.5":
+                    ViewUpdateHelper.setImage(imageViewToManage, R.mipmap.snifter_glass, mContext);
+                    imageViewToManage.setVisibility(View.VISIBLE);
+                    break;
+                case "10":
+                case "9":
+                    ViewUpdateHelper.setImage(imageViewToManage, R.mipmap.wine_glass, mContext);
+                    imageViewToManage.setVisibility(View.VISIBLE);
+                    break;
+                default:
+                    ViewUpdateHelper.setImage(imageViewToManage, R.mipmap.pint_glass, mContext);
+                    imageViewToManage.setVisibility(View.INVISIBLE);
+            }
+        } else {
+            imageViewToManage.setVisibility(View.INVISIBLE);
+            if(glassSize.equals("0")) return; //Don't show zeros
+            int dotLoc = glassSize.indexOf("."); //Don't show fractional ounces
+            if (dotLoc > 0) glassSize = glassSize.substring(0,dotLoc);
+            if (textViewToManage != null) {
+                textViewToManage.setVisibility(View.VISIBLE);
+                ViewUpdateHelper.setOuncesInView(textViewToManage, glassSize, mContext);
+            } else {
+                Log.e(TAG, "Text View was null. " );
+            }
         }
     }
     public static void setGlassPriceInView(TextView viewToManage, String glassPrice, Context mContext) {
@@ -118,6 +140,10 @@ public class ViewUpdateHelper {
             drawable = ContextCompat.getDrawable(context, imageId);
         }
         viewToManage.setImageDrawable(drawable);
+    }
+
+    public static void setOuncesInView(TextView viewById, String ounces, Context context) {
+        viewById.setText(ounces + "oz");
     }
 
     public static void setActiveStyleInView(TextView viewById, String active, Context context) {

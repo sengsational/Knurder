@@ -6,6 +6,7 @@ package com.sengsational.knurder;
 interface DataView {
     // To Process
     void getTastedList();
+    void getMemberData();
     void getStoreList(boolean resetPresentation, boolean checkForQuiz);
 
     // From Process
@@ -16,6 +17,7 @@ interface DataView {
     void setUsernameError(String message);
     void setPasswordError(String message);
     void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount);
+    void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount);
     void saveValidStore(String storeNumber);
     void navigateToHome();
     void setStoreView(boolean resetPresentation);

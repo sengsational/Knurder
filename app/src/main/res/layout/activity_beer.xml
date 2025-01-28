@@ -57,14 +57,23 @@
                 android:layout_below="@+id/beername"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true">
+
                 <ImageView
+                    android:id="@+id/glass_icon_details"
                     android:layout_width="25dp"
                     android:layout_height="25dp"
                     android:layout_centerHorizontal="true"
                     android:src="@mipmap/pint_glass"
-                    android:id="@+id/glass_icon_details"
                     android:visibility="visible"
-                    />
+                    tools:visibility="invisible"/>
+                <TextView
+                    android:id="@+id/ounces_text_details"
+                    android:layout_width="40dp"
+                    android:layout_height="25dp"
+                    android:layout_centerHorizontal="true"
+                    android:textSize="14sp"
+                    android:visibility="visible"
+                    tools:text="12oz"/>
                 <TextView
                     android:id="@+id/glass_price_details"
                     android:layout_width="match_parent"

@@ -53,7 +53,7 @@ public class TouchlessActivity extends AppCompatActivity {
                 // Call show progress in the view object <<< Does not work yet.... progress view does not show
                 //DataView dataView = (DataView)this;
                 //if (dataView != null) dataView.showProgress(true);
-                //else Log.v("sengsational", "TouchlessActivity.onActivityResult data view was null");
+                //else Log.v(TAG, "TouchlessActivity.onActivityResult data view was null");
 
             }
         } else {

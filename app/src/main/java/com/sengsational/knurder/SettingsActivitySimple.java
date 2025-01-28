@@ -111,10 +111,10 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
             builder.create().show();
         }else if ("dark_mode_switch".equals(preference.getKey())) {
             if (((SwitchPreference)preference).isChecked()) { //They are turning it on
-                Log.v("sengsational", "dark mode switch pressed Night YES.");
+                Log.v(TAG, "dark mode switch pressed Night YES.");
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
             } else{ //They are turning it off
-                Log.v("sengsational", "dark mode switch pressed Night NO.");
+                Log.v(TAG, "dark mode switch pressed Night NO.");
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             }
             // DRS20230325 - make it show on the settings page immediately
@@ -125,6 +125,7 @@ public class SettingsActivitySimple extends AppCompatPreferenceActivity {
             //Log.v(TAG, "The preference thing was: " + mAllowPicturesSwitchPreference.isChecked() + "... " + preference.getClass().getName() + " ... " + preference.toString());
             if (mAllowPicturesSwitchPreference.isChecked()) { // They are turning it on!!!
                 String imagePermissionByApi = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)?Manifest.permission.READ_MEDIA_IMAGES:Manifest.permission.READ_EXTERNAL_STORAGE;
+                Log.v(TAG, "imagePermissionByAPI [" + imagePermissionByApi + "]");
                 final String[] permissionStringArray = new String[] {imagePermissionByApi, Manifest.permission.CAMERA};
                 boolean permissionsBoolean = false;
                 int storageCheck = ContextCompat.checkSelfPermission(this, imagePermissionByApi);

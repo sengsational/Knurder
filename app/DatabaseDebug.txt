@@ -1299,7 +1299,7 @@ In TopLevelActivity:
             case R.id.database_access_button:
                 pullFields = null;
                 //Intent dbmanager = new Intent(TopLevelActivity.this,AndroidDatabaseManager.class);
-                //Log.v("sengsational", "going to AndroidDatabaseManager");
+                //Log.v(TAG, "going to AndroidDatabaseManager");
                 //startActivity(dbmanager);
                 break;
 (commented 3)

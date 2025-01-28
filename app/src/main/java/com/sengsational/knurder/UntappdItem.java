@@ -10,8 +10,9 @@ public class UntappdItem {
     private final String abv; // Looks like "4.7% ABV"
     private final String beerNumber; // confirmed integer or ""
     private final String breweryNumber; // confirmed integer or ""
+    private final String tapsOrBottles; //
 
-    public UntappdItem(String beerName, String breweryName, String ounces, String price, String abv, String beerNumber, String breweryNumber) {
+    public UntappdItem(String beerName, String breweryName, String ounces, String price, String abv, String beerNumber, String breweryNumber, String tapsOrBottles) {
         this.beerName = beerName;
         this.breweryName = breweryName;
         this.ounces = ounces;
@@ -19,6 +20,7 @@ public class UntappdItem {
         this.abv = abv;
         this.beerNumber = beerNumber;
         this.breweryNumber = breweryNumber;
+        this.tapsOrBottles = tapsOrBottles;
     }
     public String getCleanedBreweryName() {
         return OcrScanHelper.breweryTextCleanup(breweryName);
@@ -52,6 +54,8 @@ public class UntappdItem {
     public String getBreweryNumber() {
         return this.breweryNumber;
     }
+
+    public String getTapsOrBottles() { return this.tapsOrBottles; }
 
     public String toString() {
         return breweryName + ", " + beerName + ", " + getOuncesNumber() + ", " + getPriceNumber() + ", " + getAbvNumber() + ", " + beerNumber + ", " + breweryNumber;

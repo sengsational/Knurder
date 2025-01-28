@@ -108,7 +108,7 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
         viewHolder.tvFirst.setTextColor(ContextCompat.getColor(mContext, R.color.colorActivePrimary));
         viewHolder.tvSecond.setTextColor(ContextCompat.getColor(mContext, R.color.colorNonActiveSecondary));
 
-        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.viewToManage, glassSize, mContext);
+        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.imageViewToManage, viewHolder.textViewToManage, glassSize, "draught", mContext);
 
         viewHolder.tvDatabaseKey.setText(databaseId+""); // This is the key from UFOLOCAL table (not UFO)
         viewHolder.tvUfoDatabaseKey.setText(ufoDatabaseId+""); // This is from the UFO table
@@ -202,7 +202,7 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
 
                         /** SET UPDATED FIELDS IN THE VIEW */
                         viewHolder.tvSecond.setText(buildDataLine(mUpdatedPrice, mUpdatedGlassSize, lastUpdated));
-                        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.viewToManage, mUpdatedGlassSize, mContext);
+                        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.imageViewToManage, viewHolder.textViewToManage, mUpdatedGlassSize, "draught", mContext);
 
                         /** UPDATE THE DATABASE  or INSERT IF DOESN'T EXIST */
                         UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(mContext) ;
@@ -363,7 +363,8 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
 
     static class ViewHolder extends RecyclerView.ViewHolder {
 
-        ImageView viewToManage;
+        ImageView imageViewToManage;
+        TextView textViewToManage;
         TextView tvFirst;
         TextView tvSecond;
         TextView tvDatabaseKey;
@@ -375,7 +376,8 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
 
             tvFirst = (TextView)view.findViewById(R.id.b_name);
             tvSecond = (TextView)view.findViewById(R.id.b_second_line);
-            viewToManage = (ImageView)view.findViewById(R.id.b_icon);
+            imageViewToManage = (ImageView)view.findViewById(R.id.b_icon);
+            textViewToManage = (TextView)view.findViewById(R.id.ounces_text);
             tvDatabaseKey = (TextView)view.findViewById(R.id.b_db_item);
             tvUfoDatabaseKey = (TextView)view.findViewById(R.id.b_db_ufo_item);
             descriptionTextView = (TextView) itemView.findViewById(R.id.b_description);

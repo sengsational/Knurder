@@ -35,6 +35,7 @@ import java.util.List;
  * A login screen that offers login via username/password.
  */
 public class LoginActivity extends AppCompatActivity implements DataView {
+    private static final String TAG = "LoginActivity";
     private static SharedPreferences prefs;
 
     // UI references.
@@ -108,11 +109,11 @@ public class LoginActivity extends AppCompatActivity implements DataView {
                 if(((CheckBox)v).isChecked()){
                     //editor.putString(TopLevelActivity.MOU,"1");
                     mMou = "1";
-                    Log.v("sengsational","The checkbox is set to MOU");
+                    Log.v(TAG,"The checkbox is set to MOU");
                 }else{
                     //editor.putString(TopLevelActivity.MOU,"0");
                     mMou = "0";
-                    Log.v("sengsational","The checkbox is set to not MOU");
+                    Log.v(TAG,"The checkbox is set to not MOU");
                 }
                 //editor.apply();
             }
@@ -135,7 +136,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
             }
         });
 
-        Log.v("sengsational", "from state the login values: " + mAuthenticationName + " " + mPassword + " " + mStoreNumber + " " + mMou);
+        Log.v(TAG, "from state the login values: " + mAuthenticationName + " " + mPassword + " " + mStoreNumber + " " + mMou);
 
         mCheckboxView = (CheckBox) findViewById(R.id.showPasswordCheckBox);
         mCheckboxView.setOnClickListener(new OnClickListener() {
@@ -160,7 +161,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position == 0) position = lastStorePos;
                 if (parent.getItemAtPosition(position) == null) return;
-                Log.v("sengsational", "item at position: " + parent.getItemAtPosition(position));
+                Log.v(TAG, "item at position: " + parent.getItemAtPosition(position));
                 mSpinnerView.setSelection(position);
             }
 
@@ -172,7 +173,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
 
 
         Button mUsernameSignInButton = (Button) findViewById(R.id.username_sign_in_button);
-        Log.v("sengsational",">>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        Log.v(TAG,">>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
         if ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE) != null) {
             mUsernameSignInButton.setText(R.string.action_sign_in);
             mUsernameSignInButton.setOnClickListener(new OnClickListener() {
@@ -212,11 +213,11 @@ public class LoginActivity extends AppCompatActivity implements DataView {
         Object selectedItem = mSpinnerView.getSelectedItem();
         String storeName = prefs.getString(TopLevelActivity.STORE_NAME_LIST, "(undefined)");
         if (selectedItem != null) storeName = selectedItem.toString();
-        Log.v("sengsational", "storeName in attemptLogin: " + storeName);
+        Log.v(TAG, "storeName in attemptLogin: " + storeName);
         String storeNumber = StoreNameHelper.getInstance().getStoreNumberFromName(storeName);
         //boolean storeNameChanged = !storeName.equals(prefs.getString(TopLevelActivity.STORE_NAME,TopLevelActivity.DEFAULT_STORE_NAME));
-        //Log.v("sengsational", "Changed: " + storeNameChanged + " The last store was : " + (prefs.getString(TopLevelActivity.STORE_NAME,TopLevelActivity.DEFAULT_STORE_NAME)) + " and now we have  " + storeName);
-        Log.v("sengsational", "storeNumber from Spinner: " + storeNumber);
+        //Log.v(TAG, "Changed: " + storeNameChanged + " The last store was : " + (prefs.getString(TopLevelActivity.STORE_NAME,TopLevelActivity.DEFAULT_STORE_NAME)) + " and now we have  " + storeName);
+        Log.v(TAG, "storeNumber from Spinner: " + storeNumber);
 
         // This place and saveValidCredentials() are the places where changes to save password and mou preferences happen
         SharedPreferences.Editor editor = prefs.edit();
@@ -232,8 +233,14 @@ public class LoginActivity extends AppCompatActivity implements DataView {
         tastedListPresenter.getTastedList(authenticationName, password, mMou, mSavePassword, storeNumber); // <<<<<<<<<<<<<<<< does not block
     }
 
+    @Override
+    public void getMemberData() {
+        Log.e(TAG, "getMemberData called in LoginActivity");
+
+    }
+
     @Override public void getStoreList(boolean resetPresentation, boolean checkForQuiz){
-        Log.e("sengsational", "getStoreList called in LoginActivity");
+        Log.e(TAG, "getStoreList called in LoginActivity");
     }
 
 
@@ -282,6 +289,11 @@ public class LoginActivity extends AppCompatActivity implements DataView {
         editor.putString(TopLevelActivity.TASTED_COUNT, tastedCount);
         editor.putString(TopLevelActivity.USER_NAME, userName);
         editor.apply();
+    }
+
+    @Override
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+        Log.e(TAG, "Unexpected call of old saveValidCardCredentials()");
     }
 
     // Only called from WebResultListner which is called from StoreListInteractor - The storeNumber is for the list, not the credentials.
@@ -333,7 +345,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
 
     @Override public void setUserView() {
         //Thread.dumpStack();
-        Log.v("sengsational","LA.setUserView()");
+        Log.v(TAG,"LA.setUserView()");
         //TopLevelActivity.setToUserPresentation();
         KnurderApplication.setPresentationMode("user"); // variable picked-up in TopLevelActivity.onActivityResult
     }

@@ -211,10 +211,10 @@ public class UfoDatabaseAdapter {
 
         //QueryPkg.selectionArgs = selectionArgsArray.toArray(new String[0]);
         String[] localSelectionArgs = selectionArgsArray.toArray(new String[0]);
-        Log.v("sengsational", "selectionArgs: " + Arrays.toString(localSelectionArgs));
-        Log.v("sengsational", "selectionFields: " + localSelectionFields);
-        Log.v("sengsational", "pullFields: " + Arrays.toString(QueryPkg.getPullFields(context)));
-        Log.v("sengsational", "orderBy: " + QueryPkg.getOrderBy(context));
+        Log.v(TAG, "selectionArgs: " + Arrays.toString(localSelectionArgs));
+        Log.v(TAG, "selectionFields: " + localSelectionFields);
+        Log.v(TAG, "pullFields: " + Arrays.toString(QueryPkg.getPullFields(context)));
+        Log.v(TAG, "orderBy: " + QueryPkg.getOrderBy(context));
 
         String orderByDirective = QueryPkg.getOrderBy(context);
         orderByDirective += " " + QueryPkg.getSecondOrderBy(context);
@@ -262,7 +262,7 @@ public class UfoDatabaseAdapter {
         }
 
         boolean hasRecords = SQL_CURSOR.moveToFirst();
-        Log.v("sengsational", "UfoDatabaseAdapter.fetch() cursor created. " + SQL_CURSOR + " and " + (hasRecords?"has records":"has NO RECORDS"));
+        Log.v(TAG, "UfoDatabaseAdapter.fetch() cursor created. " + SQL_CURSOR + " and " + (hasRecords?"has records":"has NO RECORDS"));
 
         return SQL_CURSOR;
     }

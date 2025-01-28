@@ -6,6 +6,18 @@
             <certificates src="@raw/www_saucerknurd_com"/>
         </trust-anchors>
     </domain-config>
+    <domain-config>
+        <domain includeSubdomains="true">tappthatapp.beerknurd.com</domain>
+        <trust-anchors>
+            <certificates src="@raw/fsbs_beerknurd_der"/>
+        </trust-anchors>
+    </domain-config>
+    <domain-config>
+        <domain includeSubdomains="true">untappd.com</domain>
+        <trust-anchors>
+            <certificates src="@raw/untappd_com_pem"/>
+        </trust-anchors>
+    </domain-config>
 </network-security-config>
 <!-- This certificate is for https://www.saucerknurd.com/glassnite/quiz/ and expires 2029 03 18 -->
 <!-- This isn't the right way to do this, but it was quick -->

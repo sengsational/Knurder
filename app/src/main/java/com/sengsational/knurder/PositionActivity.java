@@ -255,7 +255,7 @@ public class PositionActivity extends AppCompatActivity implements OnTouchListen
             final SaucerItem modelItem = new SaucerItem(KnurderApplication.getCursor(getApplicationContext()));
             Log.v(TAG, "brewer: " + modelItem.brewer);
             Log.v(TAG, "style: " + modelItem.style);
-            //Log.v("sengsational", "BeerSlideFragment.onCreateView() Cursor moving to ARG_POSITION position: " + mPosition + " and finding " + modelItem.getName());
+            //Log.v(TAG, "BeerSlideFragment.onCreateView() Cursor moving to ARG_POSITION position: " + mPosition + " and finding " + modelItem.getName());
             ((TextView)mBeerLayout.findViewById(R.id.database_key)).setText(modelItem.getIdString());
             ((TextView)mBeerLayout.findViewById(R.id.beername)).setText(modelItem.getName());
             ((TextView)mBeerLayout.findViewById(R.id.description)).setText(modelItem.getDescription());

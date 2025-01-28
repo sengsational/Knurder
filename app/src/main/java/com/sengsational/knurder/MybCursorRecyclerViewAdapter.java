@@ -83,7 +83,16 @@ public class MybCursorRecyclerViewAdapter extends CursorRecyclerViewAdapter<MybC
         ViewUpdateHelper.setHighlightIconInView(viewHolder.viewToManage, modelItem.getHighlighted(), mContext);
 
         // DRS 20171128 - Added 2+ if/else - Menu scan
-        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.glassSize, modelItem.getGlassSize(), mContext);
+        //ViewUpdateHelper.setGlassShapeIconInView(viewHolder.glassSize, modelItem.getGlassSize(), mContext);
+        String container = modelItem.getContainer();
+        if (container == null) {
+            if (!modelItem.getName().contains("(CAN)") && !modelItem.getName().contains("(BTL)")) {
+                container = "draught";
+            } else {
+                container = "nottap";
+            }
+        }
+        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.glassSize, viewHolder.ouncesText, modelItem.getGlassSize(), container, mContext);
         String glassPrice = modelItem.getGlassPrice();
         if (glassPrice !=null && glassPrice.length() > 0) {
             viewHolder.glassPrice.setText("$" + glassPrice);
@@ -159,6 +168,8 @@ public class MybCursorRecyclerViewAdapter extends CursorRecyclerViewAdapter<MybC
         ImageView glassSize; // DRS 20171128 - Menu scan
         TextView glassPrice; // DRS 20171128 - Menu scan
 
+        TextView ouncesText;
+
         ViewHolder(View view) {
             super(view);
 
@@ -168,6 +179,7 @@ public class MybCursorRecyclerViewAdapter extends CursorRecyclerViewAdapter<MybC
             tvDatabaseKey = (TextView)view.findViewById(R.id.b_db_item);
             descriptionTextView = (TextView) itemView.findViewById(R.id.b_description);
             glassSize = (ImageView)view.findViewById(R.id.glass_icon); // DRS 20171128 - Menu scan
+            ouncesText = (TextView)view.findViewById(R.id.ounces_text); // DRS 20171128 - Menu scan
             glassPrice = (TextView)view.findViewById(R.id.b_price); // DRS 20171128 - Menu scan
         }
 

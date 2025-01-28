@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -62,54 +63,59 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 Log.v(TAG, "dataView:" + dataView.getClass().getName());
                 dataView.showProgress(true);
             } else {
-                Log.v("sengsational", "TastedListPresenterImpl.getTastedList() dataView was null");
+                Log.v(TAG, "TastedListPresenterImpl.getTastedList() dataView was null");
             }
             this.execute((Void) null);
     }
 
     @Override
     protected void onPreExecute() {
-        Log.v("sengsational", "onPreExecute()..."); //Run order #01
+        Log.v(TAG, "onPreExecute()..."); //Run order #01
         if (TextUtils.isEmpty(nStoreNumber) || TextUtils.isEmpty(nAuthenticationName) || TextUtils.isEmpty(nPassword)) {
             nListener.onError("input parameters problem: " + nStoreNumber + ", " + nAuthenticationName + ", " + nPassword);
             nErrorMessage = "There was a problem with the credentials.";
         }
         // set-up a single nHttpclient
         if (nHttpclient != null) {
-            Log.e("sengsational", "Attempt to set-up more than one HttpClient!!");
+            Log.e(TAG, "Attempt to set-up more than one HttpClient!!");
         } else {
             try {
                 nCookieStore = new BasicCookieStore();
                 HttpClientBuilder clientBuilder = HttpClientBuilder.create();
                 nHttpclient = clientBuilder.setRedirectStrategy(new LaxRedirectStrategy()).setDefaultCookieStore(nCookieStore).build();
                 nHttpclient.log.enableDebug(true);
-                Log.v("sengsational", "nHttpclient object created."); //Run order #02
+                Log.v(TAG, "nHttpclient object created."); //Run order #02
             } catch (Throwable t) {//
-                Log.v("sengsational", "nHttpclient object NOT created. " + t.getMessage());
+                Log.v(TAG, "nHttpclient object NOT created. " + t.getMessage());
                 StringWriter sw = new StringWriter();
                 t.printStackTrace(new PrintWriter(sw));
-                Log.v("sengsational", sw.toString());
+                Log.v(TAG, sw.toString());
                 nListener.onError("client error");
                 nErrorMessage = "Problem with the http connection.";
             }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                nListener.onError("client error");
+                nErrorMessage = "The UFO web site no longer accepts connections from older Android devices.  Sorry.  Nothing I can do about it.\n\nPlease try on a device with Jelly Bean or higher.";
+            }
+
         }
     }
 
     @Override
     protected void onPostExecute(final Boolean success) {
         // new nHttpclient object each time
-        Log.v("sengsational", "onPostExecute with success " + success);
+        Log.v(TAG, "onPostExecute with success " + success);
         try {
             nHttpclient.close();
             nHttpclient = null;
         } catch (Exception e) {}
 
         if (success) {
-            Log.v("sengsational", "onPostExecute success: " + success);
+            Log.v(TAG, "onPostExecute success: " + success);
             nListener.setToUserPresentation();
             nListener.onFinished();
         } else {
-            Log.v("sengsational", "onPostExecute fail.");
+            Log.v(TAG, "onPostExecute fail.");
             nListener.onError(nErrorMessage);
         }
     }
@@ -204,7 +210,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             nListener.onTastedListSuccess();
             // >>>>>>>>>>Tasted items now loaded into the database<<<<<<<<<<<<<<<<<
         } catch (Exception e) {
-            Log.e("sengsational", LoadDataHelper.getInstance().getStackTraceString(e));
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nErrorMessage = "Exception " + e.getMessage();
             return false;
         } finally {
@@ -235,7 +241,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             beersTastedPage = LoadDataHelper.getPageContent(("https://www.beerknurd.com/api/tasted/list_user/" + userNumber), nLastResponse, nHttpclient, nCookieStore, timeoutSeconds);  //<<<<<<<<<<<<<<<<<PULL TASTED<<<<<<<<<<<<<<<<<<<
             prefs.edit().putString(USER_NUMBER, userNumber).apply();
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get tastedListPage. " + e.getMessage());
+            Log.e(TAG, "Could not get tastedListPage. " + e.getMessage());
             nListener.sendStatusToast(e.getMessage(), Toast.LENGTH_LONG);
             return null;
         }
@@ -249,7 +255,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
             db.execSQL("update UFO set TASTED = 'D'");
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get prepare database for new tasted record loading. " + e.getMessage());
+            Log.e(TAG, "Could not get prepare database for new tasted record loading. " + e.getMessage());
             return false;
         } finally {
             try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
@@ -263,7 +269,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
             db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
             int currentCount = getCount(db, "UFO");
-            Log.v("sengsational", "Starting out we had " + currentCount + " records.");
+            Log.v(TAG, "Starting out we had " + currentCount + " records.");
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(KnurderApplication.getContext());
             boolean showOnlyCurrentTasted = prefs.getBoolean("current_beers_switch", true);
 
@@ -273,7 +279,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             int updateCount = 0;
             String[] items = tastedWebPage.split("\\},\\{");
             if (items.length > 1) {
-                Log.v("sengsational", "The tasted list (including bottled) had " + items.length + " items.");
+                Log.v(TAG, "The tasted list (including bottled) had " + items.length + " items.");
                 for (String string : items) {
                     SaucerItem modelItem = new SaucerItem();
                     modelItem.setStoreNameAndNumber(nStoreNumber, db);
@@ -369,16 +375,16 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                     }
                     if (cursor != null) cursor.close();
                 }
-                Log.v("sengsational", "After loading active, and updating " + updateCount + ", we had " + getCount(db, "UFO") + " records. That should equal " + currentCount + ".");
-                //Log.v("sengsational", "We had " + getCount(db, "STYLES") + " style records.");
+                Log.v(TAG, "After loading active, and updating " + updateCount + ", we had " + getCount(db, "UFO") + " records. That should equal " + currentCount + ".");
+                //Log.v(TAG, "We had " + getCount(db, "STYLES") + " style records.");
             } else {
-                Log.v("sengsational", "Found nothing in the beersWeb page.");
+                Log.v(TAG, "Found nothing in the beersWeb page.");
                 nListener.onError("no data found");
             }
 
             if (logoff) LoadDataHelper.getPageContent("http://www.beerknurd.com/user/logout", null, nHttpclient, nCookieStore); // Log off
         } catch (Exception e) {
-            Log.e("sengsational", LoadDataHelper.getInstance().getStackTraceString(e));
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nListener.onError("exception " + e.getMessage());
             return false;
         } finally {
@@ -431,7 +437,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 String timestamp = "1531717343";
                 String saucerName = "Charlotte Flying Saucer";
                 String beerName = "Allagash White";
-                String userName = "sengsational";
+                String userName = TAG;
                 */
 
 
@@ -453,7 +459,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 db.execSQL("update UFO set REVIEW_FLAG='W' where REVIEW_ID IN " + reviewIdsDone.toString());
             }
         } catch (Exception e) {
-            Log.e("sengsational", LoadDataHelper.getInstance().getStackTraceString(e));
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nListener.onError("exception " + e.getMessage());
             return false;
         } finally {
@@ -482,7 +488,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
             db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
             int currentCount = getCount(db, "UFO");
-            Log.v("sengsational", "Before removing old tasted records we had " + currentCount + " records.");
+            Log.v(TAG, "Before removing old tasted records we had " + currentCount + " records.");
 
             // First, Prevent deletion of active records.  Never delete actives.
             db.execSQL("update UFO set TASTED='F' where TASTED='D' and ACTIVE='T'");
@@ -492,9 +498,9 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 
             db.execSQL("delete from  UFO where TASTED = 'D'");
             int newCount = getCount(db, "UFO");
-            Log.v("sengsational", "After  removing old tasted records we had " + newCount + " records.");
+            Log.v(TAG, "After  removing old tasted records we had " + newCount + " records.");
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get prepare database for new tasted record loading. " + e.getMessage());
+            Log.e(TAG, "Could not get prepare database for new tasted record loading. " + e.getMessage());
             return false;
         } finally {
             try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
@@ -508,12 +514,12 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
             nListener.sendStatusToast("Going to logon page...", Toast.LENGTH_SHORT);
             //ADDED https
             String loginFormPage = LoadDataHelper.getPageContent("https://www.beerknurd.com/user", null, nHttpclient, nCookieStore);                       //<<<<<<<<<GET INITIAL LOGIN FORM PAGE<<<<<<<<<<<<<<<<<<<
-            Log.v("sengsational", "doInBackground() Ran first page"); // Run Order #14
+            Log.v(TAG, "doInBackground() Ran first page"); // Run Order #14
 
             // Scrape the page for the parameters to submit to the login page
             List<NameValuePair> postParams = LoadDataHelper.getInstance().getFormParams(loginFormPage, nAuthenticationName, nPassword, nMou, nStoreNumber);
 
-            Log.v("sengsational", "doInBackground() Got form parameters from first page.  Logging in with " + nAuthenticationName + " " + nPassword + " " + nMou + " " + nStoreNumber); // Run Order #17
+            Log.v(TAG, "doInBackground() Got form parameters from first page.  Logging in with " + nAuthenticationName + " " + nPassword + " " + nMou + " " + nStoreNumber); // Run Order #17
             // Added https
             nListener.sendStatusToast("Request sent.  Might take a LONG time!!! Waiting for logon...", Toast.LENGTH_LONG);
 
@@ -523,9 +529,9 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 
             userStatsPage = LoadDataHelper.getResultBuffer(nLastResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
             nListener.sendStatusToast("Log on completed OK.", Toast.LENGTH_SHORT);
-            Log.v("sengsational", "doInBackground() Sent form with fields filled-in.  Should be logged-in now."); // Run Order #22
+            Log.v(TAG, "doInBackground() Sent form with fields filled-in.  Should be logged-in now."); // Run Order #22
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get userStatsPage. " + e.getMessage());
+            Log.e(TAG, "Could not get userStatsPage. " + e.getMessage());
         }
         return userStatsPage;
     }
@@ -567,7 +573,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 return false;
             }
         } catch (Exception e) {
-            Log.e("sengsational", "Exception on pre-execute getSiteAccess. " + e.getMessage());
+            Log.e(TAG, "Exception on pre-execute getSiteAccess. " + e.getMessage());
             return false;
         }
         return true;
@@ -578,7 +584,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
         Elements userInfo = doc.getElementsByClass("user-info");
         String[] returnString = new String[4];
         if (userInfo.size() < 1) {
-            Log.v("sengsational","not logged-in");
+            Log.v(TAG,"not logged-in");
             return null;
         } else {
             try {
@@ -638,7 +644,7 @@ public class TastedListInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 }
 
             } catch (Throwable t) {
-                Log.v("sengsational", "Unable to parse good login page." + t.getMessage());
+                Log.v(TAG, "Unable to parse good login page." + t.getMessage());
                 return null;
             }
             return returnString;

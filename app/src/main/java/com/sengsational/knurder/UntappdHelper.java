@@ -27,16 +27,16 @@ public class UntappdHelper {
     private static String mUntappdUrlMapString = "" +
             "13888,https://business.untappd.com/locations/35529/themes/137645/js," + //https://saucerknurd.com/touchless-menu/?store=FSCHAR
             "13883,https://business.untappd.com/locations/35463/themes/137381/js," + //https://saucerknurd.com/touchless-menu/?store=FSCOR
-            "18686214,," +                                                          //https://saucerknurd.com/touchless-menu/?store=FSCYPRESS works, but has no untappd data
-            "18262641,," +                                                          //https://saucerknurd.com/touchless-menu/?store=FSDFW works, but has no untappd data
+            "18686214,https://business.untappd.com/locations/35529/themes/137645/js," + //https://saucerknurd.com/touchless-menu/?store=FSCYPRESS works, but has no untappd data
+            "18262641,https://business.untappd.com/locations/35464/themes/137385/js," + //https://saucerknurd.com/touchless-menu/?store=FSDFW works, but has no untappd data
             "13891,https://business.untappd.com/locations/35055/themes/135749/js," + //https://saucerknurd.com/touchless-menu/?store=FSFW
             "13880,https://business.untappd.com/locations/34604/themes/133945/js," + //https://saucerknurd.com/touchless-menu/?store=FSHOU
             "13885,https://business.untappd.com/locations/35530/themes/137649/js," + //https://saucerknurd.com/touchless-menu/?store=FSLR
             "13881,https://business.untappd.com/locations/35533/themes/137661/js," + //https://saucerknurd.com/touchless-menu/?store=FSMEM
             "13877,https://business.untappd.com/locations/35528/themes/137641/js," + //https://saucerknurd.com/touchless-menu/?store=FSRAL
             "13882,https://business.untappd.com/locations/35531/themes/137653/js," + //https://saucerknurd.com/touchless-menu/?store=FSSAN
-            "13879,," + //Have not found touchless page.  Tried SL,SUGAR,SLAND,SUGLAND,FSSL,FSSUGAR,FSSLAND,FSSUGLAND,SUGARFS,SLANDFS,SUGLANDFS,SUGARLANDFS
-            "13884,," + //Have not found touchless page.  Tried LAKE,THELAKE,TL,TLAKE,FSLAKE,FSTHELAKE,FSTL,FSTLAKE,LAKEFS,THELAKEFS,TLFS,TLAKEFS
+            "13879,https://business.untappd.com/locations/35464/themes/137385/js," + //Have not found touchless page.  Tried SL,SUGAR,SLAND,SUGLAND,FSSL,FSSUGAR,FSSLAND,FSSUGLAND,SUGARFS,SLANDFS,SUGLANDFS,SUGARLANDFS
+            "13884,https://business.untappd.com/locations/35529/themes/137645/js," + //Have not found touchless page.  Tried LAKE,THELAKE,TL,TLAKE,FSLAKE,FSTHELAKE,FSTL,FSTLAKE,LAKEFS,THELAKEFS,TLFS,TLAKEFS
             "";
 
     public static String getUntappdUrlForCurrentStore(String defaultValue, Context context) {

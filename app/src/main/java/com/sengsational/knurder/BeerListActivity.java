@@ -35,6 +35,7 @@ import android.widget.Toast;
 import java.util.Arrays;
 
 public class BeerListActivity extends ListActivity implements AppCompatCallback {
+    private static final String TAG = "BeerListActivity";
     private SQLiteDatabase db;
     private static Cursor cursor;
 
@@ -110,15 +111,15 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.v("sengsational", "Long item click.  position:" + position );
+                Log.v(TAG, "Long item click.  position:" + position );
                 View databaseKeyView = view.findViewById(R.id.database_key_list_item);
                 if (databaseKeyView != null) {
                     String keyString = ((TextView)databaseKeyView).getText().toString();
                     int databaseId = Integer.parseInt(keyString);
                     //BeerSlideFragment.toggleFavorite(databaseId, view, true);
-                    Log.v("sengsational", "ERROR...REMOVED toggleFavorite!!!  This is old code and wasn't being referenced, but just in case, I put this");
+                    Log.v(TAG, "ERROR...REMOVED toggleFavorite!!!  This is old code and wasn't being referenced, but just in case, I put this");
         }  else {
-                    Log.v("sengsational", "dkv was null. View was " + view);
+                    Log.v(TAG, "dkv was null. View was " + view);
                 }
                 return true;
             }
@@ -140,8 +141,8 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
             QueryPkg.appendSelectionFields(" AND STYLE<>?", this);
             QueryPkg.appendSelectionArgs("Flight", this);
         }
-        Log.v("sengsational", "selectionArgs: " + Arrays.toString(QueryPkg.getSelectionArgs(this)));
-        Log.v("sengsational", "selectionFields: " + QueryPkg.getSelectionFields(this));
+        Log.v(TAG, "selectionArgs: " + Arrays.toString(QueryPkg.getSelectionArgs(this)));
+        Log.v(TAG, "selectionFields: " + QueryPkg.getSelectionFields(this));
 
         try {
 
@@ -150,7 +151,7 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
             repository.open(this);
             cursor = repository.fetch(this);
 
-            Log.v("sengsational", "BeerListActivity.onCreate() cursor reference from fetch(). " + BeerListActivity.getCursor());
+            Log.v(TAG, "BeerListActivity.onCreate() cursor reference from fetch(). " + BeerListActivity.getCursor());
             if (cursor.moveToFirst()) {
 
                 mResourceCursorAdapter = new ResourceCursorAdapter(this, R.layout.my_simple_expandable_list_item_2, cursor) {
@@ -196,7 +197,7 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
             Toast toast = Toast.makeText(this, "Database Unavailable", Toast.LENGTH_SHORT);
             toast.show();
         } finally {
-            Log.v("sengsational","Not closing cursor.  Will do in onDestroy().");
+            Log.v(TAG,"Not closing cursor.  Will do in onDestroy().");
             // try {cursor.close();} catch(Throwable t){}
         }
     }
@@ -205,7 +206,7 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
     public void onDestroy(){
         super.onDestroy();
         mAppCompatDelegate.onDestroy();
-        Log.v("sengsational", "Closing cursor in onDestroy().");
+        Log.v(TAG, "Closing cursor in onDestroy().");
 
         if (cursor != null) cursor.close();
         if (db != null) db.close();
@@ -215,7 +216,7 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
     protected void onListItemClick(ListView listView, View view, int position, long id) {
         Intent intent = new Intent(BeerListActivity.this, BeerSlideActivity.class);
         listView.getFirstVisiblePosition();
-        Log.v("sengsational", "BeerListActivity.onListItemClick() position:" + position + " id:" + id);
+        Log.v(TAG, "BeerListActivity.onListItemClick() position:" + position + " id:" + id);
 
         intent.putExtra(BeerSlideActivity.EXTRA_POSITION, (int) position);
         //intent.putExtra(BeerSlideActivity.EXTRA_FIRST_VISIBLE_POSITION, (int) listView.getFirstVisiblePosition());
@@ -225,7 +226,7 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
     @Override
     protected void onResume() {
         super.onResume();
-       //Log.v("sengsational", "BLA.onResume() refreshRequired:" + refreshRequired);
+       //Log.v(TAG, "BLA.onResume() refreshRequired:" + refreshRequired);
         if (refreshRequired) {
             refreshList();
         }
@@ -233,7 +234,7 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
 
     public static void setRefreshRequired(boolean refreshRequired) {
         BeerListActivity.refreshRequired = refreshRequired;
-        //Log.v("sengsational","BLA.setRefreshRequired("  + refreshRequired + ")");
+        //Log.v(TAG,"BLA.setRefreshRequired("  + refreshRequired + ")");
     }
 
     public static void setLastListPosition(int listPosition) {
@@ -281,14 +282,14 @@ public class BeerListActivity extends ListActivity implements AppCompatCallback 
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        Log.v("sengsational","Item selected: " + item.getTitle());
+        Log.v(TAG,"Item selected: " + item.getTitle());
         switch (id) {
             case R.id.action_share:
                 if (listBeers.getAdapter().isEmpty()){
                     Toast.makeText(getApplicationContext(), "The list was empty...", Toast.LENGTH_SHORT).show();
                     break;
                 }
-                Log.v("sengsational","In switch: " + item.getTitle());
+                Log.v(TAG,"In switch: " + item.getTitle());
                 Intent intent = new Intent(Intent.ACTION_SEND);
                 intent.putExtra(Intent.EXTRA_SUBJECT, "KnurderList.csv");
                 intent.putExtra(Intent.EXTRA_TEXT, getCsvFromViewCursor(listBeers));

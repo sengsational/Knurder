@@ -82,7 +82,7 @@ public class BeerSlideActivity extends AppCompatActivity {
             mCurrentFileName = savedInstanceState.getString(CURRENT_FILE_NAME_KEY);
         }
 
-        Log.v("sengsational", "BeerSlideActivity.onCreate().  position: " + (Integer) getIntent().getExtras().get(EXTRA_POSITION));
+        Log.v(TAG, "BeerSlideActivity.onCreate().  position: " + (Integer) getIntent().getExtras().get(EXTRA_POSITION));
 
         // DRS 20161130 - Added 3
         try { mPosition = (Integer) getIntent().getExtras().get(EXTRA_POSITION); } catch (Throwable t) {Log.e(TAG, "unable to get " + EXTRA_POSITION);}
@@ -124,7 +124,7 @@ public class BeerSlideActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        Log.v("sengsational", "Item selected: " + item.getTitle());
+        Log.v(TAG, "Item selected: " + item.getTitle());
 
         // Must set the current position in order for the right beer description page to be used
         ViewPager mPager = (ViewPager)findViewById(R.id.pager);
@@ -391,7 +391,7 @@ public class BeerSlideActivity extends AppCompatActivity {
 
         @Override
         public Fragment getItem(int position) {
-            //Log.v("sengsational", "BeerSlideActivity.getItem with passed in position " + position);
+            //Log.v(TAG, "BeerSlideActivity.getItem with passed in position " + position);
             //return BeerSlideFragment.create(position);
             // DRS 20161130 - Commented 1, Added 1
             //return BeerSlideFragment.newInstance(position, firstVisiblePosition);

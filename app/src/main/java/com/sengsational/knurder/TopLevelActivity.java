@@ -39,13 +39,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.play.core.review.ReviewInfo;
-import com.google.android.play.core.review.ReviewManager;
-import com.google.android.play.core.review.ReviewManagerFactory;
-import com.google.android.play.core.tasks.OnCompleteListener;
-import com.google.android.play.core.tasks.OnFailureListener;
-import com.google.android.play.core.tasks.Task;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -63,6 +56,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import static com.sengsational.knurder.BeerSlideActivity.PREF_RATE_BEER_TUTORIAL;
 
 public class TopLevelActivity extends AppCompatActivity implements DataView {
     private static final String TAG = TopLevelActivity.class.getSimpleName();
@@ -89,7 +84,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     public static final String UBER_EATS_LINK = "uberEatsLinkPref";
     public static final String LOGIN_ALERT_MESSAGE = "loginAlertMessagePref";
     public static final String NEW_FEATURE_ALERT_MESSAGE = "newFeatureAlertMessagePref";
-    public static final String NEW_FEATURE_ALERT_DATE = "20220801"; // TODO: Change this to trigger the new feature alert
+    public static final String NEW_FEATURE_ALERT_DATE = "20250122"; // TODO: Change this to trigger the new feature alert
     // DRS 20210827 - Added 3 - Card Number Authentication
     public static final String CARD_NUMBER = "cardNumberActualPref";
     public static final String SAVE_CARD_PIN = "saveCardPinPref";
@@ -106,6 +101,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     public static final int SET_PRESENTATION_MODE = 1957;
     public static final int SETTINGS_ACTIVITY = 1955;
     public static final int UPDATE_GLASS_CALLBACK = 1953;
+    public static final int GET_MEMBER_DATA = 1962;
     public static final long ONE_DAY_IN_MS = 86400000L; //86400000L;
 
     // DRS 20161208 - Query by icon feature
@@ -119,11 +115,12 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     // control items populated in onCreate
     private StoreListPresenter storeListPresenter;
     private TastedListPresenter tastedListPresenter;
+    private MemberDataPresenter memberDataPresenter;
 
     public static SharedPreferences prefs;
 
-    ReviewInfo reviewInfo;
-    ReviewManager manager;
+    //ReviewInfo reviewInfo;
+    //ReviewManager manager;
 
     Context context;
     View topLevelView;
@@ -161,46 +158,53 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
     @Override
     protected void onPause() {
-        Log.v("sengsational", "onPause() running");
+        Log.v(TAG, "onPause() running");
         mWeHavePaused = true;
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        Log.v("sengsational", "onResume() running");
+        Log.v(TAG, "onResume() running");
+        saucerNameView = ((TextView) findViewById(R.id.saucerName));
+        Log.v(TAG, "saucerNameView.setText() onCreate()");
+        saucerNameView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
         // Only run this if we're resuming after a pause, because a resume happens early, and we don't want a dialog then.
         if (mWeHavePaused) {
-            Log.v("sengsational", "onResume() passed test 0");
+            Log.v(TAG, "onResume() passed test 0");
             String newFeatureAlertPreference = prefs.getString(NEW_FEATURE_ALERT_MESSAGE,""); // newFeatureAlertPreference will be blank, or the DATE of the last new feature alert
             boolean newFeatureAlertPreferenceIsDoneAlready = NEW_FEATURE_ALERT_DATE.equals(newFeatureAlertPreference);
             boolean useAlternateAlertText = UntappdHelper.getInstance().getUntappdUrlForCurrentStore("", this).equals(""); // This variable and the 'if' block that uses it can be removed later.
             if (!newFeatureAlertPreferenceIsDoneAlready) {
-                Log.v("sengsational", "onResume() passed test 1");
+                Log.v(TAG, "onResume() passed test 1");
                 android.app.AlertDialog.Builder logonDialog = new android.app.AlertDialog.Builder(this);
                 //logonDialog.setMessage("DONNIE DARK MODE\n\nI'm a few years late on this feature, but if you find yourself grappling for your blue light filter glasses every time you open Knurder, you're in for a treat.\n\nFrom the starting page, go to the 'three dot' menu, select settings, and you'll find a \"Dark Theme\" switch.\n\nWe'll now return you to your regular drinking.");
-                logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_title) + "</p><p>" + getResources().getString(R.string.new_feature_alert_message) + "</p>"));
+                //logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_title) + "</p><p>" + getResources().getString(R.string.new_feature_alert_message) + "</p>"));
                 // override message if they have never scanned the QR code and haven't populated the Untappd URL.
-                if (useAlternateAlertText) {
-                    String storeName = prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME);
-                    logonDialog.setTitle(getResources().getString(R.string.new_feature_alert_title_alt));
-                    logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_message_alt, storeName) + "</p>"));
-                }
+                //if (useAlternateAlertText) {
+                //    String storeName = prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME);
+                //    logonDialog.setTitle(getResources().getString(R.string.new_feature_alert_title_alt));
+                //    logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_message_alt, storeName) + "</p>"));
+                //}
+                logonDialog.setMessage("REBUILDING KNURDER\n\nThey FINALLY put the original UFO member site out of it's misery, and moved the functionality to 'Tap-That-App'\n\nThat broke Knurder.\n\nI think I have most things working again.  Feel free and hit 'about' and let me know what's still broken.\n\nIf you want to help, find Knurder on github.");
                 logonDialog.setCancelable(true);
                 logonDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putString(NEW_FEATURE_ALERT_MESSAGE, NEW_FEATURE_ALERT_DATE);
+                        //Additional tutorials affected
+                        editor.putBoolean(PREF_RATE_BEER_TUTORIAL, true);
                         editor.apply();
                         dialog.dismiss();
                     }
                 });
-                Log.v("sengsational", "onResume() showing dialog");
+                Log.v(TAG, "onResume() showing dialog");
                 android.app.AlertDialog newFeatureAlert = logonDialog.create();
                 newFeatureAlert.show();
                 // The following allows links to be clickable
                 TextView aView = (TextView)newFeatureAlert.findViewById(android.R.id.message);
                 aView.setMovementMethod(LinkMovementMethod.getInstance());
+
             }
         }
         super.onResume();
@@ -213,16 +217,29 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
         storeListPresenter = new StoreListPresenterImpl(this);  // Creates a WebResultListener
         tastedListPresenter = new TastedListPresenterImpl(this); // Creates a WebResultListener
+        memberDataPresenter = new MemberDataPresenterImpl(this); // Creates a WebResultListener
 
         context = getApplicationContext(); KnurderApplication.setContext(context);
         prefs = PreferenceManager.getDefaultSharedPreferences(TopLevelActivity.this);
-        manager = ReviewManagerFactory.create(this);
+        //manager = ReviewManagerFactory.create(this);
+        // Set to true for TESTING ONLY!
+        boolean wipeCardNumberAndPin = false; // TODO: set to false
+        if (wipeCardNumberAndPin) {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove(CARD_NUMBER);
+            editor.remove(CARD_PIN);
+            editor.remove(SAVE_CARD_PIN);
+            editor.remove(MOU);
+            editor.commit();
+            Log.v(TAG, "REMOVED PREFERENCES FOR AUTHENTICATION!!!!!!!!!!!!!!!!!!!");
+        }
+
 
         if (savedInstanceState == null) { // When starting app for the first time with or without preferences set
-            dumpPrefs(); // <<<<<<<<<<<<<For debugging only.  Remove when removing Log.v("sengsational", items
+            dumpPrefs(); // <<<<<<<<<<<<<For debugging only.  Remove when removing Log.v(TAG, items
             boolean wipeDatabaseForTesting = false;
             if (wipeDatabaseForTesting){
-                Log.e("sengsational", "ERASING EVERYTHING IN DATABASE NAME FOR DEBUG");
+                Log.e(TAG, "ERASING EVERYTHING IN DATABASE NAME FOR DEBUG");
                 UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(context) ;
                 SQLiteDatabase db = ufoDatabaseAdapter.openDb(this);                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
                 db.execSQL("drop table if exists UFO");
@@ -234,7 +251,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             if (!forceNewUserStateForTesting) { // Normally, during non-test runs
                 // we need to set the correct presentation mode below
             } else {
-                Log.e("sengsational", "ERASING EVERYTHING IN PREFS NAME FOR DEBUG");
+                Log.e(TAG, "ERASING EVERYTHING IN PREFS NAME FOR DEBUG");
                 Map<String, ?> allPrefs = prefs.getAll();
                 SharedPreferences.Editor editor = prefs.edit();
                 Iterator<String> apIter = allPrefs.keySet().iterator();
@@ -276,6 +293,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         tastedCountView = ((TextView) findViewById(R.id.tastedCount));
         tastedCountView.setText("Tasted " + prefs.getString(TASTED_COUNT, "?") + " so far.");
         saucerNameView = ((TextView) findViewById(R.id.saucerName));
+        Log.v(TAG, "saucerNameView.setText() onCreate()");
         saucerNameView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
         localBeersNotTastedButton = ((Button) findViewById(R.id.local_beers_nt_button));
         localTapsNotTastedButton = ((Button) findViewById(R.id.local_taps_nt_button));
@@ -322,12 +340,13 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 setToStorePresentation(clearUserData);
                 break;
             case USER_PRESENTATION:
+                Log.v(TAG, "TLA.onCreate() setToUserPresentation()");
                 setToUserPresentation();
                 break;
         }
 
         //Cause store selection pop-up if there is no store defined
-        if(DEFAULT_STORE_NAME.equals(prefs.getString(STORE_NAME_LIST,DEFAULT_STORE_NAME))){
+        if(DEFAULT_STORE_NAME.equals(prefs.getString(STORE_NAME_LIST,DEFAULT_STORE_NAME)) || NO_STORE_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE,NO_STORE_PRESENTATION))){
             Intent intent = new Intent(TopLevelActivity.this, SelectStoreActivity.class);
             startActivityForResult(intent, SET_STORE_CALLBACK);
         }
@@ -381,13 +400,14 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                                     })
                                     .setNegativeButton("Email Log", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int which) {
-                                            Log.v("sengsational", "Email log requested");
+                                            Log.v(TAG, "Email log requested");
                                             extractLogAndEmail();
                                         }
                                     })
                                     .setIcon(android.R.drawable.ic_dialog_alert)
                                     .show();
                             break;
+                    /*
                         case R.id.action_rate_app:
                             boolean useNewWay = false;
                             if (useNewWay) {
@@ -424,23 +444,23 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                                 request.addOnCompleteListener(new OnCompleteListener<ReviewInfo>() {
                                     @Override
                                     public void onComplete(@NonNull Task<ReviewInfo> task) {
-                                        Log.v("sengsational", "onComplete() running");
+                                        Log.v(TAG, "onComplete() running");
                                         if (task.isSuccessful()) {
-                                            Log.v("sengsational", "task.isSuccessful()");
+                                            Log.v(TAG, "task.isSuccessful()");
                                             // We can get the ReviewInfo object
                                             ReviewInfo reviewInfo = task.getResult();
                                             Task<Void> flow = manager.launchReviewFlow(TopLevelActivity.this, reviewInfo);
                                             flow.addOnCompleteListener(new OnCompleteListener<Void>() {
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> task2) {
-                                                    Log.v("sengsational", "onComplete() running");
+                                                    Log.v(TAG, "onComplete() running");
                                                     // The flow has finished. The API does not indicate whether the user
                                                     // reviewed or not, or even whether the review dialog was shown. Thus, no
                                                     // matter the result, we continue our app flow.
                                                 }
                                             });
                                         } else {
-                                            Log.v("sengsational", "task.isSuccessful() FALSE");
+                                            Log.v(TAG, "task.isSuccessful() FALSE");
                                             // There was some problem, continue regardless of the result.
                                         }
                                     }
@@ -456,6 +476,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                                 }
                             }
                             break;
+                            */
                         case R.id.change_location:
                             Intent intent = new Intent(TopLevelActivity.this, SelectStoreActivity.class);
                             startActivityForResult(intent, SET_STORE_CALLBACK);
@@ -489,7 +510,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                             long lastListDate = prefs.getLong(TopLevelActivity.LAST_LIST_DATE, 0L);
                             //lastListDate = lastListDate - 99900000L; ///////////////////////////////////////TESTING<<<<<<<<<<<<<<
                             long msSinceRefreshList = new Date().getTime() - lastListDate;
-                            Log.v("sengsational","msSinceRefreshList " + msSinceRefreshList);
+                            Log.v(TAG,"msSinceRefreshList " + msSinceRefreshList);
                             if (msSinceRefreshList > ONE_DAY_IN_MS) {
                                 askAboutUpdating("storeList", lastListDate, (msSinceRefreshList / ONE_DAY_IN_MS), " UPDATE IS STRONGLY SUGGESTED FOR MATCHING TAPS");
                             } else {
@@ -499,7 +520,14 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                             break;
                         case R.id.load_active:
                             boolean resetPresentation = false;
-                            getStoreList(resetPresentation, true);
+                            String presentationMode = prefs.getString(TopLevelActivity.PRESENTATION_MODE,"");
+                            if(USER_PRESENTATION.equals(presentationMode)) {
+                                Log.v(TAG, "MILESTONE: user selected R.id.load_active as a member.");
+                                getMemberData();
+                            } else {
+                                Log.v(TAG, "MILESTONE: user selected R.id.load_active as a visitor.");
+                                getStoreList(resetPresentation, false);
+                            }
                             break;
                         case R.id.load_tasted:
                             getTastedList();
@@ -508,9 +536,12 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
                                 Toast.makeText(getApplicationContext(), "The UFO web site no longer accepts connections from older Android devices.  Sorry.  Nothing I can do about it.\n\nPlease try on a device with Jelly Bean or higher.", Toast.LENGTH_LONG).show();
                             } else {
-                                Intent loginIntent = new Intent(TopLevelActivity.this, LoginActivity.class);
+                                Log.v(TAG, "MILESTONE: user selected R.id.logon. User presenation mode was " + USER_PRESENTATION.equals(prefs.getString(TopLevelActivity.PRESENTATION_MODE,"")));
+                                Intent loginIntent = new Intent(TopLevelActivity.this, LoginPinActivity.class);
+                                loginIntent.putExtra("refreshUser","true");
+                                loginIntent.putExtra("EXTRA_TEXT3",prefs.getString(CARD_NUMBER, "000000"));
                                 //startActivity(loginIntent);
-                                startActivityForResult(loginIntent, SET_PRESENTATION_MODE);
+                                startActivityForResult(loginIntent, GET_MEMBER_DATA);
                             }
                             break;
                         case R.id.action_edit_query:
@@ -535,7 +566,20 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             });
 
         }
-        Log.v("sengsational", "TLA.onCreate() is complete. 1722");
+        Log.v(TAG, "TLA.onCreate() is complete. 1722");
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            android.app.AlertDialog.Builder logonDialog = new android.app.AlertDialog.Builder(this);
+            String oldVersionErrorMessage = "The UFO web site no longer accepts connections from older Android devices.  Sorry.  Nothing I can do about it.\n\nPlease try on a device with Jelly Bean or higher.";
+            logonDialog.setMessage(oldVersionErrorMessage);
+            logonDialog.setCancelable(true);
+            logonDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                }
+            });
+            logonDialog.create().show();
+        }
 
         // DRS 20160815 = added 'if' - old list reminder
         if (KnurderApplication.oldListCheck) {
@@ -561,29 +605,26 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                     logonDialog.create().show();
                 }
             } else{
+                // There will be one update for logged-on members that gets the current list and tasted list and untappd.
+                // There will be one update for non-logged-on users that gets the current list from untappd.
+
                 String presentationMode = prefs.getString(TopLevelActivity.PRESENTATION_MODE,"");
-                if(USER_PRESENTATION.equals(presentationMode)) {
-                    long lastTastedDate = prefs.getLong(TopLevelActivity.LAST_TASTED_DATE, 0L);
-                    //lastTastedDate = lastTastedDate - 99900000L; ///////////////////////////////////////TESTING<<<<<<<<<<<<<<
-                    long msSinceRefreshTasted = new Date().getTime() - lastTastedDate;
-                    if (msSinceRefreshTasted > ONE_DAY_IN_MS) {
 
-                        askAboutUpdating("tastedList", lastTastedDate, (msSinceRefreshTasted / ONE_DAY_IN_MS), null);
-                    }
-                }
-
-
-                if (STORE_PRESENTATION.equals(presentationMode) || USER_PRESENTATION.equals(presentationMode)) {
+                if (STORE_PRESENTATION.equals(presentationMode)) {
                     long lastListDate = prefs.getLong(TopLevelActivity.LAST_LIST_DATE, 0L);
                     Log.v(TAG, "last list date " + new Date(lastListDate));
-                    //lastListDate = lastListDate - 99900000L; ///////////////////////////////////////TESTING<<<<<<<<<<<<<<
                     long msSinceRefreshList = new Date().getTime() - lastListDate;
-                    Log.v("sengsational","msSinceRefreshList " + msSinceRefreshList);
+                    Log.v(TAG,"msSinceRefreshList " + msSinceRefreshList);
                     if (msSinceRefreshList > ONE_DAY_IN_MS) {
                         askAboutUpdating("storeList", lastListDate, (msSinceRefreshList / ONE_DAY_IN_MS), null);
                     }
+                } else if(USER_PRESENTATION.equals(presentationMode)) {
+                    long lastTastedDate = prefs.getLong(TopLevelActivity.LAST_TASTED_DATE, 0L);
+                    long msSinceRefreshTasted = new Date().getTime() - lastTastedDate;
+                    if (msSinceRefreshTasted > ONE_DAY_IN_MS) {
+                        askAboutUpdating("memberData", lastTastedDate, (msSinceRefreshTasted / ONE_DAY_IN_MS), null);
+                    }
                 }
-
                 KnurderApplication.oldListCheck = false;
             }
         }
@@ -624,7 +665,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
             // DRS 20160815 - added 'method' - old list reminder
     private void askAboutUpdating(final String listType, long lastListDate, long daysSinceRefresh, final String extraMessage) {
-        Log.v("sengsational", "askAboutUpdating");
+        Log.v(TAG, "askAboutUpdating");
         //ContextThemeWrapper wrapper = new ContextThemeWrapper(this, R.style.myDialogTheme);
         //android.app.AlertDialog.Builder oldListDialog = new android.app.AlertDialog.Builder(wrapper);
         //android.app.AlertDialog.Builder oldListDialog = new android.app.AlertDialog.Builder(this, R.style.Theme_AppCompat_Dialog);
@@ -659,13 +700,16 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             public void onClick(DialogInterface dialog, int id) {
                 dialog.dismiss();
                 boolean resetPresentation = false;
+                boolean checkForQuiz = true;
                 if (listType.equals("storeList")) {
-                    boolean checkForQuiz = true;
                     boolean updateRequestFromMenuScan = extraMessage != null && extraMessage.contains("STRONGLY");
                     if (updateRequestFromMenuScan) checkForQuiz = false;
                     getStoreList(resetPresentation, checkForQuiz);
                 } else if (listType.equals("tastedList")) {
                     getTastedList();
+                } else if (listType.equals("memberData")){
+                    getMemberData();
+                    getStoreList(resetPresentation, checkForQuiz);
                 }
                 if (extraMessage != null) {
                     Intent intentOcrBase = new Intent(TopLevelActivity.this, OcrBase.class);
@@ -682,7 +726,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 }
             }
         });
-        Log.v("sengsational", "about to show.");
+        Log.v(TAG, "about to show.");
         oldListDialog.create().show();
         return;
     }
@@ -761,7 +805,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
         // Copied this block
         Intent beerList = null;
-        Log.v("sengsational", "TRYING RECYCLER VIEW"); //<<<<<<<<<<<<<<<<<<<<<<<<<<<SWAP-OUT TECHNIQUE
+        Log.v(TAG, "TRYING RECYCLER VIEW"); //<<<<<<<<<<<<<<<<<<<<<<<<<<<SWAP-OUT TECHNIQUE
         beerList = new Intent(TopLevelActivity.this, RecyclerSqlbListActivity.class);
         beerList.putExtra("pullFields", pullFields);
         //beerList.putExtra("selectedItems", selectedItems);
@@ -774,7 +818,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         beerList.putExtra("isLoggedIn", USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, STORE_PRESENTATION)));
         beerList.putExtra("refreshRequired",selectionFields.contains("HIGHLIGHTED")?true:false); // Tell the list activity that we must refresh the list when backing out
         beerList.putExtra("queryButtonText", listBeersButton.getText());
-        Log.v("sengsational", "going to RecyclerSqlbListActivity");
+        beerList.putExtra("storeNumber", prefs.getString(STORE_NUMBER_LIST, STORE_NUMBER_LOGON));
+        Log.v(TAG, "going to RecyclerSqlbListActivity");
         startActivity(beerList);
         // END Copied this block
     }
@@ -859,7 +904,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     }
 
     public void onClickLaunchUberEatsBrowser(View view) {
-        Log.v("sengsational", "<<<<<<<<<<<<clicked to launch browser");
+        Log.v(TAG, "<<<<<<<<<<<<clicked to launch browser");
         Intent browserIntent = new Intent(Intent.ACTION_VIEW);
         browserIntent.setData(Uri.parse(prefs.getString(UBER_EATS_LINK,"https://www.beerknurd.com")));
         startActivity(browserIntent);
@@ -942,7 +987,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             case R.id.database_access_button:
                 pullFields = null;
                 Intent dbmanager = new Intent(TopLevelActivity.this,AndroidDatabaseManager.class);
-                Log.v("sengsational", "going to AndroidDatabaseManager");
+                Log.v(TAG, "going to AndroidDatabaseManager");
                 startActivity(dbmanager);
                 break;
             case R.id.all_beers_button:
@@ -980,7 +1025,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         } // end switch
         if (pullFields != null) {
             Intent beerList = null;
-            Log.v("sengsational", "TRYING RECYCLER VIEW"); //<<<<<<<<<<<<<<<<<<<<<<<<<<<SWAP-OUT TECHNIQUE
+            Log.v(TAG, "TRYING RECYCLER VIEW"); //<<<<<<<<<<<<<<<<<<<<<<<<<<<SWAP-OUT TECHNIQUE
             beerList = new Intent(TopLevelActivity.this, RecyclerSqlbListActivity.class);
             beerList.putExtra("pullFields", pullFields);
             //beerList.putExtra("selectedItems", selectedItems);
@@ -991,7 +1036,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             beerList.putExtra("showDateInList", showDateInList);
             beerList.putExtra("isLoggedIn", USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, STORE_PRESENTATION)));
             beerList.putExtra("refreshRequired",selectionFields.contains("HIGHLIGHTED")?true:false); // Tell the list activity that we must refresh the list when backing out
-            Log.v("sengsational", "going to BeerListActivity");
+            beerList.putExtra("storeNumber", prefs.getString(STORE_NUMBER_LIST, STORE_NUMBER_LOGON));
+            Log.v(TAG, "going to BeerListActivity");
             startActivity(beerList);
         } else {
             // This needs to go to set the icons and then run the query the new way
@@ -1019,7 +1065,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     // START NEXT ACTIVITY AFTER STORE SELECTED
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.v("sengsational", "onActivityResult running with " + resultCode);
+        Log.v(TAG, "onActivityResult running with " + resultCode);
         if (requestCode == SET_STORE_CALLBACK) {
             if (resultCode == RESULT_OK){
                 // need to load that saucer's beers and remove tasted if that needs to be done <<<< That was the FORMER IDEA, now we will not remove tasted
@@ -1032,15 +1078,27 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 boolean checkQuiz = true;
                 try {checkQuiz = !"N".equals(data.getStringExtra("check_quiz"));} catch (Throwable t) {}
                 Log.v(TAG, "checkQuiz was " + checkQuiz);
-                this.getStoreList(resetPresentation, checkQuiz);
+                Bundle extras = data.getExtras();
+                String storeName = (String)extras.get("store_name");
+                String storeNumber = (String)extras.get("store_number");
+                Log.v(TAG, "passed-in Store name:" + storeName);
+                Log.v(TAG, "passed-in Store number:" + storeNumber);
+                Log.v(TAG, "saucerNameView.setText() onActivityResult()");
+                saucerNameView.setText(storeName);
+                if (USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, ""))){
+                    this.getMemberData();
+                } else {
+                    getStoreList(resetPresentation, checkQuiz);
+                }
             } else {
-                Log.v("sengsational","TLA.onActivityResult code: " + resultCode);
+                Log.v(TAG,"TLA.onActivityResult code: " + resultCode);
             }
         } else if (requestCode == SET_PRESENTATION_MODE) {
             String presentationMode = KnurderApplication.getPresentationMode();
             if ("store-false".equals(presentationMode)) {
                 setToStorePresentation(false);
             } else if ("user".equals(presentationMode)) {
+                Log.v(TAG, "TLA.onActivityResult() setToUserPresentation() SET_PRESENTATION_MODE");
                 setToUserPresentation();
             }
         } else if (requestCode  == SETTINGS_ACTIVITY) {
@@ -1048,6 +1106,15 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             setUbereatsButtonVisibility();
         } else if (requestCode  == UPDATE_GLASS_CALLBACK) {
             // Nothing to do here?
+        } else if (requestCode == GET_MEMBER_DATA) {
+            getMemberData();
+            String presentationMode = KnurderApplication.getPresentationMode();
+            if ("store-false".equals(presentationMode)) {
+                setToStorePresentation(false);
+            } else if ("user".equals(presentationMode)) {
+                Log.v(TAG, "TLA.onActivityResult() setToUserPresentation() GET_MEMBER_DATA");
+                setToUserPresentation();
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }//onActivityResult
@@ -1055,13 +1122,13 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     // CONTROL VISIBILITY DEPENDING ON MODE
 
     public void setToUserPresentation() {
-        Log.v("sengsational", "TLA.setToUserPresentation");
+        Log.v(TAG, "TLA.setToUserPresentation");
         userNameView.setText(prefs.getString(USER_NAME, ""));
 
         // DRS 20161008 - Added 'if' - For when existing user upgrades to allow logged in store to differ from display store
         if("undefined".equals(prefs.getString(STORE_NUMBER_LOGON,"undefined"))){
             // this installation has never logged-on with updated version.  Make the STORE_NUMBER and STORE_NUMBER_LOGON match
-            Log.v("sengsational","STORE_NUMBER_LOGON not defined.  Now setting it to the STORE_NUMBER");
+            Log.v(TAG,"STORE_NUMBER_LOGON not defined.  Now setting it to the STORE_NUMBER");
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
             editor.putString(STORE_NUMBER_LOGON, prefs.getString(STORE_NUMBER_LIST,"13888"));
             editor.apply();
@@ -1119,18 +1186,19 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         while (menuIter.hasNext()){menuMap.get(menuIter.next()).setEnabled(true);}
         for (String title : menuTitles) {
             MenuItem item = menuMap.get(title);
-            Log.v("sengsational", "disable " + title);
+            Log.v(TAG, "disable " + title);
             if (item != null) item.setEnabled(false);
         }
     }
 
     public void setToStorePresentation(boolean clearUserData) {
-        Log.v("sengsational", "TLA.setToStorePresentation()");
+        Log.v(TAG, "TLA.setToStorePresentation()");
 
         // DRS 20161006 - Add 1 - Allow Change Location while logged-in
         locationTextView.setVisibility(View.INVISIBLE);
 
         userNameView.setText("");
+        Log.v(TAG, "saucerNameView.setText()");
         saucerNameView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
         saucerNameView.setVisibility(View.VISIBLE);
         tastedCountView.setVisibility(View.INVISIBLE);
@@ -1172,7 +1240,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         } else {
             removeTastedFlagsFromDatabase();
         }
-        Log.v("sengsational", "Clearing preferences.");
+        Log.v(TAG, "Clearing preferences.");
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove(USER_NAME);
         editor.remove(TASTED_COUNT);
@@ -1184,11 +1252,12 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         editor.remove(QUERY_GEOGRAPHY);
         editor.remove(QUERY_TASTED);
         editor.putString(PRESENTATION_MODE, STORE_PRESENTATION);
+        editor.remove(MOU);
         editor.apply();
     }
 
     private void setToNoStorePresentation() {
-        Log.v("sengsational", "TLA.setToNoStorePresentation");
+        Log.v(TAG, "TLA.setToNoStorePresentation");
 
         // DRS 20161006 - Add 1 - Allow Change Location while logged-in
         locationTextView.setVisibility(View.INVISIBLE);
@@ -1249,7 +1318,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             //db.execSQL("delete from STYLES");
             db.close();                                                        //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
         } catch (Throwable t) {
-            Log.e("sengsational", "Database Failure: " + t.getMessage());
+            Log.e(TAG, "Database Failure: " + t.getMessage());
         }
     } // Private Helper Method
 
@@ -1263,7 +1332,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             db.execSQL("update UFO set CREATED = null"); // DRS 20181204
             db.close();                                                        //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
         } catch (Throwable t) {
-            Log.e("sengsational", "Database Failure: " + t.getMessage());
+            Log.e(TAG, "Database Failure: " + t.getMessage());
         }
     } // Private Helper Method
 
@@ -1274,7 +1343,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             db.execSQL("update UFO set HIGHLIGHTED='F'");
             db.close();                                                        //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
         } catch (Throwable t) {
-            Log.e("sengsational", "Database Failure: " + t.getMessage());
+            Log.e(TAG, "Database Failure: " + t.getMessage());
         }
     } // Private Helper Method
 
@@ -1297,7 +1366,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                     lineCount++;
                 }
             }
-            Log.v("sengsational","log has " + lineCount + " lines.");
+            Log.v(TAG,"log has " + lineCount + " lines.");
 
             File tempDir = getContext().getExternalCacheDir();
             String timeStamp = new SimpleDateFormat("yyyy-MM-dd-mmss").format(new Date());
@@ -1352,12 +1421,12 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 //tempFile.delete();
                 //tempZip.delete();
             } catch (Exception e) {
-                Log.v("sengsational", "Could not delete temp file(s): " + e.getMessage());
+                Log.v(TAG, "Could not delete temp file(s): " + e.getMessage());
             }
 
             //Runtime.getRuntime().exec("logcat -d -v time -f "+file.getAbsolutePath());
         } catch (IOException e) {
-            Log.v("sengsational","Failed to manage log file send. " + e.getMessage());
+            Log.v(TAG,"Failed to manage log file send. " + e.getMessage());
             Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT).show();
         }
 
@@ -1383,7 +1452,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_top_level_activty, menu);
         for (int i = 0; i < menu.size(); i++) {
-            Log.v("sengsational", "menu item " + menu.getItem(i).getTitle().toString());
+            Log.v(TAG, "menu item " + menu.getItem(i).getTitle().toString());
             menuMap.put(menu.getItem(i).getTitle().toString(), menu.getItem(i));
         }
         String presentationMode = prefs.getString(PRESENTATION_MODE, STORE_PRESENTATION);
@@ -1407,16 +1476,17 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         //Log.v("TAG", "onPrepareOptionsMenu running!!");
-        MenuItem itemGlass = menu.findItem(R.id.scan_glass_size);
-        if (itemGlass != null) {
+        MenuItem itemScanMenu = menu.findItem(R.id.scan_glass_size);
+        /* NOTE: scan_class_size is OCR scanning of the menu image.  We no longer do this.
+        if (itemScanMenu != null) {
             if (!prefs.getBoolean("allow_external_picture_storage_switch", true)) {
-                itemGlass.setVisible(false);
+                itemScanMenu.setVisible(false);
             } else {
-                itemGlass.setVisible(true);
+                itemScanMenu.setVisible(true);
             }
         } else {
             Log.e(TAG, "The Menu item glass size was null");
-        }
+        } */
 
         MenuItem itemAnalytics = menu.findItem(R.id.open_tasted_analytics);
         if (itemAnalytics != null) {
@@ -1448,17 +1518,25 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
     //////////////////////////////////////////////Methods I call on user action /////////////////////////////////////
     @Override public void getStoreList(boolean resetPresentation, boolean checkForQuiz) {
-        storeListPresenter.getStoreList(prefs.getString(STORE_NUMBER_LIST, "13888"), resetPresentation, this);
+        memberDataPresenter.getMemberData(prefs.getString(STORE_NUMBER_LOGON, "13888"), this);
 
-        // If this person is logged in (in user presentation mode), hit the quiz interactor to see if there's a quiz
-        if (prefs.getString(PRESENTATION_MODE, "").equals(USER_PRESENTATION) && checkForQuiz) {
-            new QuizInteractor(TopLevelActivity.this).getQuizPageFromWeb(this);
+        boolean disableQuizInteractor = true;
+        if (!disableQuizInteractor) {
+            // If this person is logged in (in user presentation mode), hit the quiz interactor to see if there's a quiz
+            if (prefs.getString(PRESENTATION_MODE, "").equals(USER_PRESENTATION) && checkForQuiz) {
+                new QuizInteractor(TopLevelActivity.this).getQuizPageFromWeb(this);
+            }
         }
     } // Data activity
 
     @Override public void getTastedList() {
         String savePasswordFromSwitch = prefs.getBoolean("password_switch", true)?"T":"F";
         tastedListPresenter.getTastedList(prefs.getString(AUTHENTICATION_NAME, ""), prefs.getString(PASSWORD, ""), prefs.getString(MOU,"0"), savePasswordFromSwitch, prefs.getString(STORE_NUMBER_LOGON, "13888"));
+    } // Data activity
+
+    @Override public void getMemberData() {
+        String savePinFromSwitch = prefs.getBoolean("pin_switch", true)?"T":"F";
+        memberDataPresenter.getMemberData(prefs.getString(TopLevelActivity.CARD_NUMBER, ""), prefs.getString(TopLevelActivity.CARD_PIN, ""), prefs.getString(MOU,"0"), savePinFromSwitch, prefs.getString(STORE_NUMBER_LOGON, "13888"), this);
     } // Data activity
 
     //////////////////////////////////////////Methods called by the listener////////////////
@@ -1475,6 +1553,18 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
     } // Called on successful login
 
+    @Override
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putString(TopLevelActivity.CARD_NUMBER, cardNumber);
+        if ("T".equals(prefs.getString(TopLevelActivity.SAVE_CARD_PIN,"T"))) editor.putString(TopLevelActivity.CARD_PIN, cardPin);
+        editor.putString(TopLevelActivity.STORE_NUMBER_LOGON, storeNumber);
+        editor.putString(TASTED_COUNT, tastedCount);
+        editor.putString(USER_NAME, userName);
+        editor.putString(MOU, mou);
+        editor.apply();
+    }
+
     @Override public void saveValidStore(String storeNumber) {
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
 
@@ -1483,14 +1573,14 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         // if the store number is NOT the same, wipe user data
         // this (should be) the only place where old store / new store are compared and action taken
         if (!currentStoreNumber.equals(storeNumber) && !"".equals(currentStoreNumber)){
-            Log.v("sengsational", "Store number change from " + currentStoreNumber + " to " + storeNumber + " User data getting wiped.");
+            Log.v(TAG, "Store number change from " + currentStoreNumber + " to " + storeNumber + " User data getting wiped.");
             clearUserData(currentStoreNumber);
         } else {
-            Log.v("sengsational", "Store number not changed: " + currentStoreNumber);
+            Log.v(TAG, "Store number not changed: " + currentStoreNumber);
         }
 
         editor.putString(STORE_NUMBER_LIST, storeNumber);//kK3yy7hs
-        Log.v("sengsational", "TLA.saveValidStore " + StoreNameHelper.getInstance().getStoreNameFromNumber(storeNumber, null));
+        Log.v(TAG, "TLA.saveValidStore " + StoreNameHelper.getInstance().getStoreNameFromNumber(storeNumber, null));
         editor.putString(STORE_NAME_LIST, StoreNameHelper.getInstance().getStoreNameFromNumber(storeNumber, null));
         editor.apply();
 
@@ -1524,7 +1614,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         // Once all processes call showProgress(false), it will continue and remove the progress screen.
         if (show) mProgressStacker++;
         else mProgressStacker--;
-        Log.v("sengsational", "mProgressStacker: " + mProgressStacker + " " + show);
+        Log.v(TAG, "mProgressStacker: " + mProgressStacker + " " + show);
         if (mProgressStacker < 0) {
             Log.e(TAG, "Progress Stacker less than zero!");
             mProgressStacker = 0;
@@ -1545,19 +1635,19 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 }
             });
 
-            Log.v("sengsational", "setting visibility of progressView: show=" + show);
+            Log.v(TAG, "setting visibility of progressView: show=" + show);
             progressView.setVisibility(show ? View.VISIBLE : View.GONE);
             progressView.animate().setDuration(shortAnimTime).alpha(show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    Log.v("sengsational", "setting visibility of 1progressView: show=" + show);
+                    Log.v(TAG, "setting visibility of 1progressView: show=" + show);
                     progressView.setVisibility(show ? View.VISIBLE : View.GONE);
                 }
             });
         } else {
             // The ViewPropertyAnimator APIs are not available, so simply show
             // and hide the relevant UI components.
-            Log.v("sengsational", "setting visibility of 2progressView: show=" + show);
+            Log.v(TAG, "setting visibility of 2progressView: show=" + show);
 
             progressView.setVisibility(show ? View.VISIBLE : View.GONE);
             topLevelView.setVisibility(show ? View.GONE : View.VISIBLE);
@@ -1574,7 +1664,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     }
 
     @Override public void showDialog(String message, long daysSinceQuiz) {
-        Log.v("sengsational", "showDialog about quiz");
+        Log.v(TAG, "showDialog about quiz");
         android.app.AlertDialog.Builder quizDialog = new android.app.AlertDialog.Builder(this);
 
         quizDialog.setMessage(message + " Go to quiz now?");
@@ -1597,22 +1687,23 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 dialog.dismiss();
             }
         });
-        Log.v("sengsational", "about to show dialog.");
+        Log.v(TAG, "about to show dialog.");
         quizDialog.create().show();
     }
 
     @Override public void setStoreView(boolean resetPresentation) {
         boolean clearUserData = false;
         if (resetPresentation) {
-            Log.v("sengsational","TLA.setStoreView() with resetPresentation " + resetPresentation + " and clearUserData " + clearUserData);
+            Log.v(TAG,"TLA.setStoreView() with resetPresentation " + resetPresentation + " and clearUserData " + clearUserData);
             setToStorePresentation(clearUserData);
         } else {
-            Log.v("sengsational","TLA.setStoreView() Not doing anything (resetPresentation " + resetPresentation + ")");
+            Log.v(TAG,"TLA.setStoreView() Not doing anything (resetPresentation " + resetPresentation + ")");
         }
         setUbereatsButtonVisibility();
     }
 
     @Override public void setUserView() {
+        Log.v(TAG, "TLA.setUserView() setToUserPresentation()");
         setToUserPresentation();
     }
 

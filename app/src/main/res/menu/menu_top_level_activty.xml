@@ -9,7 +9,8 @@
     <item
         android:id="@+id/load_tasted"
         android:title="@string/action_load_tasted"
-        app:showAsAction="never"/>
+        app:showAsAction="never"
+        android:visible="false"/>
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
@@ -32,16 +33,17 @@
     <item
         android:id="@+id/scan_glass_size"
         android:title="@string/action_scan_glass_size"
-        app:showAsAction="never"/>
+        app:showAsAction="never"
+        android:visible="false"/>
     <item
         android:id="@+id/open_tasted_analytics"
         android:title="@string/action_open_tasted_analytics"
         app:showAsAction="never"/>
-    <item
+    <!-- item
         android:id="@+id/action_rate_app"
         android:orderInCategory="90"
         android:title="@string/action_rate_app"
-        app:showAsAction="never"/>
+        app:showAsAction="never"/ -->
     <item
         android:id="@+id/action_about"
         android:orderInCategory="100"

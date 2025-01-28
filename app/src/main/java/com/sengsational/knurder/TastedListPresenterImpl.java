@@ -6,6 +6,7 @@ import android.util.Log;
  * Created by Dale Seng on 5/30/2016.
  */
 public class TastedListPresenterImpl implements TastedListPresenter {
+    private static final String TAG = "TastedListsPresenterImpl";
 
     private DataView dataView;
     private WebResultListener webResultListener;
@@ -25,7 +26,7 @@ public class TastedListPresenterImpl implements TastedListPresenter {
 
             // MOVED TO INTERACTOR Call show progress in the view object
             //if (dataView != null) dataView.showProgress(true);
-            //else Log.v("sengsational", "TastedListPresenterImpl.getTastedList() dataView was null");
+            //else Log.v(TAG, "TastedListPresenterImpl.getTastedList() dataView was null");
         } else {
             dataView.showProgress(false);
         }
@@ -53,7 +54,7 @@ public class TastedListPresenterImpl implements TastedListPresenter {
 
     @Override public void onSuccess() {
         if (dataView != null) {
-            Log.v("sengsational", "TLPI.onSuccess()");
+            Log.v(TAG, "TLPI.onSuccess()");
             dataView.showProgress(false);
             dataView.navigateToHome();
         }

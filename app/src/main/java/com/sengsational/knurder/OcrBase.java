@@ -214,7 +214,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
                                     .setPositiveButton("Email the Untappd URL", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int which) {
                                             UntappdHelper.getInstance().saveUntappdUrlForCurrentStore(untappdDataUrlString, listenerContext);
-                                            Log.v("sengsational", "Email URL requested");
+                                            Log.v(TAG, "Email URL requested");
                                             Intent mailIntent = new Intent(Intent.ACTION_SEND);
                                             mailIntent.setType("message/rfc822");
                                             mailIntent.putExtra(Intent.EXTRA_EMAIL, new String[] {"Knurder.frog4food@recursor.net"});
@@ -384,10 +384,22 @@ public class OcrBase extends AppCompatActivity implements DataView {
     }
 
     @Override public void getTastedList() {/*no implementation needed*/}
+
+    @Override
+    public void getMemberData() {
+        Log.e(TAG, "OcrBse.getMemberData() called unexpectedly.");
+    }
+
     @Override public void getStoreList(boolean resetPresentation, boolean checkForQuiz) {/*no implementation needed*/}
     @Override public void setUsernameError(String message) {/*no implementation needed*/}
     @Override public void setPasswordError(String message) {/*no implementation needed*/}
     @Override public void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount) {/*no implementation needed*/}
+
+    @Override
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+
+    }
+
     @Override public void saveValidStore(String storeNumber) {/*no implementation needed*/}
     @Override public void showDialog(String message, long daysSinceQuiz) {/*no implementation needed*/}
     @Override public void navigateToHome() {/*no implementation needed*/}

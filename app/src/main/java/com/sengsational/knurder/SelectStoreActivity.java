@@ -18,6 +18,7 @@ import java.util.List;
 
 
 public class SelectStoreActivity extends ListActivity {
+    private static final String TAG = "SelectStoreActivity";
 
     private SharedPreferences prefs;
     private HashMap<String, String> storeMap = new HashMap<String, String>();
@@ -60,16 +61,17 @@ public class SelectStoreActivity extends ListActivity {
         String selectedItem = (String)getListView().getItemAtPosition(position);
         String selectedNumber = StoreNameHelper.getInstance().getStoreNumberFromName(selectedItem);
         String previousStoreName = prefs.getString(TopLevelActivity.STORE_NAME_LIST, TopLevelActivity.DEFAULT_STORE_NAME);
-        Log.v("sengsational", "selectedItem: " + selectedItem + "  existingItem: " + previousStoreName);
-        if (previousStoreName.equals(selectedItem)){
+        Log.v(TAG, "selectedItem: " + selectedItem + "  existingItem: " + previousStoreName);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (previousStoreName.equals(selectedItem) && !TopLevelActivity.NO_STORE_PRESENTATION.equals(prefs.getString(TopLevelActivity.PRESENTATION_MODE,TopLevelActivity.NO_STORE_PRESENTATION))) {
             Toast.makeText(this, "Same Location!", Toast.LENGTH_SHORT);
             finish();
         } else {
             SharedPreferences.Editor edit = prefs.edit();
-            Log.v("sengsational","store name put " + selectedItem);
+            Log.v(TAG,"store name put " + selectedItem);
             edit.putString(TopLevelActivity.STORE_NAME_LIST, selectedItem);
             edit.putString(TopLevelActivity.STORE_NUMBER_LIST, selectedNumber);
-            edit.apply();
+            edit.commit();
             mIntent.putExtra("store_name", selectedItem);
             mIntent.putExtra("store_number", selectedNumber);
             mIntent.putExtra("check_quiz", "N"); // TopLevelActivity.onActivityResult
@@ -81,7 +83,7 @@ public class SelectStoreActivity extends ListActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        Log.v("sengsational", "SelectStoreActivity.onBackPressed fired");
+        Log.v(TAG, "SelectStoreActivity.onBackPressed fired");
         mIntent.putExtra("clear_tasted", false);
         setResult(RESULT_CANCELED, mIntent);
         finish();

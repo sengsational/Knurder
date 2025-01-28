@@ -24,12 +24,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.w3c.dom.Text;
+
 import java.util.Date;
 
 import static com.sengsational.knurder.BeerSlideActivity.EXTRA_TUTORIAL_TYPE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TEXT_RESOURCE;
 import static com.sengsational.knurder.PopTutorial.EXTRA_TITLE_RESOURCE;
-import static com.sengsational.knurder.TopLevelActivity.ONE_DAY_IN_MS;
 import static com.sengsational.knurder.TopLevelActivity.USER_NAME;
 import static com.sengsational.knurder.UfoDatabaseAdapter.fractionTapsWithMenuData;
 
@@ -57,7 +58,7 @@ public class BeerSlideFragment extends Fragment {
         Bundle args = new Bundle();
         args.putInt(ARG_POSITION, position);
         args.putInt(ARG_POSITION_FIRST_VISIBLE, firstVisible);
-        Log.v("sengsational", "create first visible : " + firstVisible);
+        Log.v(TAG, "create first visible : " + firstVisible);
         fragment.setArguments(args);
         return fragment;
     }
@@ -80,7 +81,7 @@ public class BeerSlideFragment extends Fragment {
         Bundle args = new Bundle();
         args.putInt(ARG_POSITION, position);
         args.putInt(ARG_POSITION_FIRST_VISIBLE, firstVisible);
-        Log.v("sengsational", "new instance first visible : " + firstVisible);
+        Log.v(TAG, "new instance first visible : " + firstVisible);
         fragment.setArguments(args);
         REFRESH_REQUIRED = false;
         return fragment;
@@ -92,7 +93,7 @@ public class BeerSlideFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-        //Log.v("sengsational", "BeerSlideFragment.onCreate() ARG_POSITION position: " + getArguments().getInt(ARG_POSITION));
+        //Log.v(TAG, "BeerSlideFragment.onCreate() ARG_POSITION position: " + getArguments().getInt(ARG_POSITION));
         if (savedInstanceState != null) {
             mLayoutId = savedInstanceState.getInt(ARG_LAYOUT_ID);
         }
@@ -153,7 +154,7 @@ public class BeerSlideFragment extends Fragment {
                 aViewGroup = (ViewGroup) inflater.inflate(layoutId, container, false);
             }
         } catch (Exception e) {
-            Log.v("sengsational", "Could not define the rootView.  This is bad.  mLayoutId was " + mLayoutId + " Error: " + e.getMessage());
+            Log.v(TAG, "Could not define the rootView.  This is bad.  mLayoutId was " + mLayoutId + " Error: " + e.getMessage());
         }
 
         if (aViewGroup == null) aViewGroup = container; // Total BS...  I don't know what to do if this happens.
@@ -164,9 +165,9 @@ public class BeerSlideFragment extends Fragment {
         Cursor aCursor = KnurderApplication.getCursor(getContext());
         aCursor.moveToPosition(listPosition);
         final SaucerItem modelItem = new SaucerItem(KnurderApplication.getCursor(getContext()));
-        //Log.v("sengsational", "BeerSlideFragment.onCreateView() Cursor moving to ARG_POSITION position: " + listPosition + " and finding " + modelItem.getName());
+        //Log.v(TAG, "BeerSlideFragment.onCreateView() Cursor moving to ARG_POSITION position: " + listPosition + " and finding " + modelItem.getName());
         //int databaseId = Integer.parseInt(mCursor.getString(0));
-        //Log.v("sengsational", "BeerSlideFragment.onCreateView() ListView cursor said to query database id: " + databaseId  );
+        //Log.v(TAG, "BeerSlideFragment.onCreateView() ListView cursor said to query database id: " + databaseId  );
         // DRS 20161130 - Commented 1, Added 11 - set view elements from model
         // populateView(databaseId, rootView); <<<  This opens a database instead of using an existing cursor and doesn't use a model
         ((TextView)rootView.findViewById(R.id.database_key)).setText(modelItem.getIdString());
@@ -186,7 +187,22 @@ public class BeerSlideFragment extends Fragment {
         ViewUpdateHelper.setActiveStyleInView((TextView)rootView.findViewById(R.id.beername), modelItem.getActive(), getContext());
         ViewUpdateHelper.setActiveStyleInView((TextView)rootView.findViewById(R.id.description), modelItem.getActive(), getContext());
 
-        ViewUpdateHelper.setGlassShapeIconInView((ImageView)rootView.findViewById(R.id.glass_icon_details), modelItem.glassSize, this.getContext());
+        Log.v(TAG, "BeerSlideFragment.onCreateView ");
+        TextView ouncesTextView = (TextView)rootView.findViewById(R.id.ounces_text_details);
+        Log.v(TAG, "BSF.ocv() container " + modelItem.getContainer());
+        String draughtOrBottle = modelItem.container;
+        if (draughtOrBottle == null) {
+            if (!modelItem.getName().contains("(CAN)") && !modelItem.getName().contains("(BTL)")){
+                draughtOrBottle = "draught";
+            } else {
+                draughtOrBottle = "nottap";
+            }
+        }
+
+        Log.v(TAG, "BeerSlideFragment.onCreateView ");
+        ViewUpdateHelper.setGlassShapeIconInView((ImageView)rootView.findViewById(R.id.glass_icon_details), ouncesTextView, modelItem.glassSize, draughtOrBottle, this.getContext());
+        //DRS 20231208 Check back
+        //ViewUpdateHelper.setGlassShapeIconInView((ImageView)rootView.findViewById(R.id.glass_icon_details), modelItem.glassSize, this.getContext());
         ViewUpdateHelper.setGlassPriceInView((TextView)rootView.findViewById(R.id.glass_price_details), modelItem.glassPrice, this.getContext());
 
         // This will set bold, bold-italic, italic or normal font for the beer name in the beer detail page.
@@ -281,7 +297,7 @@ public class BeerSlideFragment extends Fragment {
     @Override
     public void onPause(){
         super.onPause();
-        Log.v("sengsational", "BSF.onPause() refresh:" + REFRESH_REQUIRED);
+        Log.v(TAG, "BSF.onPause() refresh:" + REFRESH_REQUIRED);
         Log.v(TAG, "Context from Application: " + KnurderApplication.getContext());
         BeerListActivity.setRefreshRequired(REFRESH_REQUIRED);
         if (REFRESH_REQUIRED) {
@@ -312,7 +328,7 @@ public class BeerSlideFragment extends Fragment {
                 highlightState = cursor.getString(0);
             }
             cursor.close();
-            Log.v("sengsational", "Highlighted state: " + highlightState);
+            Log.v(TAG, "Highlighted state: " + highlightState);
             ImageView viewToManage = (ImageView)rootView.findViewById(R.id.highlighted);
             if (viewToManage == null) viewToManage = (ImageView)rootView.findViewById(R.id.highlighted_list_item);
             updateHighlightState(viewToManage, highlightState, db, databaseKey, this.getContext());
@@ -343,7 +359,7 @@ public class BeerSlideFragment extends Fragment {
     }
 
     private boolean informUserAboutMenuScanOrUntappedMatching(String storeNumber, Context context) {
-        Log.v("sengsational", "informUserAboutMenuScanOrUntappedMatching");
+        Log.v(TAG, "informUserAboutMenuScanOrUntappedMatching");
         Log.v(TAG, "storeNumber for beer was " + storeNumber);
         boolean isConsumed = false;
         if (storeNumber == null || storeNumber.equals("null")) return isConsumed;
@@ -391,7 +407,7 @@ public class BeerSlideFragment extends Fragment {
             isConsumed = false;
         }
         if (isConsumed) {
-            Log.v("sengsational", "about to show.");
+            Log.v(TAG, "about to show.");
             untappdProblemDialog.create().show();
         }
         return isConsumed;
@@ -403,7 +419,7 @@ public class BeerSlideFragment extends Fragment {
         SQLiteDatabase db = null;
         //Create a cursor to read the one record by database _id, passed here by EXTRA_ID
         try {
-            Log.v("sengsational","Running query with id: " + id);
+            Log.v(TAG,"Running query with id: " + id);
             Log.v(TAG, "THIS METHOD UNUSED!!!");
             Log.v(TAG, "THIS METHOD UNUSED!!!");
             Log.v(TAG, "THIS METHOD UNUSED!!!");
@@ -464,7 +480,7 @@ public class BeerSlideFragment extends Fragment {
                 }
 
                 // Manage Visibility of Highlighted
-                Log.v("sengsational", "highlightedText: " + highlightedText);
+                Log.v(TAG, "highlightedText: " + highlightedText);
                 ImageView highlightedView = (ImageView)rootView.findViewById(R.id.highlighted);
                 ViewUpdateHelper.setHighlightIconInView(highlightedView, highlightedText, this.getContext());
 

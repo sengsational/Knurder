@@ -24,9 +24,9 @@ public class MatchGroup {
     private final ConcurrentHashSet<String[]> mFoundResults = new ConcurrentHashSet<>(100);
     private static final String TAG = MatchGroup.class.getSimpleName();
 
-    public MatchGroup load(List<String[]> allTapsNames, String storeNumber) {
-        for (int i = 0; i < allTapsNames.size(); i++){
-            mSaucerMatchItems.add(new MatchItem(allTapsNames.get(i), storeNumber));
+    public MatchGroup load(List<String[]> allItemsNames, String storeNumber) {
+        for (int i = 0; i < allItemsNames.size(); i++){
+            mSaucerMatchItems.add(new MatchItem(allItemsNames.get(i), storeNumber));
         }
         return this;
     }

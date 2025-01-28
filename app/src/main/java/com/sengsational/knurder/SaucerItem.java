@@ -34,12 +34,15 @@ public class SaucerItem {
     boolean mOverrideFlight = false;
     boolean mOverrideMix = false;
     public static final String[] BREWERY_CLEANUP = {"Winery & Distillery","Beverage Associates","der Trappisten van","Brewing Company","Artisanal Ales","Hard Cider Co.","& Co. Brewing","Craft Brewery","Beer Company","Gosebrauerei","Brasserie d'","and Company","Cooperative","Brewing Co.","Brewing Co","& Son Co.","Brasserir","Brasserie","Brasseurs","Brau-haus","Brouwerji","Brauerei","BrewWorks","Breweries","Brouwerj","and Co.","Brewery","Brewing","Beer Co","Company","& Sohn","(Palm)","and Co","Cidery","& Sons","Beers","& Son","Ales","Brau","GmbH","Co.","Ltd","LTD","& co"};
+    public static final String IMPORT_CLEANUP = "'the carolinas','longmount','various','it varies','none','charlotte','milton','kansas city','fort collins','atlanta','n\\/a','local','vermont'";
 
     SaucerItem saucerItem;    //this object
 
-    static final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+    static final SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy");
     static final SimpleDateFormat ndf = new SimpleDateFormat("yyyy MM dd");
     static final SimpleDateFormat qdf = new SimpleDateFormat("yyyy MM dd HH mm");
+    static final SimpleDateFormat rdf = new SimpleDateFormat("MM/dd/yyyy");
+    static final SimpleDateFormat tdf = new SimpleDateFormat("MM\\/dd\\/yyyy");
 
     public SaucerItem() {
         setId(0L);
@@ -47,6 +50,19 @@ public class SaucerItem {
 
     public SaucerItem(Cursor cursor) {
         populate(cursor);
+    }
+
+    public SaucerItem(UntappdItem untappdItem) {
+        this.abv = untappdItem.getAbvNumber();
+        this.name = untappdItem.getCleanedBreweryName() + " " + untappdItem.getBeerName();
+        this.brew_id = untappdItem.getBeerNumber();
+        this.untappdBeer = untappdItem.getBeerNumber();
+        this.glassSize = untappdItem.getOuncesNumber();
+        this.untappdBrewery = untappdItem.getBreweryNumber();
+        this.glassPrice = untappdItem.getPriceNumber();
+        String tapsOrBottles = untappdItem.getTapsOrBottles();
+        if ("taps".equals(tapsOrBottles)) this.container = "draught";
+        else if ("bottles".equals(tapsOrBottles)) this.container = "bottle";
     }
 
     public void setStoreName(String storeName) {
@@ -94,7 +110,12 @@ public class SaucerItem {
     }
 
     public void setStore_id(String store_id) {
-        this.store_id = store_id;
+        if (store_id.contains("-")) {
+            String[] chit = store_id.split("-");
+            this.store_id = chit[1];
+        } else {
+            this.store_id = store_id;
+        }
     }
 
     public String getBrew_id() {
@@ -148,12 +169,27 @@ public class SaucerItem {
             this.city = "";
         }
         //Log.v(TAG, "setCity starting [" + saveCity + "] now [" + this.city + "]");
+
+        // pretty much no imports contain a comma, but city, state is common for domestic
+        if (this.city.contains(",")) {
+            isImport = "F";
+            return;
+        }
+        // still might be domestic use manually composed list to clean up
+        String quotedSaveCityLower = "'" + this.city.toLowerCase() + "'";
+        if (IMPORT_CLEANUP.contains(quotedSaveCityLower)) {
+            isImport = "F";
+            return;
+        }
+        isImport = "T";
+        return;
     }
 
     public String getCountry() {
         return country;
     }
 
+    //This is no longer populated on the saucer site.
     public void setCountry(String country) {
         if(country!=null && !country.trim().equals("UnitedStates") && !country.trim().equals("United States") && !country.trim().equals("USA") && !country.trim().equals("None")) {
             this.isImport = "T";
@@ -180,15 +216,15 @@ public class SaucerItem {
         if(style.contains("\\")){
             style = unescapeJavaString(style);
         }
-        if ("Brew Fusion".equals(style)) mOverrideMix = true;
-
+        if ("Brew Fusion".equalsIgnoreCase(style)) mOverrideMix = true;
+        if ("Various".equalsIgnoreCase(style)) mOverrideFlight = true;
         this.style = style;
-        if (mOverrideFlight && "draught".equals(this.container)) this.style = "Flight";
-        if (mOverrideMix && "draught".equals(this.container)) this.style = "Mix";
-
+        if (mOverrideFlight) this.style = "Flight";
+        if (mOverrideMix) {
+            Log.v(TAG, "mOverrideMix");
+            this.style = "Mix";
+        }
     }
-
-
 
     public String getDescription() {
         return description;
@@ -259,7 +295,20 @@ public class SaucerItem {
 
     public void setTimestamp(String timestamp) { this.timestamp = timestamp;}
 
-    public void setBrew_plate(String brew_plate) {this.brew_plate = brew_plate;}  // Used in loading tasted. Not in database
+    public void setAddedDate(String addedDate) { this.addedDate = addedDate;} //This variable is not persisted to database becaseu we don't use it //DRS 20250121
+
+    public void setReviewRating(String reviewRating) { this.reviewRating = reviewRating;} //This variable is not persisted to database becaseu we don't use it //DRS 20250121
+
+    public void setReviewRatingCount(String reviewRatingCount) { this.reviewRatingCount = reviewRatingCount;} //This variable is not persisted to database becaseu we don't use it //DRS 20250121
+
+    public void setBrew_plate(String brew_plate) {
+        this.brew_plate = brew_plate;
+        try {
+            int brewPlateNumber = Integer.parseInt(this.brew_plate);
+            int lastCompletedPlate = brewPlateNumber - 1;
+            setUser_plate("" + lastCompletedPlate);
+        } catch (Throwable t){}
+    }  // Used in loading tasted. Not in database
 
     public void setUser_plate(String user_plate) {this.user_plate = user_plate;}  // Used in loading tasted. Not in database
 
@@ -268,8 +317,11 @@ public class SaucerItem {
         // brew_plate is the plate they are working on
         // if brew_plate is greater than user_plate, the beer is on their current plate
         try {
-            if (Integer.parseInt(brew_plate) > Integer.parseInt(user_plate)) return true;
-            else return false;
+            boolean isOnCurrentPlate = true;
+            try {
+                isOnCurrentPlate = Integer.parseInt(brew_plate) > Integer.parseInt(user_plate);
+            } catch (Throwable t) {} // presume it is.
+            return isOnCurrentPlate;
         } catch (Throwable t) {
             Log.v(TAG, "Problem confirming if the beer was on the current plate. " + brew_plate + " / " + user_plate + " : " + t.getMessage() );
             return true; // default to showing the beer
@@ -280,9 +332,30 @@ public class SaucerItem {
         return created;
     }
 
+    // created is formatted "January 1, 1970"
+    // or later could be 01/01/1970
     public void setCreated(String created) {
-        this.created = created;
-        setCreatedDate(created);
+        boolean parseFullMonthNameOk = false;
+        boolean parseSlashDateOk = false;
+        boolean parseVeeSlashDateOk = false;
+        try {sdf.parse(created); parseFullMonthNameOk = true;} catch (Throwable t){}
+        try {rdf.parse(created); parseSlashDateOk = true;} catch (Throwable t) {}
+        try {tdf.parse(created); parseVeeSlashDateOk = true;} catch (Throwable t) {}
+        if (parseFullMonthNameOk) {
+            this.created = created;
+            setCreatedDate(created);
+        } else if (parseSlashDateOk || parseVeeSlashDateOk) {
+            Calendar cal = Calendar.getInstance();
+            String slashDate = "01/01/1970";
+            try {
+                if (parseSlashDateOk) cal.setTime(rdf.parse(created));
+                else if (parseVeeSlashDateOk) cal.setTime(tdf.parse(created));
+                this.created = sdf.format(cal.getTime());
+                setCreatedDate(this.created);
+            } catch (Throwable t) {}
+        } else {
+            Log.v(TAG, "Unable to parse date [" + created + "]");
+        }
     }
 
     public String getCreatedDate() { return createdDate;}
@@ -291,7 +364,7 @@ public class SaucerItem {
         Calendar cal = Calendar.getInstance();
         this.createdDate = "1970 01 01";
         try {
-            cal.setTime(sdf.parse(created));
+            cal.setTime(sdf.parse(created)); //sdf is to parse "January 1, 1970"
             this.createdDate= ndf.format(cal.getTime());
         } catch (Exception e) {}
     }
@@ -417,16 +490,16 @@ public class SaucerItem {
     public void setIsLocal(String city) {
         // Make sure getInstance is called before setting fields
         //String storeName = prefs.getString("lastStoreName","- Select a value -");
-        //Log.v("sengsational", "setIsLocal storeName " + storeName);
+        //Log.v(TAG, "setIsLocal storeName " + storeName);
         String statesDelim = StoreNameHelper.getInstance().lookupStatesForStoreName(mStoreName);
-        //Log.v("sengsational", "setIsLocal statesDelim " + statesDelim);
+        //Log.v(TAG, "setIsLocal statesDelim " + statesDelim);
 
         this.isLocal = "F";
         if (city != null) {
             if (statesDelim != null){
                 String states[] = statesDelim.split(";");
                 for (String state : states){
-                    //Log.v("sengsational", "this.setIsLocal " + state + " ? " + city);
+                    //Log.v(TAG, "this.setIsLocal " + state + " ? " + city);
                     if (city.endsWith(state)) {
                         this.isLocal = "T";
                         break;
@@ -514,7 +587,7 @@ public class SaucerItem {
     public String getCurrentlyQueued() { return currentlyQueued; }
 
     public String getQueText(Context context) {
-        Log.v(TAG, "SaucerItem.getQueText() called");
+        //Log.v(TAG, "SaucerItem.getQueText() called");
         if (queStamp == null) return "";
         String returnQueText = "";
         try {
@@ -588,8 +661,22 @@ public class SaucerItem {
         localize();
     }
 
+    public void loadTta(String string) {
+        //Tasted   "id": "22171949","roh_lap": "5","tasted_date": "12/22/2024","brew_name": "Wooden Robot Winter Vibes",       "brewer": "Wooden Robot Brewing","brewer_loc": "Charlotte, North Carolina","brew_style": "English Brown Ale","brew_container": "draught","review_count": "1","review_ratings": "4","brew_description": "Winter Vibes channels the soul of an English brown porter. Expect deep caramel, rich chocolate, and a comforting bready warmth. A brew built for long, frosty nights.","chit_code": "22171949-13888-417180"
+        //InStock  "id":"17408941","added_date":"09-21-2024",                  "brew_name":"Wooden Robot Good Morning Vietnam","brewer":"Wooden Robot Brewing", "brewer_loc":"Charlotte, North Carolina", "brew_style":"Blonde Ale",        "brew_container":"draught", "review_count":"0", "review_rating":"0",  "brew_description":"<p>Made with locally roasted Ethiopian Coffee from our friends at Enderly Coffee Roasters and rich Madagascar Vanilla Beans.&nbsp; The (clipped) and complex.<\/p>\r\n"
+        StringBuffer buf = new StringBuffer(string);
+        if (buf.substring(0,2).equals("[{")){
+            buf.delete(0,2);
+        }
+        mRawInputString = buf.toString();
+        parseTta();
+        localize();
+    }
+
+
     private void localize() {
         if (store_id == null) return;
+        if (brewer == null) return;
         if (getStoreIdsForState("NC").contains(store_id)) {
             if (brewer.contains("Sierra Nevada")) {
                 setCity("Mills River, NC");
@@ -616,7 +703,7 @@ public class SaucerItem {
 
         //Log.v(TAG, "mRawInputString [" + mRawInputString + "]");
         mRawInputString = mRawInputString.replaceAll("\"\\:null,", "\"\\:\"null\",");
-        String[] nvpa = mRawInputString.split("\",\"");
+        String[] nvpa = mRawInputString.split("\",\""); //Use "quoted comma" to split, otherwise single commas would split!!
         for (String nvpString : nvpa) {
             String[] nvpItem = nvpString.split("\":\"");
             if (nvpItem.length < 2) continue;
@@ -689,6 +776,136 @@ public class SaucerItem {
         }
     }
 
+    public void parseTta() {
+        //*O "name":"21st Amendment Back in Black IPA (CAN)",
+        //*N "brew_name": "Wooden Robot Winter Vibes",
+        //*O "store_id":"13888",
+        //*N "chit_code": "22171949-13888-417180" <<< need to parse out the store ID
+        //*O "brew_id":"7233936",
+        //*N "id": "22171949",
+        //*O "brewer":"21st Amendemnt Brewery",
+        //*N "brewer": "Wooden Robot Brewing",
+        //*O "city":"San Francisco",
+        //*N "brewer_loc": "Charlotte, North Carolina",
+        //O "country":"United States",
+        //N
+        //*O "container":"bottled",
+        //*N "brew_container": "draught",
+        //*O "style":"Black IPA",
+        //*N "brew_style": "English Brown Ale",
+        //*O "description":"Back in Black pours a midnight black with a very dark tan head. Brewed like an American IPA, and coming in at 65 IBUs, the addition of rich, dark malts grants this brew has all the flavor and hop character you expect with a smooth, mellow finish.",
+        //*N "brew_description": "Winter Vibes channels the soul of an English brown porter. Expect deep caramel, rich chocolate, and a comforting bready warmth. A brew built for long, frosty nights.",
+        //O "stars":3,
+        //N
+        //*O "reviews":"0"
+        //*N "review_count": "1",
+        //*O "brew_plate": "5"
+        //*N "roh_lap": "5",
+        //*O "created: December 10, 2023",
+        //*N "tasted_date": "12/22/2024",
+        //O "created_date": "20231210",
+        //N
+        //O "timestamp": "1702249596"
+        //O
+        //N "review_ratings": "4",
+
+        if (mRawInputString == null) {
+            System.out.println("nothing to parse");
+            return;
+        }
+
+        //Log.v(TAG, "mRawInputString [" + mRawInputString + "]");
+        mRawInputString = mRawInputString.replaceAll("\"\\:null,", "\"\\:\"null\",");
+        String[] nvpa = mRawInputString.split("\",\"");
+        for (String nvpString : nvpa) {
+            String[] nvpItem = nvpString.split("\":\"");
+            if (nvpItem.length < 2) continue;
+            String identifier = nvpItem[0].replaceAll("\"", "");
+            String content = nvpItem[1].replace("\\\"u", "u"); // "backslash quote u" will become "backslash u", so can't have that.
+            content = content.replaceAll("\"", ""); // Remove quotes from within the content.  I don't know why we're doing this any more.
+
+            switch (identifier) {
+                case "brew_name":
+                    setName(content);
+                    break;
+                case "chit_code":
+                    setStore_id(content);
+                    break;
+                case "id":
+                    setBrew_id(content);
+                    break;
+                case "brewer":
+                    setBrewer(content);
+                    break;
+                case "brewer_loc":
+                    setCity(content);
+                    break;
+                case "country":
+                    setCountry(content);
+                    break;
+                case "brew_container":
+                    setContainer(content);
+                    break;
+                case "brew_style":
+                    setStyle(content);
+                    break;
+                case "brew_description":
+                    setDescription(content);
+                    break;
+                case "stars":
+                    setStars(content);
+                    break;
+                case "review_count":
+                    setReviews(content);
+                    break;
+                case "review":
+                    setUserReview(content);  // DRS 20181023
+                    break;
+                case "uid":
+                    break;
+                case "review_id":
+                    setReviewId(content);  // DRS 20181023
+                    break;
+                case "tasted_date": //tasted_date (month/day/year not monthname day, year)
+                    setCreated(content);
+                    break;
+                case "user_star":
+                    setUserStars(content);  // DRS 20181023
+                    break;
+                case "roh_lap":
+                    setBrew_plate(content);
+                    break;
+                case "user_plate":
+                    setUser_plate(content);
+                    break;
+                case "time_stamp": // 1620009779???
+                    setTimestamp(content); // DRS 20181023
+                    break;
+                case "added_date": //MM-dd-yyyy
+                    setAddedDate(content);
+                    break;
+                case "review_rating":
+                    setReviewRating(content);
+                    break;
+                case "review_ratings":
+                    setReviewRatingCount(content);
+                    break;
+                case "reward:[{reward_id": //parseTta nowhere to put ["reward":[{"reward_id] "reward":[{"reward_id":"20833198 raw: "reward":[{"reward_id":"20833198","redeemed":"0","reward_type":"$5 Credit"}]}]
+                    //TODO: Save reward
+                    break;
+                case "redeemed": //parseTta nowhere to put [redeemed] redeemed":"0 raw: "reward":[{"reward_id":"20833198","redeemed":"0","reward_type":"$5 Credit"}]}]
+                    //TODO: Save reward
+                    break;
+                case "reward_type": //parseTta nowhere to put [reward_type] reward_type":"$5 Credit"}]}] raw: "reward":[{"reward_id":"20833198","redeemed":"0","reward_type":"$5 Credit"}]}]
+                    //TODO: Save reward
+                    break;
+
+                default:
+                    Log.v(TAG,"parseTta nowhere to put [" + identifier + "] " + nvpString + " raw: " + mRawInputString);
+                    break;
+            }
+        }
+    }
 
     public static String unescapeJavaString(String st) {
         if (st == null) return null;
@@ -753,7 +970,7 @@ public class SaucerItem {
                             int code = Integer.parseInt(fourChars, 16);
                             sb.append(Character.toChars(code));
                         } catch (Throwable t) {
-                            Log.v("sengsational", "Error parsing unicode string [" + fourChars + "]");
+                            Log.v(TAG, "Error parsing unicode string [" + fourChars + "]");
                         }
                         i += 5;
                         continue;
@@ -798,6 +1015,7 @@ public class SaucerItem {
         reviewId = null;  // DRS 20181023
         reviewFlag = null; // DRS 20181023
         timestamp = null; // DRS 20181023
+        addedDate = null; // DRS 20250121
 
         glassSize = null;  //DRS 20171128 - Menu scan
         glassPrice = null; //DRS 20171128 - Menu scan
@@ -975,6 +1193,10 @@ public class SaucerItem {
     String userStars;   //from web DRS 20181023
     String reviewId;    //from web DRS 20181023
     String timestamp;   //from web DRS 20181023
+    String addedDate;   //from web NOT INTEGRATED 20250121
+    String reviewRating;//from web NOT INTEGRATED 20250121
+    String reviewRatingCount;//from web NOT INTEGRATED 20250121
+
     String createdDate; //calculated from created
     String newArrival;  //added during database population
     String isImport;    //added during database population

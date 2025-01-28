@@ -5,17 +5,22 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.sengsational.ocrreader.MatchComparer;
+import com.sengsational.ocrreader.MatchItem;
 import com.sengsational.ocrreader.OcrScanHelper;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
@@ -51,7 +56,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
 
     @Override
     protected void onPreExecute() {
-        Log.v("sengsational", "onPreExecute()..."); //Run order #01
+        Log.v(TAG, "onPreExecute()..."); //Run order #01
         if (TextUtils.isEmpty(nStoreNumber)) {
             nListener.onError("store number error");
             nErrorMessage = "We need a Saucer location.";
@@ -59,21 +64,25 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
 
         // set-up a single nHttpclient
         if (nHttpclient != null) {
-            Log.e("sengsational", "Attempt to set-up more than one HttpClient!!");
+            Log.e(TAG, "Attempt to set-up more than one HttpClient!!");
         } else {
             try {
                 nCookieStore = new BasicCookieStore();
                 HttpClientBuilder clientBuilder = HttpClientBuilder.create();
                 nHttpclient = clientBuilder.setRedirectStrategy(new LaxRedirectStrategy()).setDefaultCookieStore(nCookieStore).build();
                 nHttpclient.log.enableDebug(true);
-                Log.v("sengsational", "nHttpclient object created."); //Run order #02
+                Log.v(TAG, "nHttpclient object created."); //Run order #02
             } catch (Throwable t) {//
-                Log.v("sengsational", "nHttpclient object NOT created. " + t.getMessage());
+                Log.v(TAG, "nHttpclient object NOT created. " + t.getMessage());
                 StringWriter sw = new StringWriter();
                 t.printStackTrace(new PrintWriter(sw));
-                Log.v("sengsational", sw.toString());
+                Log.v(TAG, sw.toString());
                 nListener.onError("http client error");
                 nErrorMessage = "Problem with the http connection.";
+            }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                nListener.onError("client error");
+                nErrorMessage = "The UFO web site no longer accepts connections from older Android devices.  Sorry.  Nothing I can do about it.\n\nPlease try on a device with Jelly Bean or higher.";
             }
         }
     }
@@ -87,10 +96,10 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
         } catch (Exception e) {}
 
         if (success) {
-            Log.v("sengsational", "onPostExecute success: " + success);
+            Log.v(TAG, "onPostExecute success: " + success);
             nListener.onFinished();
         } else {
-            Log.v("sengsational", "onPostExecute fail");
+            Log.v(TAG, "onPostExecute fail");
             nListener.onError(nErrorMessage);
         }
     }
@@ -111,13 +120,17 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 Log.v(TAG, "doInBackground is accessing web update lock.");
             } while (!KnurderApplication.getWebUpdateLock(TAG)); // if lock unavailable, this will delay 1/2 second up to 10 seconds, then release.
 
-            nListener.sendStatusToast("Getting list from saucer site...", Toast.LENGTH_SHORT);
-            // Get the currently active beers from the particular store
-            String beersWebPage = pullBeersWebPage(nStoreNumber);
-            if(beersWebPage == null){
-                nListener.onError("did not get beer list page");
-                nErrorMessage = "Did not get the list of beers from the UFO site.";
-                return false;
+            boolean useOldSite = false;
+            String beersWebPage = null;
+            if (useOldSite) {
+                nListener.sendStatusToast("Getting list from saucer site...", Toast.LENGTH_SHORT);
+                // Get the currently active beers from the particular store
+                beersWebPage = pullBeersWebPage(nStoreNumber);
+                if(beersWebPage == null){
+                    nListener.onError("did not get beer list page");
+                    nErrorMessage = "Did not get the list of beers from the UFO site.";
+                    return false;
+                }
             }
             //nListener.sendStatusToast("Got the list.  Loading local table...", Toast.LENGTH_SHORT);
             // Remove everything except the tasted and highlighted records
@@ -129,29 +142,31 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
 
             StoreNameHelper.getStoreIdsByStateMapFromDatabase(true);
 
-            // Insert the active beers into the database (or just update to active if record exists as a tasted record)
-            if (!loadActiveFromSite(beersWebPage)){
-                nListener.onError("active beer update error");
-                nErrorMessage = "Internal database error...";
-                return false;
-            }
+            if (useOldSite) {
+                // Insert the active beers into the database (or just update to active if record exists as a tasted record)
+                if (!loadActiveFromSite(beersWebPage)) {
+                    nListener.onError("active beer update error");
+                    nErrorMessage = "Internal database error...";
+                    return false;
+                }
+                // Remove inactive highlighted (keep inactive tasted, of course)
+                if (!manageEntriesNotJustRefreshed(nStoreNumber)){
+                    nListener.onError("clearing inactive error");
+                    nErrorMessage = "Internal database error....";
+                    return false;
+                }
 
-            // Remove inactive highlighted (keep inactive tasted, of course)
-            if (!manageEntriesNotJustRefreshed(nStoreNumber)){
-                nListener.onError("clearing inactive error");
-                nErrorMessage = "Internal database error....";
-                return false;
-            }
-
-            nListener.sendStatusToast("Table loaded.  Checking just landed...", Toast.LENGTH_SHORT);
-            String storePage = pullStorePage(nStoreNumber);
-            if (storePage == null) {
-                Log.e("sengsational","Store Page not received.") ;
-            } else {
-                if (!loadNewArrivalsFromSite(storePage)){
-                    Log.e("sengsational","New Arrivals not loaded.") ;
+                nListener.sendStatusToast("Table loaded.  Checking just landed...", Toast.LENGTH_SHORT);
+                String storePage = pullStorePage(nStoreNumber);
+                if (storePage == null) {
+                    Log.e(TAG,"Store Page not received.") ;
+                } else {
+                    if (!loadNewArrivalsFromSite(storePage)){
+                        Log.e(TAG,"New Arrivals not loaded.") ;
+                    }
                 }
             }
+
 
             /* START: THIS IS TO PULL MENU DATA FROM UNTAPPD ************** */
             boolean menuDataAdded = false;
@@ -173,20 +188,82 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                     }
                     // Parse the beers out of the data
                     //nListener.sendStatusToast("Loading untapped list...", Toast.LENGTH_SHORT);
-                    ArrayList<UntappdItem> untappdItems = getUntappdItemsFromData(untappdDataPage);
+
+                    // --------- TAPS ---------------
+                    ArrayList<UntappdItem> untappdItems = getUntappdItemsFromData(untappdDataPage, "taps");
                     if (untappdItems.size() == 0) {
                         throw new Exception("zero items pulled from untappdDataPage of size " + untappdDataPage.length());
                         //nListener.onError("zero items pulled from untappdDataPage of size " + untappdDataPage.length());
                         //nErrorMessage = "Did not understand the menu information found.";
                         //return false;
                     }
+
                     // Match the untappd list with the saucer tap list
                     nListener.sendStatusToast("Matching untappd list with saucer list...", Toast.LENGTH_SHORT);
-                    OcrScanHelper.getInstance().matchUntappdItems(untappdItems, nContext);
+                    OcrScanHelper.getInstance().matchUntappdItems(untappdItems, "taps", nContext);
                     // Save the results
-                    int[] results = OcrScanHelper.getInstance().getResults(nContext);
-                    // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImple.doInBackground()
-                    // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImple.doInBackground()
+                    int[] results = OcrScanHelper.getInstance().getResults("taps", nContext);
+                    //////////////NEW CODE - BOTTLES////////////////////////////////
+                    //------------BOTTLES--------------
+                    ArrayList<UntappdItem> untappdItemsBottles = getUntappdItemsFromData(untappdDataPage, "bottles");
+                    Log.v(TAG, "DEBUG 1");
+                    if (untappdItemsBottles.size() == 0) {
+                        nListener.onError("zero bottle items pulled from untappdDataPage of size " + untappdDataPage.length());
+                        nErrorMessage = "Did not understand the menu information found. Proceed with existing taps and ignore bottles.";
+                    }
+                    // Match the untappd list with the saucer tap list
+                    OcrScanHelper.getInstance().matchUntappdItems(untappdItemsBottles, "bottles", nContext);
+                    Log.v(TAG, "DEBUG 2");
+                    int[] bottleResults = OcrScanHelper.getInstance().getResults("bottles", nContext);
+                    Log.v(TAG, "DEBUG bottleResults size: " + bottleResults.length);
+
+                    /////////////END NEW CODE///////////////////////////////////////
+                    // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImpl.doInBackground()
+                    // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImpl.doInBackground()
+
+                    if (false) {
+                        // Here, we have untappd items and no saucer items.  We need to create saucer items for each untappd item.
+                        Iterator<UntappdItem> untappdTapIterator = untappdItems.iterator();
+                        ArrayList<SaucerItem> saucerItems = new ArrayList<>();
+                        while (untappdTapIterator.hasNext()) {
+                            UntappdItem anUntappdItem = untappdTapIterator.next();
+                            SaucerItem aSaucerItem = new SaucerItem(anUntappdItem);
+                            saucerItems.add(aSaucerItem);
+                        }
+                        Iterator<UntappdItem> untappdBottleIterator = untappdItemsBottles.iterator();
+                        while (untappdTapIterator.hasNext()) {
+                            UntappdItem anUntappdItem = untappdBottleIterator.next();
+                            SaucerItem aSaucerItem = new SaucerItem(anUntappdItem);
+                            saucerItems.add(aSaucerItem);
+                        }
+
+                        if (!loadActiveFromSite(saucerItems)) {
+                            nListener.onError("active beer update error");
+                            nErrorMessage = "Internal database error...";
+                            return false;
+                        }
+                        // Remove inactive highlighted (keep inactive tasted, of course)
+                        if (!manageEntriesNotJustRefreshed(nStoreNumber)){
+                            nListener.onError("clearing inactive error");
+                            nErrorMessage = "Internal database error....";
+                            return false;
+                        }
+                    } else {
+                        /* I think we have done this already
+                        if (!loadActiveFromSite(saucerItems)) {
+                            nListener.onError("active beer update error");
+                            nErrorMessage = "Internal database error...";
+                            return false;
+                        }
+                        */
+                        // Remove inactive highlighted (keep inactive tasted, of course)
+                        if (!manageEntriesNotJustRefreshed(nStoreNumber)){
+                            nListener.onError("clearing inactive error");
+                            nErrorMessage = "Internal database error....";
+                            return false;
+                        }
+
+                    }
                     menuDataAdded = true;
                 } else {
                     Log.v(TAG, "Not pulling from untappd.");
@@ -200,7 +277,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             nListener.onStoreListSuccess(nResetPresentation, menuDataAdded);
             // >>>>>>>>>>Active items now loaded into the database<<<<<<<<<<<<<<<<<
         } catch (Exception e) {
-            Log.e("sengsational", LoadDataHelper.getInstance().getStackTraceString(e));
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nErrorMessage = "Exception " + e.getMessage();
             return false;
         } finally {
@@ -217,7 +294,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
             db.execSQL("update UFO set ACTIVE='D'");
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get prepare database for new record loading. " + e.getMessage());
+            Log.e(TAG, "Could not get prepare database for new record loading. " + e.getMessage());
             return false;
         } finally {
             try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
@@ -227,14 +304,14 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
 
     private boolean xremoveAllExceptTastedAndHighlighted(SQLiteDatabase db) {
         try {
-            Log.v("sengsational", "We have " + getCount(db, "UFO") + " before.");
+            Log.v(TAG, "We have " + getCount(db, "UFO") + " before.");
             db.execSQL("delete from UFO where TASTED<>'T' and HIGHLIGHTED is null");
             db.execSQL("delete from UFO where TASTED<>'T' and HIGHLIGHTED='F'");
             db.execSQL("update UFO set ACTIVE = 'F'");
-            Log.v("sengsational", "We have " + getCount(db, "UFO") + " tasted plus highlighted");
+            Log.v(TAG, "We have " + getCount(db, "UFO") + " tasted plus highlighted");
             // We now have only tasted/highlighted records in the database or empty database
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get prepare database for new record loading. " + e.getMessage());
+            Log.e(TAG, "Could not get prepare database for new record loading. " + e.getMessage());
             return false;
         }
         return true;
@@ -246,9 +323,9 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
             db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
 
-            Log.v("sengsational", "Database was open in SLI.loadActiveFromSite " + db.isOpen());
+            Log.v(TAG, "Database was open in SLI.loadActiveFromSite " + db.isOpen());
             int currentCount = getCount(db, "UFO");
-            Log.v("sengsational", "Starting out we had " + currentCount + " records.");
+            Log.v(TAG, "Starting out we had " + currentCount + " records.");
 
             ////////////////////////////////////////////////////////
             // page contains the active list for the selected store
@@ -256,7 +333,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             int updateCount = 0;
             String[] items = beersWebPage.split("\\},\\{");
             if (items.length > 1) {
-                Log.v("sengsational", "The active list (including bottled) had " + items.length + " items.");
+                Log.v(TAG, "The active list (including bottled) had " + items.length + " items.");
                 for (String string : items) {
                     SaucerItem modelItem = new SaucerItem();
                     modelItem.setStoreNameAndNumber(nStoreNumber, db);
@@ -301,7 +378,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                         //sb.append(modelItem.getContentValues().get("NEW_ARRIVAL"));
                         //Log.v(TAG, "SLI Update database      " + sb + "  " + modelItem.getContentValues().toString());
                         updateCount++;
-                        //Log.v("sengsational", "updating BREW_ID: " + brewId);
+                        //Log.v(TAG, "updating BREW_ID: " + brewId);
                     } else { // need to insert
                         // Since this is an insert, we have to set the flags to default values
                         modelItem.setTasted(false);
@@ -327,18 +404,18 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                         }
                         */
                         currentCount++;
-                        //Log.v("sengsational", "inserting: " + brewId);
+                        //Log.v(TAG, "inserting: " + brewId);
                     }
                     if (cursor != null) cursor.close();
                 }
-                Log.v("sengsational", "After loading active, and updating " + updateCount + ", we had " + getCount(db, "UFO") + " records. That should equal " + currentCount + ".");
-                //Log.v("sengsational", "We had " + getCount(db, "STYLES") + " style records.");
+                Log.v(TAG, "After loading active, and updating " + updateCount + ", we had " + getCount(db, "UFO") + " records. That should equal " + currentCount + ".");
+                //Log.v(TAG, "We had " + getCount(db, "STYLES") + " style records.");
             } else {
-                Log.v("sengsational", "Found nothing in the beersWeb page.");
+                Log.v(TAG, "Found nothing in the beersWeb page.");
                 nListener.onError("found nothing on the beersweb page");
             }
         } catch (Exception e) {
-            Log.e("sengsational", LoadDataHelper.getInstance().getStackTraceString(e));
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nListener.onError("exception in storelistinteractor " + e.getMessage());
             return false;
         } finally {
@@ -346,6 +423,121 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
         }
         return true;
     }
+
+    private boolean loadActiveFromSite(List<SaucerItem> saucerItemList) {
+        SQLiteDatabase db = null;
+        try {
+            UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
+            db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
+
+            Log.v(TAG, "Database was open in SLI.loadActiveFromSite " + db.isOpen());
+            int currentCount = getCount(db, "UFO");
+            Log.v(TAG, "Starting out we had " + currentCount + " records.");
+
+            ////////////////////////////////////////////////////////
+            // page contains the active list for the selected store
+            ////////////////////////////////////////////////////////
+            int updateCount = 0;
+            if (saucerItemList.size() > 1) {
+                Log.v(TAG, "The active list (including bottled) had " + saucerItemList.size() + " items.");
+                for (SaucerItem modelItem : saucerItemList) {
+                    modelItem.setStoreNameAndNumber(nStoreNumber, db);
+                    modelItem.setActive(true);
+                    // We will be updating new arrival shortly, but get false into the db to start with
+                    modelItem.setNewArrival(false);
+
+                    String brewId = modelItem.getBrew_id(); // The brew EXTRA_ID we're working with in this loop
+                    //Log.v(TAG, "The brewId was [" + brewId + "]");
+
+                    // This could be in the database already, so we need to find out if it is.
+                    Cursor cursor = db.query("UFO", new String[] {"BREW_ID, HIGHLIGHTED, TASTED, STYLE"}, "BREW_ID = ?", new String[] {brewId}, null, null, null);
+                    if (cursor.moveToFirst()) { // true if record found
+                        Log.v(TAG, brewId + " found in database.");
+                        // preserve highlighted flag
+                        String highlighted = cursor.getString(1);
+                        if ("T".equals(highlighted)) {
+                            modelItem.setHighlighted("T");
+                        } else if ("X".equals(highlighted)){
+                            modelItem.setHighlighted("X");
+                        } else {
+                            modelItem.setHighlighted("F");
+                        }
+
+                        // preserve tasted flag
+                        String tasted = cursor.getString(2);
+                        if ("T".equals(tasted)) {
+                            modelItem.setTasted("T");
+                        } else {
+                            modelItem.setTasted("F");
+                        }
+
+                        // preserve style flag
+                        String style = cursor.getString(3);
+                        if (style != null && style.length() > 0) {
+                            modelItem.setStyle(style);
+                        }
+
+                        db.update("UFO", modelItem.getContentValues(), "BREW_ID = ?", new String[] {brewId});
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(modelItem.getContentValues().get("ACTIVE"));
+                        sb.append(modelItem.getContentValues().get("TASTED"));
+                        sb.append(modelItem.getContentValues().get("HIGHLIGHTED"));
+                        sb.append(modelItem.getContentValues().get("NEW_ARRIVAL"));
+                        sb.append(modelItem.getContentValues().get("CONTAINER"));
+                        sb.append(modelItem.getContentValues().get("STYLE"));
+                        Log.v(TAG, "SLI Update database      " + sb + "  " + modelItem.getContentValues().toString());
+                        updateCount++;
+                        //Log.v(TAG, "updating BREW_ID: " + brewId);
+                    } else { // need to insert
+                        Log.v(TAG, brewId + " NOT found in database.");
+
+                        // Since this is an insert, we have to set the flags to default values
+                        modelItem.setTasted(false);
+                        modelItem.setHighlighted(false);
+                        modelItem.setNewArrival(false);
+                        //Log.v("insert", "BREW_ID " + brewId + " was NOT found, inserting a new row.");
+
+                        // This is for logging purposes
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(modelItem.getContentValues().get("ACTIVE"));
+                        sb.append(modelItem.getContentValues().get("TASTED"));
+                        sb.append(modelItem.getContentValues().get("HIGHLIGHTED"));
+                        sb.append(modelItem.getContentValues().get("NEW_ARRIVAL"));
+                        sb.append(modelItem.getContentValues().get("CONTAINER"));
+                        sb.append(modelItem.getContentValues().get("STYLE"));
+
+
+                        db.insert("UFO", null, modelItem.getContentValues());
+                        Log.v(TAG, "SLI Insert into database " + sb + "  " + modelItem.getContentValues().toString());
+                        Log.v(TAG, "Inserted modelItem: " + modelItem.getName());
+
+                        /*
+                        if ("draught".equals(modelItem.getContainer())){
+                            Log.v("styletest", "style " + modelItem.getStyle());
+                            db.insertWithOnConflict ("STYLES", null, modelItem.getStyleCv(),SQLiteDatabase.CONFLICT_IGNORE);
+                        }
+                        */
+                        currentCount++;
+                        //Log.v(TAG, "inserting: " + brewId);
+                    }
+                    if (cursor != null) cursor.close();
+                }
+                Log.v(TAG, "After loading active, and updating " + updateCount + ", we had " + getCount(db, "UFO") + " records. That should equal " + currentCount + ".");
+                //Log.v(TAG, "We had " + getCount(db, "STYLES") + " style records.");
+            } else {
+                Log.v(TAG, "Found nothing in the beersWeb page.");
+                nListener.onError("found no saucer items");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
+            nListener.onError("exception in storelistinteractor " + e.getMessage());
+            return false;
+        } finally {
+            try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
+        }
+        return true;
+    }
+
 
     private boolean manageEntriesNotJustRefreshed(String nStoreNumber) {
         // All currently active beers from this store now have ACTIVE set to 'T'
@@ -359,7 +551,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
         try {
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
             db = ufoDatabaseAdapter.openDb(getContext());                                     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<OPENING DATABASE
-            Log.v("sengsational", "SLI.manageEntriesNotJustRefreshed before count " + getCount(db, "UFO"));
+            Log.v(TAG, "SLI.manageEntriesNotJustRefreshed before count " + getCount(db, "UFO"));
 
             // First, Prevent inactive tasted from getting deleted (we never delete tasted in the store list process).
             // Remove the 'D' from tasted beers that are not active.  This will prevent them from getting deleted, below.
@@ -385,9 +577,9 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             //                        and 3) are not in the set of highlighted
             db.execSQL("delete from UFO where ACTIVE='D'");
 
-            Log.v("sengsational", "SLI.manageEntriesNotJustRefreshed after  count " + getCount(db, "UFO"));
+            Log.v(TAG, "SLI.manageEntriesNotJustRefreshed after  count " + getCount(db, "UFO"));
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get prepare database for new record loading. " + e.getMessage());
+            Log.e(TAG, "Could not get prepare database for new record loading. " + e.getMessage());
             return false;
         } finally {
             try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
@@ -414,7 +606,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 }
             }
         } catch (Throwable t) {
-            Log.e("sengsational", "Could not get or update new arrivals. " + t.getMessage());
+            Log.e(TAG, "Could not get or update new arrivals. " + t.getMessage());
         } finally {
             try {db.close();} catch (Throwable t){};                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<CLOSING DATABASE
         }
@@ -427,7 +619,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
         try {
             beersListPage = LoadDataHelper.getPageContent("http://www.beerknurd.com/api/brew/list/" + storeNumber, null, nHttpclient, nCookieStore);        //<<<<<<<<<<<<<<<<PULL STORE'S AVAILABLE LIST
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get beersListPage. " + e.getMessage());
+            Log.e(TAG, "Could not get beersListPage. " + e.getMessage());
         }
         return beersListPage;
     }
@@ -438,10 +630,10 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             String storeName = StoreNameHelper.getInstance().getStoreNameFromNumber(nStoreNumber, null);
             storeName = storeName.replaceAll(" ","-").toLowerCase();
             if (storeName != null && storeName.startsWith("the-")) storeName = storeName.substring(4); // the-lake-flying-saucer is in valid...it's lake-flying-saucer
-            Log.v("sengsational", "Pulling http://www.beerknurd.com/locations/" + storeName);
+            Log.v(TAG, "Pulling http://www.beerknurd.com/locations/" + storeName);
             storePage = LoadDataHelper.getPageContent("http://www.beerknurd.com/locations/" + storeName, null, nHttpclient, nCookieStore);        //<<<<<<<<<<<<<<<<PULL STORE'S AVAILABLE LIST
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get beersListPage. " + e.getMessage());
+            Log.e(TAG, "Could not get beersListPage. " + e.getMessage());
         }
         return storePage;
     }
@@ -452,14 +644,14 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                 return false;
             }
         } catch (Exception e) {
-            Log.e("sengsational", "Exception on pre-execute getSiteAccess. " + e.getMessage());
+            Log.e(TAG, "Exception on pre-execute getSiteAccess. " + e.getMessage());
             return false;
         }
         return true;
     }
 
     private int getCount(SQLiteDatabase db, String dbTableName){
-        Log.v("sengsational", "getCount() database was open? " + db.isOpen());
+        Log.v(TAG, "getCount() database was open? " + db.isOpen());
         Cursor cursor = db.query(dbTableName, new String[]{"COUNT(*) AS count"}, null, null, null, null, null);
         int count = -1;
         if (cursor.moveToFirst()){

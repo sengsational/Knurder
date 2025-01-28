@@ -44,11 +44,22 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
         if (aView == null) return;
     }
 
+    @Override
+    public void saveValidCardCredentials(final String cardNumber, final String cardPin, final String savePin, final String mou, final String storeNumber, final String userName, final String tastedCount) {
+        if (aActivity == null || aView == null) return;
+        aActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                aView.saveValidCardCredentials(cardNumber, cardPin, savePin, mou, storeNumber, userName, tastedCount);
+            }
+        });
+        if (aView == null) return;
+    }
+
     @Override public void saveValidStore(final String storeNumber){
         if (aActivity == null || aView == null) return;
         aActivity.runOnUiThread(new Runnable() {
             public void run() {
-                Log.v("sengsational", "WebResultListenerImpl.saveValidStore");
+                Log.v(TAG, "WebResultListenerImpl.saveValidStore");
                 aView.saveValidStore(storeNumber);
             }
         });
@@ -65,7 +76,7 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
         if (aActivity == null || aView == null) return;
         aActivity.runOnUiThread(new Runnable() {
             public void run() {
-                Log.v("sengsational", "WebResultListenerImpl.onStoreListSuccess");
+                Log.v(TAG, "WebResultListenerImpl.onStoreListSuccess");
                 aView.setStoreView(resetPresentation);
                 if (menuDataAdded) {
                     aView.showMessage("You've got the current beer list plus details!");
@@ -92,8 +103,21 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
             }
         });
     }
+    @Override public void onMemberDataSuccess() {
+        SharedPreferences.Editor editor = TopLevelActivity.prefs.edit();
+        editor.putLong(TopLevelActivity.LAST_TASTED_DATE, new Date().getTime());
+        editor.apply();
 
-    @Override public void onSuccess(String mSavePin, String cardPin, String mMou, String cardNumber) {
+        if (aActivity == null || aView == null) return;
+        aActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                aView.showMessage("You've got your tasted list!");
+                aView.setUserView();
+            }
+        });
+    }
+
+    @Override public void onSuccess(String mSavePin, String cardPin, String mMou, String cardNumber, String storeNumberLogon) {
         // This place and saveValidCredentials() are the places where changes to save cardPin and mou preferences happen
         SharedPreferences.Editor editor = TopLevelActivity.prefs.edit();
 
@@ -103,12 +127,13 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
         else editor.remove(TopLevelActivity.CARD_PIN);
         editor.putString(TopLevelActivity.MOU, mMou);
         editor.putString(TopLevelActivity.CARD_NUMBER, cardNumber);
+        editor.putString(TopLevelActivity.STORE_NUMBER_LOGON, storeNumberLogon);
         editor.apply();
 
         if (aActivity == null || aView == null) return;
         aActivity.runOnUiThread(new Runnable() {
             public void run() {
-                aView.showMessage("Flagged beers placed into 'Brews on Queue'");
+                //aView.showMessage("Flagged beers placed into 'Brews on Queue'");
                 aView.setUserView();
             }
         });
@@ -199,7 +224,7 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
         }
         aActivity.runOnUiThread(new Runnable() {
             public void run() {
-                Log.v("sengsational", "WebResultListener.onFinished.");
+                Log.v(TAG, "WebResultListener.onFinished.");
                 aView.showProgress(false);
                 aView.navigateToHome();
             }
@@ -260,10 +285,12 @@ interface WebResultListener {
     void onError(String message);
     void sendStatusToast(String message, int toastLength);
     void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount);
+    void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount);
     void saveValidStore(String storeNumber);
     void onStoreListSuccess(boolean nResetPresentation, boolean menuDataAdded);
     void onTastedListSuccess();
-    void onSuccess(String mSavePin, String cardPin, String mMou, String cardNumber);
+    void onMemberDataSuccess();
+    void onSuccess(String mSavePin, String cardPin, String mMou, String cardNumber, String storeNumberLogon);
     void setToUserPresentation();
     void onOcrScanSuccess(final Intent data);
     void onOcrScanProgress(final int completePercent);

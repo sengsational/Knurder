@@ -36,6 +36,7 @@ import static android.content.Intent.EXTRA_TEXT;
  * A login screen that offers login via username/password.
  */
 public class LoginPinActivity extends AppCompatActivity implements DataView {
+    private static final String TAG = "LoginPinActivity";
     private static SharedPreferences prefs;
 
     // UI references.
@@ -64,6 +65,9 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
     private String mSavePin;
     private boolean mSavePinSwitch;
     private String mBrewIds;
+    private String mBrewNames;
+    private String mStoreId;
+    private String mRefreshUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +77,16 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
         cardCredentialValidator = new CardCredentialValidator(this);  // Creates a WebResultListener
 
         Intent intent = getIntent();
-        try { mBrewIds = (String) intent.getExtras().get(EXTRA_TEXT); } catch (Throwable t) {Log.v("sengsational", "Could not find brew ids on intent.");}
-        Log.v("sengsational", "mBrewIds [" + mBrewIds + "]");
+        try { mBrewIds = (String) intent.getExtras().get(EXTRA_TEXT); } catch (Throwable t) {Log.v(TAG, "Could not find brew ids on intent.");}
+        Log.v(TAG, "mBrewIds [" + mBrewIds + "]");
+        try { mBrewNames = (String) intent.getExtras().get("EXTRA_TEXT2"); } catch (Throwable t) {Log.v(TAG, "Could not find brew names on intent.");}
+        Log.v(TAG, "mBrewNames [" + mBrewNames + "]");
+        try { mStoreId = (String) intent.getExtras().get("EXTRA_TEXT3"); } catch (Throwable t) {Log.v(TAG, "Could not find store id names on intent.");}
+        Log.v(TAG, "mStoreId [" + mStoreId + "] from EXTRA_TEXT3");
+        if (mStoreId == null) { mStoreId = TopLevelActivity.STORE_NUMBER_LOGON; }
+        try { mRefreshUser = (String) intent.getExtras().get("refreshUser"); } catch (Throwable t) {Log.v(TAG, "Could not find load user on intent.");}
+        Log.v(TAG, "mRefreshUser [" + mRefreshUser + "]");
+
 
         // Get defaults and prepare store list from shared preferences
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -95,13 +107,13 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
         mActionBar = getSupportActionBar();
         mLoginFormView = findViewById(R.id.login_pin_form);
         mProgressView = findViewById(R.id.login_progress_pin);
-        //Log.v("sengsational", ">>>>>>>>>>>>> mLoginFormView " + mLoginFormView + " mProgressView " + mProgressView);
+        //Log.v(TAG, ">>>>>>>>>>>>> mLoginFormView " + mLoginFormView + " mProgressView " + mProgressView);
 
 
         // Set up the login form.
         mCardNumberView =  (EditText) findViewById(R.id.card_number);
         if (mCardNumberView != null) mCardNumberView.setText(mCardNumber);
-        else Log.v("sengsational", "mCardNumberView is null");
+        else Log.v(TAG, "mCardNumberView is null");
 
         mPinView = (EditText) findViewById(R.id.card_pin);
         mPinView.setText(mCardPin);
@@ -114,11 +126,11 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
                 if(((CheckBox)v).isChecked()){
                     //editor.putString(TopLevelActivity.MOU,"1");
                     mMou = "1";
-                    Log.v("sengsational","The checkbox is set to MOU");
+                    Log.v(TAG,"The checkbox is set to MOU");
                 }else{
                     //editor.putString(TopLevelActivity.MOU,"0");
                     mMou = "0";
-                    Log.v("sengsational","The checkbox is set to not MOU");
+                    Log.v(TAG,"The checkbox is set to not MOU");
                 }
                 //editor.apply();
             }
@@ -141,7 +153,7 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
             }
         });
 
-        Log.v("sengsational", "from state the login values cardnumber pin storenumber mou: " + mCardNumber + " " + mCardPin + " " + mStoreNumberLogon + " " + mMou);
+        Log.v(TAG, "from state the login values cardnumber pin storenumber mou: " + mCardNumber + " " + mCardPin + " " + mStoreNumberLogon + " " + mMou);
 
         mCheckboxView = (CheckBox) findViewById(R.id.showPinCheckBox);
         mCheckboxView.setOnClickListener(new OnClickListener() {
@@ -166,7 +178,7 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position == 0) position = lastStorePos;
                 if (parent.getItemAtPosition(position) == null) return;
-                Log.v("sengsational", "item at position: " + parent.getItemAtPosition(position));
+                Log.v(TAG, "item at position: " + parent.getItemAtPosition(position));
                 mSpinnerView.setSelection(position);
             }
 
@@ -176,16 +188,15 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
             }
         });
 
-
         Button mCardNumberSignInButton = (Button) findViewById(R.id.card_number_sign_in_button);
-        Log.v("sengsational",">>>>>>>>>>>>>>>>>>>check network<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        Log.v(TAG,">>>>>>>>>>>>>>>>>>>check network<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
         if ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE) != null) {
             mCardNumberSignInButton.setText(R.string.action_validate_card_credentials);
             mCardNumberSignInButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     hideSoftKeyBoard();
-                    Log.v("sengsational",">>>>>>>>>>>>>>>>>>>calling validateCardNumberCredentials<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+                    Log.v(TAG,">>>>>>>>>>>>>>>>>>>calling validateCardNumberCredentials<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
                     validateCardNumberCredentials(); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<VALIDATE CREDENTIALS
                 }
             });
@@ -218,25 +229,28 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
         Object selectedItem = mSpinnerView.getSelectedItem();
         String storeName = prefs.getString(TopLevelActivity.STORE_NAME_LIST, "(undefined)");
         if (selectedItem != null) storeName = selectedItem.toString();
-        Log.v("sengsational", "storeName in attempt card credential validation: " + storeName);
+        Log.v(TAG, "storeName in attempt card credential validation: " + storeName);
         String storeNumber = StoreNameHelper.getInstance().getStoreNumberFromName(storeName);
         //boolean storeNameChanged = !storeName.equals(prefs.getString(TopLevelActivity.STORE_NAME,TopLevelActivity.DEFAULT_STORE_NAME));
-        //Log.v("sengsational", "Changed: " + storeNameChanged + " The last store was : " + (prefs.getString(TopLevelActivity.STORE_NAME,TopLevelActivity.DEFAULT_STORE_NAME)) + " and now we have  " + storeName);
-        Log.v("sengsational", "storeNumber from Spinner: " + storeNumber);
+        //Log.v(TAG, "Changed: " + storeNameChanged + " The last store was : " + (prefs.getString(TopLevelActivity.STORE_NAME,TopLevelActivity.DEFAULT_STORE_NAME)) + " and now we have  " + storeName);
+        Log.v(TAG, "storeNumber from Spinner: " + storeNumber);
 
-
-
-        cardCredentialValidator.validateCredentials(cardNumber, cardPin, mMou, mSavePin, storeNumber, mStoreNumberForList, mBrewIds); // <<<<<<<<<<<<<<<< does not block
+        cardCredentialValidator.validateCredentials(cardNumber, cardPin, mMou, mSavePin, storeNumber, mStoreNumberForList, mBrewIds, mStoreId, mBrewNames); // <<<<<<<<<<<<<<<< does not block
     }
 
     @Override
     public void getTastedList() {
         // UNUSED HERE
-        Log.v("sengsational", "ERROR: Called getTastedList inside LoginPinActivity");
+        Log.v("TAG", "ERROR: Called getTastedList inside LoginPinActivity");
+    }
+
+    @Override
+    public void getMemberData() {
+        Log.e(TAG, "ERROR: Unexpected use of getMemeberData()");
     }
 
     @Override public void getStoreList(boolean resetPresentation, boolean checkForQuiz){
-        Log.e("sengsational", "getStoreList called in LoginActivity");
+        Log.e(TAG, "getStoreList called in LoginPinActivity");
     }
 
 
@@ -287,6 +301,11 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
         editor.apply();
     }
 
+    @Override
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+        Log.e(TAG, "Unexpected call of LoginPinActivity.saveValidCardCredentials()");
+    }
+
     @Override public void saveValidStore(String storeNumber) {
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
         editor.putString(TopLevelActivity.STORE_NUMBER_LIST, storeNumber); // DRS 20161006 - Leaving this as STORE_NUMBER, not changing to STORE_NUMBER_LOGON
@@ -335,7 +354,7 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
 
     @Override public void setUserView() {
         //Thread.dumpStack();
-        Log.v("sengsational","LA.setUserView()");
+        Log.v(TAG,"LA.setUserView()");
         //TopLevelActivity.setToUserPresentation();
         KnurderApplication.setPresentationMode("user"); // variable picked-up in TopLevelActivity.onActivityResult
     }

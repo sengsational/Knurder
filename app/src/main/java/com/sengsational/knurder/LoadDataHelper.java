@@ -23,12 +23,18 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.HeaderElement;
 import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.HttpResponse;
 import cz.msebera.android.httpclient.NameValuePair;
+import cz.msebera.android.httpclient.client.CookieStore;
 import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
@@ -49,6 +55,8 @@ import cz.msebera.android.httpclient.util.EntityUtils;
  */
 public class LoadDataHelper {
     private static LoadDataHelper loadDataHelper;
+    private static final String TAG = "LoadDataHelper";
+    private String nLastPageString;
 
     public static LoadDataHelper getInstance() {
         if (loadDataHelper == null){
@@ -66,7 +74,7 @@ public class LoadDataHelper {
 
     // GO TO THE LOGIN PAGE AND COLLECT FORM FIELDS
     static String getPageContent(String url, HttpResponse unusedParameter, CloseableHttpClient httpclient, BasicCookieStore cookieStore, int timeoutSeconds) throws Exception {
-        StringBuffer result = null;
+        String result = null;
 
         CloseableHttpResponse response = null;
 
@@ -76,13 +84,13 @@ public class LoadDataHelper {
         request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         request.setHeader("Accept-Language", "en-US,en;q=0.5");
 
-        Log.v("sengsational", "Sending 'GET' request to URL : " + url); // Run Order #06
-        Log.v("sengsational", "httpclient " + httpclient); // Run Order #07
+        Log.v(TAG, "Sending 'GET' request to URL : " + url); // Run Order #06
+        Log.v(TAG, "httpclient " + httpclient); // Run Order #07
         if (httpclient != null) {
             int CONNECTION_TIMEOUT_MS = timeoutSeconds * 1000; // Timeout in millis.
             try {
-                //Log.v("sengsational", "enable log on httpclient " + httpclient.log.isDebugEnabled()); // Run Order #08
-                Log.v("sengsational", "request was null? " + (request == null)); // Run Order #09
+                //Log.v(TAG, "enable log on httpclient " + httpclient.log.isDebugEnabled()); // Run Order #08
+                Log.v(TAG, "request was null? " + (request == null)); // Run Order #09
 
                 //DRS 2016 06 24 - try new method since it hangs on the white phone (Android version 4.4.2)
                 RequestConfig requestConfig = RequestConfig.custom()
@@ -97,21 +105,24 @@ public class LoadDataHelper {
                 response = httpclient.execute(request);
                 int responseCode = response.getStatusLine().getStatusCode();
 
-                Log.v("sengsational", "Response Code : [" + responseCode + "] <<<< 200 expected"); // Run Order #10 (200 expected)
-                Log.v("sengsational", "Response Status Line : " + response.getStatusLine()); // Run Order #11
+                Log.v(TAG, "Response Code : [" + responseCode + "] <<<< 200 expected"); // Run Order #10 (200 expected)
+                Log.v(TAG, "Response Status Line : " + response.getStatusLine()); // Run Order #11
 
                 result = getResultBuffer(response); //<<<<<<<<<Pull from response to get the page contents
 
-                List<Cookie> cookies = cookieStore.getCookies();
-                if (cookies.isEmpty()) {
-                    Log.v("sengsational", "No cookies! !"); // Run Order #13
-                } else {
-                    for (int i = 0; i < cookies.size(); i++) {
-                        Log.v("sengsational", "- " + cookies.get(i).toString());
+                boolean showCookiesInLog = false;
+                if (showCookiesInLog) {
+                    List<Cookie> cookies = cookieStore.getCookies();
+                    if (cookies.isEmpty()) {
+                        Log.v(TAG, "No cookies! !"); // Run Order #13
+                    } else {
+                        for (int i = 0; i < cookies.size(); i++) {
+                            Log.v(TAG, "- cookies: " + cookies.get(i).toString());
+                        }
                     }
                 }
             } catch (Exception e) {
-                Log.e("sengsational", "Something bad in getPageContent " + url + ": " + e.getMessage());
+                Log.e(TAG, "Something bad in getPageContent " + url + ": " + e.getMessage());
                 e.printStackTrace();
                 result = null;
                 if (e.getMessage().contains("timed out")) {
@@ -121,9 +132,9 @@ public class LoadDataHelper {
         }
 
         if (result != null) {
-            return result.toString();
+            return result;
         }
-        Log.v("sengsational", "no result from getPageContent " + url);
+        Log.v(TAG, "no result from getPageContent " + url);
         return null;
     }
 
@@ -138,11 +149,11 @@ public class LoadDataHelper {
         request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         request.setHeader("Accept-Language", "en-US,en;q=0.5");
 
-        Log.v("sengsational", "Sending 'GET' request to URL : " + imageUrl); // Run Order #06
-        Log.v("sengsational", "httpclient " + httpclient); // Run Order #07
+        Log.v(TAG, "Sending 'GET' request to URL : " + imageUrl); // Run Order #06
+        Log.v(TAG, "httpclient " + httpclient); // Run Order #07
         if (httpclient != null) {
             try {
-                Log.v("sengsational", "request was null? " + (request == null)); // Run Order #09
+                Log.v(TAG, "request was null? " + (request == null)); // Run Order #09
 
                 int CONNECTION_TIMEOUT_MS = 25 * 1000; // Timeout in millis.
                 RequestConfig requestConfig = RequestConfig.custom()
@@ -155,22 +166,22 @@ public class LoadDataHelper {
 
                 response = httpclient.execute(request);
                 int responseCode = response.getStatusLine().getStatusCode();
-                Log.v("sengsational", "Response Code : [" + responseCode + "] <<<< 200 expected"); // Run Order #10 (200 expected)
-                Log.v("sengsational", "Response Status Line : " + response.getStatusLine()); // Run Order #11
+                Log.v(TAG, "Response Code : [" + responseCode + "] <<<< 200 expected"); // Run Order #10 (200 expected)
+                Log.v(TAG, "Response Status Line : " + response.getStatusLine()); // Run Order #11
 
 
                 bitmapResult = getBitmapFromEntity(response); //<<<<<<<<<Pull from response to get the page contents
 
                 List<Cookie> cookies = cookieStore.getCookies();
                 if (cookies.isEmpty()) {
-                    Log.v("sengsational", "No cookies! !"); // Run Order #13
+                    Log.v(TAG, "No cookies! !"); // Run Order #13
                 } else {
                     for (int i = 0; i < cookies.size(); i++) {
-                        Log.v("sengsational", "- " + cookies.get(i).toString());
+                        Log.v(TAG, "- " + cookies.get(i).toString());
                     }
                 }
             } catch (Exception e) {
-                Log.e("sengsational", "Something bad in getImageContent " + imageUrl + ": " + e.getMessage());
+                Log.e(TAG, "Something bad in getImageContent " + imageUrl + ": " + e.getMessage());
                 e.printStackTrace();
                 bitmapResult = null;
             }
@@ -179,7 +190,7 @@ public class LoadDataHelper {
         if (bitmapResult != null) {
             return bitmapResult;
         }
-        Log.v("sengsational", "no bitmapResult from getImageContent " + imageUrl);
+        Log.v(TAG, "no bitmapResult from getImageContent " + imageUrl);
         return null;
     }
 
@@ -190,7 +201,7 @@ public class LoadDataHelper {
             InputStream inputStream = entity.getContent();
             resultBitmap = BitmapFactory.decodeStream(inputStream);
         } catch (Exception e) {
-            Log.v("sengsational", "Failed to transform entity into bitmap. " + e.getMessage() );
+            Log.v(TAG, "Failed to transform entity into bitmap. " + e.getMessage() );
         }
         return resultBitmap;
     }
@@ -198,14 +209,14 @@ public class LoadDataHelper {
     /*
     List<NameValuePair> getKioskFormParams(String html, String cardNumber, String cardPin, String mou, String storeNumber) throws UnsupportedEncodingException {
 
-        Log.v("sengsational", "Extracting kiosk form's data..."); // Run Order #15
+        Log.v(TAG, "Extracting kiosk form's data..."); // Run Order #15
 
         Document doc = Jsoup.parse(html);
 
         List <Element> formList = doc.getElementsByTag("form");
 
         if (formList.size() == 0) {
-            Log.v("sengsational", "ERROR: Unable to get kiosk login form");
+            Log.v(TAG, "ERROR: Unable to get kiosk login form");
             return null;
         }
         Element signinPinForm = formList.get(0);
@@ -213,13 +224,13 @@ public class LoadDataHelper {
 
         List<NameValuePair> paramList = new ArrayList<NameValuePair>();
         paramList.add(new BasicNameValuePair("homestore", storeNumber));
-        Log.v("sengsational", "parmList.add-- key: " + "homestore" + " value: " + storeNumber); // Run Order #16
+        Log.v(TAG, "parmList.add-- key: " + "homestore" + " value: " + storeNumber); // Run Order #16
 
         // Loop through all <input> elements, overwriting the value if needed
         for (Element inputElement : inputElements) {
             String key = inputElement.attr("name");
             String value = inputElement.attr("value");
-            Log.v("sengsational", "key [" + key + "]   value [" + value + "]");
+            Log.v(TAG, "key [" + key + "]   value [" + value + "]");
 
             if ("cardData".equals(key)) {
                 value = "%" + StoreNameHelper.getTwoCharacterStoreIdFromStoreNumber(storeNumber) + cardNumber + "=?";
@@ -228,7 +239,7 @@ public class LoadDataHelper {
             }
 
             paramList.add(new BasicNameValuePair(key, value));
-            Log.v("sengsational", "parmList.add - key: " + key + " value: " + value); // Run Order #16
+            Log.v(TAG, "parmList.add - key: " + key + " value: " + value); // Run Order #16
         }
 
         return paramList;
@@ -242,7 +253,7 @@ public class LoadDataHelper {
     // PULL FORM FIELDS FROM THE FORM
     List<NameValuePair> getFormParams(String html, String authenticationName, String password, String mou, String storeNumber) throws UnsupportedEncodingException {
 
-        Log.v("sengsational", "Extracting form's data..."); // Run Order #15
+        Log.v(TAG, "Extracting form's data..."); // Run Order #15
 
         Document doc = Jsoup.parse(html);
 
@@ -255,7 +266,7 @@ public class LoadDataHelper {
         for (Element inputElement : inputElements) {
             String key = inputElement.attr("name");
             String value = inputElement.attr("value");
-            Log.v("sengsational", "key [" + key + "]   value [" + value + "]");
+            Log.v(TAG, "key [" + key + "]   value [" + value + "]");
 
             if ("username".equals(key)) {
                 value = authenticationName;
@@ -264,12 +275,12 @@ public class LoadDataHelper {
             }
 
             paramList.add(new BasicNameValuePair(key, value));
-            //Log.v("sengsational", "parmList.add - key: " + key + " value: " + value); // Run Order #16
+            //Log.v(TAG, "parmList.add - key: " + key + " value: " + value); // Run Order #16
         }
 
         // Add log in parameter to paramList
         paramList.add(new BasicNameValuePair("op", "Log+In"));
-        //Log.v("sengsational", "parmList.add - key: " + "op" + " Form value: " + "Log+In");
+        //Log.v(TAG, "parmList.add - key: " + "op" + " Form value: " + "Log+In");
 
         // Loop through <select> elements, overwriting the value if it's store#
         Elements selectElements = loginform.getElementsByTag("select");
@@ -279,14 +290,14 @@ public class LoadDataHelper {
             String fieldName = selectElement.attr("name");
 
             if (key.startsWith("edit-field-login-store")) {
-                Log.v("sengsational", "The id for edit field login store matched and we are setting value to " + storeNumber);
+                Log.v(TAG, "The id for edit field login store matched and we are setting value to " + storeNumber);
                 value = storeNumber;
                 if (fieldName != null && fieldName.startsWith("field_login_store")){
-                    Log.v("sengsational", "Form input key: " + fieldName + " Form value: " + value);
+                    Log.v(TAG, "Form input key: " + fieldName + " Form value: " + value);
                 } else if (fieldName != null) {
-                    Log.v("sengsational", "fieldName was wrong (" + fieldName + "  Fixing it.");
+                    Log.v(TAG, "fieldName was wrong (" + fieldName + "  Fixing it.");
                     fieldName = "field_login_store[und]";
-                    Log.v("sengsational", "Form select key: " + fieldName + " Form value: " + value);
+                    Log.v(TAG, "Form select key: " + fieldName + " Form value: " + value);
                 }
             }
             paramList.add(new BasicNameValuePair(fieldName, value));
@@ -320,7 +331,7 @@ public class LoadDataHelper {
     // PULL FORM FIELDS FROM THE FORM
     List<NameValuePair> getReviewFormParams(String html, int stars, String reviewText, String unusedTimestamp, String saucerName, String beerName, String userName) throws UnsupportedEncodingException {
 
-        Log.v("sengsational", "Extracting review form's data..."); // Run Order #15
+        Log.v(TAG, "Extracting review form's data..."); // Run Order #15
 
         Document doc = Jsoup.parse(html);
 
@@ -346,7 +357,7 @@ public class LoadDataHelper {
             if (key.startsWith("field_brew")) continue;
 
             paramList.add(new BasicNameValuePair(key, value));
-            Log.v("sengsational", "parmList.add - key: " + key + " value: " + value); // Run Order #16
+            Log.v(TAG, "parmList.add - key: " + key + " value: " + value); // Run Order #16
         }
 
         // Loop through all <textarea> elements, overwriting the value if it's one of our inputs
@@ -358,7 +369,7 @@ public class LoadDataHelper {
                 value = reviewText;
 
             paramList.add(new BasicNameValuePair(key, value));
-            Log.v("sengsational", "parmList.add - key: " + key + " value: " + value); // Run Order #16
+            Log.v(TAG, "parmList.add - key: " + key + " value: " + value); // Run Order #16
         }
 
         // Loop through all <select> elements, overwriting the value if it's one of our inputs
@@ -370,12 +381,12 @@ public class LoadDataHelper {
                 value = "" + stars * 20;
 
             paramList.add(new BasicNameValuePair(key, value));
-            Log.v("sengsational", "parmList.add - key: " + key + " value: " + value); // Run Order #16
+            Log.v(TAG, "parmList.add - key: " + key + " value: " + value); // Run Order #16
         }
 
         // Add Save in parameter to paramList
         paramList.add(new BasicNameValuePair("op", "Save"));
-        Log.v("sengsational", "parmList.add - key: " + "op" + " value: " + "Save");
+        Log.v(TAG, "parmList.add - key: " + "op" + " value: " + "Save");
 
         return paramList;
     } /********getReviewFormParams*********/
@@ -394,23 +405,23 @@ public class LoadDataHelper {
         Header[] headers = post.getAllHeaders();
 
         for (int i = 0; i < headers.length; i++){
-            Log.v("sengsational","Headers Before Adding Mine : " + headers[i]);
+            Log.v(TAG,"Headers Before Adding Mine : " + headers[i]);
         }
 
         StringBuffer cookieNvp = new StringBuffer();
         List<Cookie> cookies = cookieStore.getCookies();
         if (cookies.isEmpty()) {
-            Log.v("sengsational", "No cookies! !"); // Run Order #13
+            Log.v(TAG, "No cookies! !"); // Run Order #13
         } else {
             for (int i = 0; i < cookies.size(); i++) {
                 String aCookie = cookies.get(i).getName() + "=" + cookies.get(i).getValue() + ";";
-                //Log.v("sengsational", "cookie [" + aCookie + "]");
+                //Log.v(TAG, "cookie [" + aCookie + "]");
                 cookieNvp.append(aCookie);
             }
         }
 
         // add header
-        post.setHeader("Host", "www.beerknurd.com");
+        post.setHeader("Host", "tapthatapp.beerknurd.com");
         post.setHeader("User-Agent","Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0");
         post.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
         post.setHeader("Accept-Language", "en-US,en;q=0.5");
@@ -421,10 +432,12 @@ public class LoadDataHelper {
         else if (postType.equals("review"))
             post.setHeader("Referer", "https://www.beerknurd.com");
         else if (postType.equals("cardnumber"))
-            post.setHeader("Referer", "https://www.beerknurd.com/tapthatapp");
-        else {
-            Log.v("sengsational", "WARNING: Unknown postType: " + postType);
-            post.setHeader("Referer", "http://www.beerknurd.com/user");
+            post.setHeader("Referer", "https://tapthatapp.beerknurd.com");
+        else if (postType.equals("addToQueue")) {
+            post.setHeader("Referer", "https://tapthatapp.beerknurd.com");
+        } else {
+            Log.v(TAG, "WARNING: Unknown postType: " + postType);
+            post.setHeader("Referer", "http://tapthatapp.beerknurd.com/user");
         }
 
         post.setHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -435,9 +448,9 @@ public class LoadDataHelper {
             BasicHttpEntity basicHttpEntity = new BasicHttpEntity();
             contentLengthString = post.getFirstHeader("Content-Length").getValue();
             basicHttpEntity.setContentLength(Integer.parseInt(contentLengthString));
-            Log.v("sengsational", "set content length to " + contentLengthString);
+            Log.v(TAG, "set content length to " + contentLengthString);
         } catch (Throwable t) {
-            Log.v("sengsational", "unable to set content length. contentLengthString:" + contentLengthString);
+            Log.v(TAG, "unable to set content length. contentLengthString:" + contentLengthString);
         }
 
         post.setEntity(new UrlEncodedFormEntity(postParams));
@@ -446,7 +459,7 @@ public class LoadDataHelper {
         if (printHeadersForDebug) {
             Header[] headersInPost = post.getAllHeaders();
             for (Header h: headersInPost) {
-                Log.v("sengsational", "header in post request [" + h.getName() +"]=[" + h.getValue() + "]");
+                Log.v(TAG, "header in post request [" + h.getName() +"]=[" + h.getValue() + "]");
             }
 
             BufferedReader br = new BufferedReader(new InputStreamReader(post.getEntity().getContent()));
@@ -455,22 +468,25 @@ public class LoadDataHelper {
             while((read = br.readLine()) != null) {
                 sb.append(read);
             }
-            Log.v("sengsational", "entity content: " + sb.toString());
+            nLastPageString = sb.toString();
+            Log.v(TAG, "entity content: " + nLastPageString);
+        } else {
+            nLastPageString = null;
         }
 
         boolean printCookiesForDebug = true;
         if (printCookiesForDebug) {
             List<Cookie> cookiesList = cookieStore.getCookies();
             if (cookiesList.isEmpty()) {
-                Log.v("sengsational", "No cookies! !"); // Run Order #13
+                Log.v(TAG, "No cookies! !"); // Run Order #13
             } else {
                 for (int i = 0; i < cookiesList.size(); i++) {
-                    Log.v("sengsational", "Cookie->" + cookiesList.get(i).toString());
+                    Log.v(TAG, "Cookie->" + cookiesList.get(i).toString());
                 }
             }
         }
 
-        Log.v("sengsational", "\nSending 'POST' request to URL : " + url);
+        Log.v(TAG, "\nSending 'POST' request to URL : " + url);
 
         int connectionTimeoutMs = timeoutSeconds * 1000;
         RequestConfig requestConfig = RequestConfig.custom()
@@ -484,14 +500,15 @@ public class LoadDataHelper {
 
         int responseCode = response.getStatusLine().getStatusCode();
 
-        Log.v("sengsational","Post parameters : " + postParams); // Run Order #18
-        Log.v("sengsational","Response Code : [" + responseCode + "] in sendPost()");
-        Log.v("sengsational", "Response Status Line : " + response.getStatusLine());
+        Log.v(TAG,"Post parameters : " + postParams); // Run Order #18
+        Log.v(TAG,"Response Code : [" + responseCode + "] in sendPost()");
+        Log.v(TAG, "Response Status Line : " + response.getStatusLine());
 
         if (responseCode == 302) {
             manage302(responseCode, response, postParams, httpclient);
         }
 
+        // WARNING: Turning this on may make it impossible to return the page later!
         boolean printEntirePageForDebug = false;
         if (printEntirePageForDebug) {
             BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
@@ -500,7 +517,7 @@ public class LoadDataHelper {
             while((read = br.readLine()) != null) {
                 sb.append(read);
             }
-            Log.v("sengsational","\n\n\nHTTP\n\n\n" + sb.toString() + "\n\n\nHTTPEND");
+            Log.v(TAG,"\n\n\nHTTP\n\n\n" + sb.toString() + "\n\n\nHTTPEND");
         }
 
         return response;
@@ -516,7 +533,7 @@ public class LoadDataHelper {
         Header[] headers = post.getAllHeaders();
 
         for (int i = 0; i < headers.length; i++){
-            Log.v("sengsational","Headers Before Adding Mine : " + headers[i]);
+            Log.v(TAG,"Headers Before Adding Mine : " + headers[i]);
         }
 
         // add header
@@ -531,14 +548,14 @@ public class LoadDataHelper {
 
         post.setEntity(new UrlEncodedFormEntity(postParams));
 
-        Log.v("sengsational", "\nSending 'POST' request to URL : " + url + " with postParams " +  EntityUtils.toString(post.getEntity()));
+        Log.v(TAG, "\nSending 'POST' request to URL : " + url + " with postParams " +  EntityUtils.toString(post.getEntity()));
         response = httpclient.execute(post);
 
         int responseCode = response.getStatusLine().getStatusCode();
 
-        Log.v("sengsational","Post parameters : " + postParams); // Run Order #18
-        Log.v("sengsational","Response Code : [" + responseCode + "] in sendPost()");
-        Log.v("sengsational", "Response Status Line : " + response.getStatusLine());
+        Log.v(TAG,"Post parameters : " + postParams); // Run Order #18
+        Log.v(TAG,"Response Code : [" + responseCode + "] in sendPost()");
+        Log.v(TAG, "Response Status Line : " + response.getStatusLine());
 
         if (responseCode == 302) {
             manage302(responseCode, response, postParams, httpclient);
@@ -552,78 +569,68 @@ public class LoadDataHelper {
     public static String[] getNewArrivalsFromPage(String storePage, Context context) {
         Document doc = Jsoup.parse(storePage);
         String[] returnNames = null;
-        Elements viewsTables = doc.getElementsByClass("views-table");
-        if (viewsTables != null && !viewsTables.isEmpty()){
-            Element table = viewsTables.get(0); // The only element named "views-table" has new arrivals
-            Element tableBody = table.child(0);
+        Element table = doc.getElementById("newArrivalList");
+        if (table != null) {
+            Element tableBody = table.child(1);
             Elements tableRows = tableBody.children();
             returnNames = new String[tableRows.size()];
             int i = 0;
             for (Element tableRow : tableRows){
                 Elements tableCells = tableRow.children();
-                //Log.v("sengsational", "did we find it??? " + tableCells.get(0).text());
+                //Log.v(TAG, "did we find it??? " + tableCells.get(0).text());
                 returnNames[i++] = tableCells.get(0).text(); // The first cell is the name
             }
-        } else {
-            Log.v("sengsational", "Failed to find new arrivals");
-        }
-        try {
-            Elements storeMetaDiv = doc.getElementsByClass("store-meta");
-            if (storeMetaDiv != null && !storeMetaDiv.isEmpty()) {
-                String uberEatsLink = "";
-                //Elements anchors = storeMetaDiv.get(0).getElementsByTag("a");
-                Elements links = storeMetaDiv.select("a[href]");
-                if (links != null && !links.isEmpty()) {
-                    Log.v("sengsational", ">>>>>>>>> TAGS FOUND <<<<<<<<<<<<< " + links.size());
-                    for (Element link: links ) {
-                        if (link != null && link.attr("href") != null && link.attr("href").contains("ubereatsx")) {
-                            Log.v("sengsational link", "[" + link.attr("href") + "]");
-                            uberEatsLink = link.attr("href");
-                            break;
-                        }
-                    }
-                    if ("".equals(uberEatsLink)) {
-                        for (Element link: links ) {
-                            if (link != null && link.attr("href") != null && link.attr("href").contains("doordash")) {
-                                Log.v("sengsational link", "[" + link.attr("href") + "]");
-                                uberEatsLink = link.attr("href");
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    Log.v("sengsational", ">>>>>>>>> TAGS NOT FOUND <<<<<<<<<<<<< ");
-
-                }
-                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-                editor.putString(TopLevelActivity.UBER_EATS_LINK, uberEatsLink);
-                editor.apply();
-            } else {
-                Log.v("sengsational", ">>>>>>>>> STORE META NOT FOUND <<<<<<<<<<<<< ");
-            }
-        } catch (Throwable t) {
-            Log.e("sengsational", "ERROR: could not get Uber Eats link. " + t.getMessage());
         }
         return returnNames;
     }
 
-    public static String getCurrentQueuedBeerNamesFromHtml(String currentQueuePage) {
-        StringBuilder foundBeerNames = new StringBuilder();
+    public static Map<String, String> getCurrentQueuedBeerNamesFromHtml(String currentQueuePage) {
+        Map<String, String> nvpMap = new HashMap();
         Document doc = Jsoup.parse(currentQueuePage);
-        Element accordionDiv = doc.getElementById("accordion");
-        List <Element> cardList = accordionDiv.getElementsByClass("card");
-        for (Element card : cardList) {
+        List <Element> detailsList = new ArrayList<>();
+        List <Element> namesList = new ArrayList<>();
+        try {
+            List<Element> brewListDivs = doc.getElementsByClass("brewList");
+            Element brewListDiv = brewListDivs.get(0);
+
+            detailsList = brewListDiv.getElementsByClass("brewDetails");
+            namesList = brewListDiv.getElementsByClass("brewName");
+
+        } catch (Throwable t) {
+            Log.v(TAG, "ERROR: Could not find class=brewList. Queuedbeers functionality won't work.");
+        }
+
+        for (int i = 0; i < detailsList.size() && i < namesList.size(); i++) {
+            Element brewDetails = detailsList.get(i);
+            Element brewNameElement = namesList.get(i);
+
             try {
-                List <Element> collapseList = card.getElementsByClass("collapse");
-                List <Element> removeQueueList = collapseList.get(0).getElementsByClass("removeQueuedBrewIcon");
-                String brewId = removeQueueList.get(0).attr("brewid");
-                Log.v("sengsational", "brewId for deletion [" + brewId + "]");
-                foundBeerNames.append(brewId).append(",");
+                // Work on getting "cid" (brewId)
+                List <Element> anchorList = brewDetails.getElementsByTag("a");
+                String deleteAnchor = anchorList.get(0).attr("href");
+                String brewId;
+                int cidLoc = deleteAnchor.indexOf("cid=");
+                if (cidLoc > 1 & deleteAnchor.length() > cidLoc + 4) {
+                    brewId = deleteAnchor.substring(cidLoc + 4);
+                } else {
+                    Log.v(TAG, "Unable to find cid in [" + deleteAnchor + "]");
+                    continue;
+                }
+                Log.v(TAG, "brewId on web [" + brewId + "]");
+
+                // Work on getting brewName
+                List<Element> dateElements = brewNameElement.getElementsByClass("brew_added_date");
+                Element dateElement = dateElements.get(0);
+                dateElement.remove();
+                String brewName = brewNameElement.text();
+
+                nvpMap.put(brewId, brewName);
+
             } catch (Throwable t) {
-                Log.v("sengsational", "ERROR: Could not parse accordion element");
+                Log.e(TAG, "PARSING PROBLEM IN QUEUED BEERS PAGE.\n" + brewDetails.outerHtml() + "\n" + brewNameElement.outerHtml());
             }
         }
-        return foundBeerNames.toString();
+        return nvpMap;
     }
 
 
@@ -632,7 +639,7 @@ public class LoadDataHelper {
         fileName = "/sdcard/Download/" + fileName;
         File sdCard = Environment.getExternalStorageDirectory();
         fileName = fileName.replace("/sdcard", sdCard.getAbsolutePath());
-        Log.v("sengsational", "The file name ended up to be: " + fileName); // Run Order #23
+        Log.v(TAG, "The file name ended up to be: " + fileName); // Run Order #23
         File tempFile = new File(fileName);
         FileOutputStream outputStream;
 
@@ -642,20 +649,20 @@ public class LoadDataHelper {
             outputStream.close();
             return true;
         } catch (Exception e) {
-            Log.e("sengsational", "Could not write the file." + getStackTraceString(e));
+            Log.e(TAG, "Could not write the file." + getStackTraceString(e));
         }
         return false;
     } /*****writeFile*****/
 
-    // HELPER METHOD TO TURN THE RESULT INTO A STRING
-    static StringBuffer getResultBuffer(HttpResponse response) throws Exception {
+    // HELPER METHOD TO TURN THE RESULT INTO A STRING - Might only be able to do this once per response
+    static String getResultBuffer(HttpResponse response) throws Exception {
         HttpEntity someEntity =  response.getEntity();
 
         InputStream stream = someEntity.getContent();
         BufferedReader rd = new BufferedReader(new InputStreamReader(stream)); // <<<<<<<<<<<<<<<<<<<<<<This is the only line we need!!
 
         if(rd == null) throw new Exception("The reader was null in getResultBuffer.");
-        Log.v("sengsational", " is stream ready? " + rd.ready()); // Run Order #12, // Run Order #21
+        Log.v(TAG, " is stream ready? " + rd.ready()); // Run Order #12, // Run Order #21
         StringBuffer result = new StringBuffer();
         String line = "";
         while ((line = rd.readLine()) != null) {
@@ -664,17 +671,32 @@ public class LoadDataHelper {
         // DRS 20160624 - Added 2
         someEntity.consumeContent();
         stream.close();
-        return result;
+        return result.toString();
     }   /******getResultBuffer() turn a result into a String ****/
+
+    static String getCookie(CookieStore cookieStore, String cookieName) {
+        try {
+            List<Cookie> cookieList = cookieStore.getCookies();
+            for (Cookie cookie: cookieList ) {
+                Log.v(TAG, "TESTING-------------> [" + cookie + "]");
+                if (cookie.getName().equals(cookieName)){
+                    return cookie.getValue();
+                }
+            }
+        } catch (Throwable t) {
+            Log.e(TAG, "Unable to process cookies: " + t.getMessage());
+        }
+        return "";
+    }
 
     // JUNK METHOD
     void manage302(int responseCode, CloseableHttpResponse response, List<NameValuePair> postParams, CloseableHttpClient httpclient) throws IOException {
-        Log.v("sengsational", "THIS METHOD IS NOT EXPECTED TO RUN except with DefaultRedirectStrategy."); // Run Order #19
-        Log.v("sengsational", "[" + responseCode + "]==[302]");
+        Log.v(TAG, "THIS METHOD IS NOT EXPECTED TO RUN except with DefaultRedirectStrategy."); // Run Order #19
+        Log.v(TAG, "[" + responseCode + "]==[302]");
         String redirectUrl = response.getHeaders("Location")[0].getValue();
-        Log.v("sengsational", "Redirected to : " + redirectUrl);
+        Log.v(TAG, "Redirected to : " + redirectUrl);
 
-        Log.v("sengsational", "Creating httpGet with :\n[" + redirectUrl + "?" + URLEncodedUtils.format(postParams, "utf-8") + "]");
+        Log.v(TAG, "Creating httpGet with :\n[" + redirectUrl + "?" + URLEncodedUtils.format(postParams, "utf-8") + "]");
 
         HttpGet httpGet = new HttpGet(redirectUrl + "?" + URLEncodedUtils.format(postParams, "utf-8"));
 
@@ -699,8 +721,8 @@ public class LoadDataHelper {
 
         responseCode = response.getStatusLine().getStatusCode();
 
-        Log.v("sengsational", "Response Code : " + responseCode + "if"); // Run Order #20
-        Log.v("sengsational", "Response Status Line : " + response.getStatusLine());
+        Log.v(TAG, "Response Code : " + responseCode + "if"); // Run Order #20
+        Log.v(TAG, "Response Status Line : " + response.getStatusLine());
 
     } /****junk method*****/
 

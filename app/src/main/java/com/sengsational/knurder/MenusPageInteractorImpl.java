@@ -2,7 +2,10 @@ package com.sengsational.knurder;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -48,7 +51,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
 
     @Override
     protected void onPreExecute() {
-        Log.v("sengsational", "onPreExecute()..."); //Run order #01
+        Log.v(TAG, "onPreExecute()..."); //Run order #01
         if (TextUtils.isEmpty(nMenuUrl)) {
             nListener.onError("menu url error");
             nErrorMessage = "We did not get a url to pull from.";
@@ -56,21 +59,25 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
 
         // set-up a single nHttpclient
         if (nHttpclient != null) {
-            Log.e("sengsational", "Attempt to set-up more than one HttpClient!!");
+            Log.e(TAG, "Attempt to set-up more than one HttpClient!!");
         } else {
             try {
                 nCookieStore = new BasicCookieStore();
                 HttpClientBuilder clientBuilder = HttpClientBuilder.create();
                 nHttpclient = clientBuilder.setRedirectStrategy(new LaxRedirectStrategy()).setDefaultCookieStore(nCookieStore).build();
                 nHttpclient.log.enableDebug(true);
-                Log.v("sengsational", "nHttpclient object created."); //Run order #02
+                Log.v(TAG, "nHttpclient object created."); //Run order #02
             } catch (Throwable t) {//
-                Log.v("sengsational", "nHttpclient object NOT created. " + t.getMessage());
+                Log.v(TAG, "nHttpclient object NOT created. " + t.getMessage());
                 StringWriter sw = new StringWriter();
                 t.printStackTrace(new PrintWriter(sw));
-                Log.v("sengsational", sw.toString());
+                Log.v(TAG, sw.toString());
                 nListener.onError("http client error");
                 nErrorMessage = "Problem with the http connection.";
+            }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                nListener.onError("client error");
+                nErrorMessage = "The UFO web site no longer accepts connections from older Android devices.  Sorry.  Nothing I can do about it.\n\nPlease try on a device with Jelly Bean or higher.";
             }
         }
     }
@@ -84,10 +91,10 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         } catch (Exception e) {}
 
         if (success) {
-            Log.v("sengsational", "onPostExecute success: " + success);
+            Log.v(TAG, "onPostExecute success: " + success);
             nListener.onFinished();
         } else {
-            Log.v("sengsational", "onPostExecute fail");
+            Log.v(TAG, "onPostExecute fail");
             nListener.onError(nErrorMessage);
         }
     }
@@ -132,19 +139,36 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 nErrorMessage = "Could not get the menu information from the location provided.";
                 return false;
             }
+            ///////////////ORIGINAL CODE - TAPS////////////////////////////
             // Parse the beers out of the data
-            ArrayList<UntappdItem> untappdItems = getUntappdItemsFromData(untappdDataPage);
-            if (untappdItems.size() == 0) {
+            ArrayList<UntappdItem> untappdItemsTaps = getUntappdItemsFromData(untappdDataPage, "taps");
+            if (untappdItemsTaps.size() == 0) {
                 nListener.onError("zero items pulled from untappdDataPage of size " + untappdDataPage.length());
                 nErrorMessage = "Did not understand the menu information found.";
                 return false;
             }
             // Match the untappd list with the saucer tap list
-            OcrScanHelper.getInstance().matchUntappdItems(untappdItems, nApplicationContext);
+            OcrScanHelper.getInstance().matchUntappdItems(untappdItemsTaps, "taps", nApplicationContext);
             // Save the results
-            int[] results = OcrScanHelper.getInstance().getResults(nApplicationContext);
-            // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImpl.doInBackground()
-            // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImpl.doInBackground()
+            int[] results = OcrScanHelper.getInstance().getResults("taps", nApplicationContext);
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(nApplicationContext);
+            boolean matchTapsOnly = prefs.getBoolean("match_taps_only_switch", true);
+            if (!matchTapsOnly) {
+
+                //////////////NEW CODE - BOTTLES////////////////////////////////
+                ArrayList<UntappdItem> untappdItemsBottles = getUntappdItemsFromData(untappdDataPage, "bottles");
+                if (untappdItemsBottles.size() == 0) {
+                    nListener.onError("zero bottle items pulled from untappdDataPage of size " + untappdDataPage.length());
+                    nErrorMessage = "Did not understand the menu information found. Proceed with existing taps and ignore bottles.";
+                }
+                // Match the untappd list with the saucer tap list
+                OcrScanHelper.getInstance().matchUntappdItems(untappdItemsBottles, "bottles", nApplicationContext);
+
+                /////////////END NEW CODE///////////////////////////////////////
+                // END NOTE: This code is duplicated in the refresh beer list "StoreListInteractorImpl.doInBackground()
+                // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImpl.doInBackground()
+            }
             Log.v(TAG, "About to finish data parse from untappd.  Setting extras.");
             Intent data = new Intent();
             data.putExtra("totalItemCount", results[0]);
@@ -173,7 +197,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 nErrorMessage = "Unable to get image from " + imageUrl;
                 return false;
             }
-            Log.v("sengsational", "Bitmap is " + downloadedBitmap.getByteCount() + " bytes.");
+            Log.v(TAG, "Bitmap is " + downloadedBitmap.getByteCount() + " bytes.");
 
             // Make bitmap single column
             float leftMargin = 15F/750F;
@@ -235,7 +259,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         return true;
     }
 
-    public static ArrayList<UntappdItem> getUntappdItemsFromData(String untappdData) {
+    public static ArrayList<UntappdItem> getUntappdItemsFromData(String untappdData, String tapsOrBottles) {
         ArrayList<UntappdItem> untappdItems = new ArrayList<UntappdItem>();
         int htmlLoc = untappdData.indexOf("container.innerHTML");
         if (htmlLoc < 0) {
@@ -248,11 +272,24 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         untappdData = untappdData.replaceAll("\\\\n", "");
         //Log.v(TAG, " unescaped [" + untappdData.substring(3000,6000));
 
-        int firstHtmlLoc = untappdData.indexOf("<", htmlLoc);
-        String lastThingToInclude = "menu-title\">Bottles"; // Cut-off the bottles section.... right now, only including taps.
-        int lastThingLoc = untappdData.indexOf(lastThingToInclude);
-        if (lastThingLoc < 0) lastThingLoc = untappdData.length();
-        Log.v(TAG, "first thing " + firstHtmlLoc + " last thing " + lastThingLoc);
+        int firstHtmlLoc = -1;
+        int lastThingLoc = -1;
+
+        if (tapsOrBottles.contains("taps")) {
+            firstHtmlLoc = untappdData.indexOf("<", htmlLoc);
+            String lastThingToInclude = "menu-title\">Bottles"; // Cut-off the bottles section.... right now, only including taps.
+            lastThingLoc = untappdData.indexOf(lastThingToInclude);
+            if (lastThingLoc < 0) lastThingLoc = untappdData.length();
+            Log.v(TAG, "first thing " + firstHtmlLoc + " last thing " + lastThingLoc);
+        } else {
+            firstHtmlLoc = untappdData.indexOf("menu-title\">Bottles", htmlLoc);
+            String lastThingToInclude = "(function ()"; //
+            Log.v(TAG, "DEBUG: lastThingToInclude " + lastThingToInclude);
+            lastThingLoc = untappdData.indexOf(lastThingToInclude);
+            if (lastThingLoc < 0) lastThingLoc = untappdData.length();
+            Log.v(TAG, "first thing " + firstHtmlLoc + " last thing " + lastThingLoc);
+        }
+
         StringBuffer buf = new StringBuffer();
         buf.append("<html><body>");
         buf.append(untappdData.substring(firstHtmlLoc, lastThingLoc));
@@ -309,7 +346,10 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 Element priceElement = beer.getElementsByClass("price").first(); position=14;
                 if (priceElement != null) price = priceElement.text().replaceAll("\\\\", ""); position=15;
 
-                UntappdItem untappdItem = new UntappdItem(beerName, breweryName, ounces, price, abv, beerNumber, breweryNumber);
+                UntappdItem untappdItem = new UntappdItem(beerName, breweryName, ounces, price, abv, beerNumber, breweryNumber, tapsOrBottles);
+                //if (!tapsOrBottles.contains("taps")) {
+                //    Log.v(TAG, "DEBUG bottles: " + untappdItem.toString());
+                //}
                 untappdItems.add(untappdItem);
                 untappdeAddedCount++;
                 //System.out.println("DEBUG "  +  breweryNumber + " " + beerNumber + " " + beerName + " " + breweryName );
@@ -434,7 +474,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         try {
             touchlessBeerBitmap = LoadDataHelper.getImageContent(imageUrl, null, nHttpclient, nCookieStore);
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get touchlessBeerBitmap. " + e.getMessage());
+            Log.e(TAG, "Could not get touchlessBeerBitmap. " + e.getMessage());
         }
         return touchlessBeerBitmap;
     }
@@ -446,7 +486,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         int linkDataEnd = touchlessWebPage.indexOf("}", linkData);
         if (linkDataEnd > 0 && linkData > 0 && linkDataEnd > linkData) {
             String linkDataFound = touchlessWebPage.substring(linkData, linkDataEnd);
-            //Log.v("sengsational", "[" + linkDataFound + "]"); //PreloadEmbedMenu("menu-container",35529,137645)}
+            //Log.v(TAG, "[" + linkDataFound + "]"); //PreloadEmbedMenu("menu-container",35529,137645)}
             String[] splitLinkArray = linkDataFound.replace(")", ",").replaceAll(" ","").split(",");
             if (splitLinkArray.length > 2) {
                 dataUrlString = "https://business.untappd.com/locations/" + splitLinkArray[1] + "/themes/" + splitLinkArray[2] + "/js";
@@ -456,7 +496,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 // RALEIGH:    https://business.untappd.com/locations/35528/themes/137641/js
             }
         } else {
-            Log.v("sengsational", "invalid in page:" + touchlessWebPage );
+            Log.v(TAG, "invalid in page:" + touchlessWebPage );
         }
         return dataUrlString;
     }
@@ -473,7 +513,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 int srcLocEnd = touchlessWebPage.indexOf("\">", srcLoc);
                 if (srcLocEnd > 0) {
                     String tmpSrc = touchlessWebPage.substring(srcLoc, srcLocEnd);
-                    Log.v("sengsational", "[" + tmpSrc + "]");
+                    Log.v(TAG, "[" + tmpSrc + "]");
                     int quoteLocStart = tmpSrc.indexOf("\"");
                     int quoteLocEnd = tmpSrc.indexOf("\"", quoteLocStart + 1);
                     if (quoteLocStart > 0 && quoteLocEnd > 0 && tmpSrc.contains("beer-1")){
@@ -482,7 +522,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                     start = srcLoc + 1;
                     srcLoc = touchlessWebPage.indexOf("src=\"menus/", start);
                 } else {
-                    Log.v("sengsational", "invalid in page:" + touchlessWebPage );
+                    Log.v(TAG, "invalid in page:" + touchlessWebPage );
                 }
             }  while (srcLoc > 0);
         }
@@ -496,7 +536,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         try {
             touchlessPage = LoadDataHelper.getPageContent(url, null, nHttpclient, nCookieStore);
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get touchlessPage. " + e.getMessage());
+            Log.e(TAG, "Could not get touchlessPage. " + e.getMessage());
         }
         return touchlessPage;
     }
@@ -506,7 +546,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
         try {
             untappedDataPage = LoadDataHelper.getPageContent(url, null, nHttpclient, nCookieStore);
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get untappedDataPage. " + e.getMessage());
+            Log.e(TAG, "Could not get untappedDataPage. " + e.getMessage());
         }
         return untappedDataPage;
     }
@@ -517,7 +557,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 return false;
             }
         } catch (Exception e) {
-            Log.e("sengsational", "Exception on pre-execute getSiteAccess. " + e.getMessage());
+            Log.e(TAG, "Exception on pre-execute getSiteAccess. " + e.getMessage());
             return false;
         }
         return true;

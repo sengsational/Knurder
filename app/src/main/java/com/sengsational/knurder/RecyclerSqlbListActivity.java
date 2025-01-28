@@ -77,6 +77,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     private boolean mIsTapQuery;
     private boolean mIsFlaggedBeerQuery;
     private boolean mIsLoggedIn;
+    private String mStoreNumber;
     private ShakeDetector mShakeDetector;
     private static Random mRandom =  new Random();
 
@@ -103,7 +104,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
             // DRS20171019 - Added if/else (else around existing code)
             if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
                 String query = intent.getStringExtra(SearchManager.QUERY);
-                Log.v("sengsational", "THIS NEVER RUNS - onCreate() ACTION_SEARCH!!! " + query);
+                Log.v(TAG, "THIS NEVER RUNS - onCreate() ACTION_SEARCH!!! " + query);
             } else {
                 String selectionFields = intent.getStringExtra("selectionFields");
                 String selectionArgs[] = intent.getStringArrayExtra("selectionArgs");
@@ -121,6 +122,8 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
                 mIsFlaggedBeerQuery = selectionFields.contains("HIGHLIGHTED");
                 mIsLoggedIn = intent.getBooleanExtra("isLoggedIn", false);
                 Log.v(TAG, "hightlighted found " + mIsFlaggedBeerQuery + " isLoggedIn: " + mIsLoggedIn);
+                mStoreNumber = intent.getStringExtra("storeNumber");
+                if (mStoreNumber == null || mStoreNumber.equals("")) mStoreNumber = TopLevelActivity.STORE_NUMBER_LOGON;
 
                 for (int i = 0 ; i < selectionArgs.length; i++){
                     Log.v(TAG, ">>>>>> Selection Args " + selectionArgs[i]);
@@ -151,18 +154,19 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
                             startActivity(popTutorialIntent);
 
                         } else if (savedInstanceState == null && showOnQueTutorial && QueryPkg.includesSelection("HIGHLIGHTED", this)) {
-                            Intent popTutorialIntent = new Intent(RecyclerSqlbListActivity.this, PopTutorial.class);
-                            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                            if ("".equals(prefs.getString(TopLevelActivity.CARD_NUMBER, "")) || "".equals(prefs.getString(TopLevelActivity.CARD_PIN, ""))) {
-                                popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.onque_instructions_with_auth);
-                            } else {
-                                popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.onque_instructions);
+                            if (mIsLoggedIn) {
+                                Intent popTutorialIntent = new Intent(RecyclerSqlbListActivity.this, PopTutorial.class);
+                                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                                if ("".equals(prefs.getString(TopLevelActivity.CARD_NUMBER, "")) || "".equals(prefs.getString(TopLevelActivity.CARD_PIN, ""))) {
+                                    popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.onque_instructions_with_auth);
+                                } else {
+                                    popTutorialIntent.putExtra(EXTRA_TEXT_RESOURCE, R.string.onque_instructions);
+                                }
+                                popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.onque_title);
+                                popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_ON_QUE_TUTORIAL);
+                                startActivity(popTutorialIntent);
                             }
-                            popTutorialIntent.putExtra(EXTRA_TITLE_RESOURCE, R.string.onque_title);
-                            popTutorialIntent.putExtra(EXTRA_TUTORIAL_TYPE, PREF_ON_QUE_TUTORIAL);
-                            startActivity(popTutorialIntent);
                         }
-
                     } else {
                         manageToasts();
                     }
@@ -184,7 +188,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        Log.v("sengsational", "RecyclerSqlbListActivity.onActivityResult running with requestCode " + requestCode + ", resultCode " + resultCode);
+        Log.v(TAG, "RecyclerSqlbListActivity.onActivityResult running with requestCode " + requestCode + ", resultCode " + resultCode);
         if (requestCode == VALIDATE_CARD) {
             Log.v(TAG, "Validate Card returned result " + resultCode);
             if (resultCode == 0) {
@@ -225,19 +229,19 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        Log.v("sengsational", "THIS DOES NOT RUN - onNewIntent() ");
+        Log.v(TAG, "THIS DOES NOT RUN - onNewIntent() ");
         setIntent(intent);
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            Log.v("sengsational", "onNewIntent() ACTION_SEARCH!!! " + query);
+            Log.v(TAG, "onNewIntent() ACTION_SEARCH!!! " + query);
         } else {
-            Log.v("sengsational", "onNewIntent() some other intent");
+            Log.v(TAG, "onNewIntent() some other intent");
         }
     }
     // DRS20171019 - Added method
     @Override
     public boolean onSearchRequested() {
-        Log.v("sengsational", "THIS DOES NOT RUN  - onSearchRequested");
+        Log.v(TAG, "THIS DOES NOT RUN  - onSearchRequested");
         return super.onSearchRequested();
     }
 
@@ -247,16 +251,16 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.v("sengsational", "Long item click.  position:" + position );
+                Log.v(TAG, "Long item click.  position:" + position );
                 View databaseKeyView = view.findViewById(R.id.database_key_list_item);
                 if (databaseKeyView != null) {
                     String keyString = ((TextView)databaseKeyView).getText().toString();
                     int databaseId = Integer.parseInt(keyString);
                     //BeerSlideFragment.toggleFavorite(databaseId, view, true);
-                    Log.v("sengsational", "ERROR...REMOVED toggleFavorite!!!  This is old code and wasn't being referenced, but just in case, I put this");
+                    Log.v(TAG, "ERROR...REMOVED toggleFavorite!!!  This is old code and wasn't being referenced, but just in case, I put this");
 
                 }  else {
-                    Log.v("sengsational", "dkv was null. View was " + view);
+                    Log.v(TAG, "dkv was null. View was " + view);
                 }
                 return true;
             }
@@ -296,7 +300,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
             Toast toast = Toast.makeText(this, "Database Unavailable", Toast.LENGTH_SHORT);
             toast.show();
         } finally {
-            Log.v("sengsational","Not closing cursor.  Will do in onDestroy().");
+            Log.v(TAG,"Not closing cursor.  Will do in onDestroy().");
             // try {cursor.close();} catch(Throwable t){}
         }
     }
@@ -305,7 +309,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     public void onDestroy(){
         super.onDestroy();
         //mAppCompatDelegate.onDestroy();
-        Log.v("sengsational", "Closing cursor in onDestroy().");
+        Log.v(TAG, "Closing cursor in onDestroy().");
         KnurderApplication.closeCursor();
         repository.close();
     }
@@ -313,7 +317,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     protected void onListItemClick(ListView listView, View view, int position, long id) {
         Intent intent = new Intent(RecyclerSqlbListActivity.this, BeerSlideActivity.class);
         //listView.getFirstVisiblePosition();
-        Log.v("sengsational", "BeerListActivity.onListItemClick() position:" + position + " id:" + id);
+        Log.v(TAG, "BeerListActivity.onListItemClick() position:" + position + " id:" + id);
 
         intent.putExtra(BeerSlideActivity.EXTRA_POSITION, (int) position);
         //intent.putExtra(BeerSlideActivity.EXTRA_FIRST_VISIBLE_POSITION, (int) listView.getFirstVisiblePosition());
@@ -323,8 +327,8 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     @Override
     protected void onResume() {
         super.onResume();
-        Log.v("sengsational", "onResume() running");
-        //Log.v("sengsational", "BLA.onResume() refreshRequired HAS NO EFFECT!!!!:" + refreshRequired);
+        Log.v(TAG, "onResume() running");
+        //Log.v(TAG, "BLA.onResume() refreshRequired HAS NO EFFECT!!!!:" + refreshRequired);
         //if (refreshRequired) {
         //    //refreshList();
         //}
@@ -335,7 +339,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
     @Override
     protected void onPause() {
         super.onPause();
-        Log.v("sengsational", "onPause() running");
+        Log.v(TAG, "onPause() running");
         if (!"".equals(mQueryTextContent)) getIntent().putExtra("queryTextContent", mQueryTextContent); // DRS 20171021 - keep text query from getting lost on screen reorientation
         // Stop listening for shaking
         getShaker(this).stop();
@@ -362,7 +366,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
 
     public static void setRefreshRequired(boolean refreshRequired) {
         //RecyclerSqlbListActivity.refreshRequired = refreshRequired;
-        //Log.v("sengsational","BLA.setRefreshRequired("  + refreshRequired + ")");
+        //Log.v(TAG,"BLA.setRefreshRequired("  + refreshRequired + ")");
     }
 
     public static void setLastListPosition(int listPosition) {
@@ -428,13 +432,13 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
         //DRS20171019 ADDED all to end of method - add search widget per https://developer.android.com/guide/topics/search/search-dialog.html#UsingSearchWidget
         // Get the SearchView and set the searchable configuration
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        Log.v("sengsational", "searchManager.toString(): " + searchManager);
+        Log.v(TAG, "searchManager.toString(): " + searchManager);
         MenuItem item = menu.findItem(R.id.menu_search);
-        Log.v("sengsational", "item.toString(): " + item);
+        Log.v(TAG, "item.toString(): " + item);
 
 
         //SearchView searchView = (SearchView) item.getActionView();
-        //Log.v("sengsational", "searchView.toString(): " + searchView); // <<<<<<<<<searchView is null
+        //Log.v(TAG, "searchView.toString(): " + searchView); // <<<<<<<<<searchView is null
         searchView = new SearchView(getSupportActionBar().getThemedContext());
 
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
@@ -477,7 +481,7 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
         // Assumes current activity is the searchable activity
         //searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
         //searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default
-        Log.v("sengsational", "searchView isIconified" + searchView.isIconified());
+        Log.v(TAG, "searchView isIconified" + searchView.isIconified());
 
         return true;
     }
@@ -488,14 +492,14 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        Log.v("sengsational","The item selected: " + item.getTitle() + " id:" + id);
+        Log.v(TAG,"The item selected: " + item.getTitle() + " id:" + id);
         switch (id) {
             case R.id.action_share:
                 if (!repository.cursorHasRecords()){
                     Toast.makeText(getApplicationContext(), "The list was empty", Toast.LENGTH_SHORT).show();
                     break;
                 }
-                Log.v("sengsational","In switch: " + item.getTitle());
+                Log.v(TAG,"In switch: " + item.getTitle());
                 Intent mailIntent = new Intent(Intent.ACTION_SEND);
                 mailIntent.setType("message/rfc822");
                 mailIntent.putExtra(Intent.EXTRA_SUBJECT, "Knurder Beer List");
@@ -531,13 +535,15 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
                 }
                 Intent intent = new Intent(RecyclerSqlbListActivity.this, LoginPinActivity.class);
                 intent.putExtra(Intent.EXTRA_TEXT, getBrewIdsListFromCursor());
+                intent.putExtra("EXTRA_TEXT2", getBrewNameListFromCursor());
+                intent.putExtra("EXTRA_TEXT3", mStoreNumber);
                 startActivityForResult(intent, VALIDATE_CARD);
                 break;
             case R.id.menu_search: // DRS 20171019 - Added case
-                Log.v("sengsational", "THIS NEVER RUNS!!!!!!!!!!!  menu_search");
+                Log.v(TAG, "THIS NEVER RUNS!!!!!!!!!!!  menu_search");
                 if (searchView != null) {
                     //SearchView searchView = (SearchView) item; // class cast exception
-                    //Log.v("sengsational", "query refinement " + searchView.isQueryRefinementEnabled());
+                    //Log.v(TAG, "query refinement " + searchView.isQueryRefinementEnabled());
                     //searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
                     //searchView.setQueryRefinementEnabled(true);
                     //searchView.setIconified(false);
@@ -548,11 +554,11 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
                     startSearch("", false, null, false);
                     //searchView.setIconifiedByDefault(false);
                 } else {
-                    Log.v("sengsational", "searchView was null");
+                    Log.v(TAG, "searchView was null");
                 }
                 break;
             default:
-                Log.v("sengsational", "the id: " + id);
+                Log.v(TAG, "the id: " + id);
 
         }
         return super.onOptionsItemSelected(item);
@@ -612,6 +618,23 @@ public class RecyclerSqlbListActivity extends AppCompatActivity implements Shake
             builder.append(cursor.getString(cursor.getColumnIndexOrThrow("BREW_ID"))).append(",");
         } while (cursor.moveToNext());
         Log.v(TAG, "brewIdsList [" + builder.toString() + "]");
+        return builder.toString();
+    }
+    private String getBrewNameListFromCursor() {
+        StringBuilder builder = new StringBuilder();
+        Cursor cursor = repository.getCursor();
+        boolean listHasItems = false;
+        try {
+            if (cursor.moveToFirst()) listHasItems = true; // The list was empty
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to get brewNames from the list.");
+            return "";
+        }
+
+        do {
+            builder.append(cursor.getString(cursor.getColumnIndexOrThrow("NAME"))).append(",");
+        } while (cursor.moveToNext());
+        Log.v(TAG, "brewNamesList [" + builder.toString() + "]");
         return builder.toString();
     }
 

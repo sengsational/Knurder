@@ -30,7 +30,7 @@ public class KnurderApplication extends Application {
     private static int denyCount = 0;
 
     public KnurderApplication() {
-        Log.v("sengsational", "KnurderApplication constructor.");
+        Log.v(TAG, "KnurderApplication constructor.");
     }
 
     public static void setContext(Context context) {
@@ -79,6 +79,18 @@ public class KnurderApplication extends Application {
         boolean returnValue = firstTime;
         firstTime = false;
         return returnValue;
+    }
+
+    public static void LogCallers(String tag, StackTraceElement[] stackTrace, String comment) {
+        String classNameCaller = stackTrace[2].getClassName();
+        String classNameParent = stackTrace[3].getClassName();
+        String classNameGrand = stackTrace[4].getClassName();
+        classNameCaller = classNameCaller.substring(classNameCaller.lastIndexOf(".") + 1);
+        classNameParent = classNameParent.substring(classNameParent.lastIndexOf(".") + 1);
+        classNameGrand = classNameGrand.substring(classNameGrand.lastIndexOf(".") + 1);
+        if (classNameGrand.equals(classNameParent)) classNameGrand = "..";
+        if (classNameParent.equals(classNameCaller)) classNameParent = "..";
+        Log.v(tag, "LogCallers: " + classNameCaller + "." + stackTrace[2].getMethodName() + "() called by " + classNameParent + "." + stackTrace[3].getMethodName() + "() called by " + classNameGrand + "." + stackTrace[4].getMethodName() + "()  - Comment: " + comment);
     }
 
     @Override

@@ -50,10 +50,14 @@
     <string name="rate_beer_title">
         "Saving Your Ratings"
     </string>
-    <string name="rate_beer_instructions">
+    <string name="rate_beer_instructions_old">
         <![CDATA[<p>If you\'re a UFO member, by default, your ratings will be saved to the Saucer site next time you update your \'tasted\' list.  Once saved there, they are no longer editable.</p>
         <p>You can go into Knurder settings and set it so it does not upload, if you\'d like.</p>
         <p>But if you decide not to upload (or if you are not a UFO member), then the ratings are ONLY on your phone, so could be lost if you get a new phone.</p>
+        <p>I just wanted to be sure you knew the deal.</p>]]>
+    </string>
+    <string name="rate_beer_instructions">
+        <![CDATA[<p><At this point, the saucer site does not have the ability to save ratings any more.</p><p>The ratings are ONLY on your phone, so could be lost if you get a new phone.</p>
         <p>I just wanted to be sure you knew the deal.</p>]]>
     </string>
     <string name="position_title">
@@ -74,10 +78,10 @@
         "Send Untasted in this List to the Bar"
     </string>
     <string name="onque_instructions_with_auth">
-        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>They\'ve got it set up to require a separate authentication:<br>[<b>card number / pin</b>].<br>If you don\'t have that set-up, you can go to <i>www.beerknurd.com/tapthatapp/</i>, and the pin you use will become your pin.</p><p>If you know your credentials, just hit the three dots menu (above) and select \'Send/Refresh Brews on Queue\'</p>]]>
+        <![CDATA[<p>If you\'d like, you can send this list to \`Brews-On-Queue\`.</p><p>They\'ve got it set up to require a separate authentication:<br>[<b>card number / pin</b>].<br>If you don\'t have that set-up, you can go to <i>tapthatapp.beerknurd.com</i>, and the pin you use will become your pin.</p><p>If you know your credentials, just hit the three dots menu (above) and select \'Send/Refresh Brews on Queue\'</p>]]>
     </string>
     <string name="onque_instructions">
-        <![CDATA[<p>If you\'d like, you can send the untasted in this list to \`Brews-On-Queue\`.</p><p>It looks like you have the<br>[<b>card number / pin</b>] credentials set already so just hit the three dots menu (above) and select \'Send/Refresh Brews on Queue\'</p><p>For authentication issues, get it working on your web browser first at <i>www.beerknurd.com/tapthatapp/</i></p>]]>
+        <![CDATA[<p>If you\'d like, you can send the untasted in this list to \`Brews-On-Queue\`.</p><p>It looks like you have the<br>[<b>card number / pin</b>] credentials set already so just hit the three dots menu (above) and select \'Send/Refresh Brews on Queue\'</p><p>For authentication issues, get it working on your web browser first at <i>tapthatapp.beerknurd.com</i></p>]]>
     </string>
     <string name="ocr_base_title">
         "Tap Menu Scanning 101"
@@ -184,6 +188,10 @@
 
     <string name="pref_title_hide_ubereats_setting">Hide Food Delivery Button</string>
     <string name="pref_description_hide_ubereats_setting">Do not show the button that takes you to the food delivery web page.
+    </string>
+
+    <string name="pref_title_match_taps_only_setting">Match Taps Only</string>
+    <string name="pref_description_match_taps_only_setting">Match only taps, not bottles, when pulling from Untappd (matching bottles is slow).
     </string>
 
     <string name="pref_title_automatic_untappd_setting">Automatically Pull Prices</string>

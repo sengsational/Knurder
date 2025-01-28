@@ -223,13 +223,13 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         // DRS 20180103 - Added 'if' - prevent null pointer exception
-        if (OcrScanHelper.getInstance().getResults(this).length < 3) {
+        if (OcrScanHelper.getInstance().getResults("taps", this).length < 3) {
             setResult(RESULT_CANCELED, null);
             finish();
             super.onBackPressed();
         }
         // DRS 20171129 - Added 7 - return information to the parent process
-        int[] results = OcrScanHelper.getInstance().getResults(this);
+        int[] results = OcrScanHelper.getInstance().getResults("taps", this);
         Log.v(TAG, "about to finish OCR.  Setting extras.");
         Intent data = new Intent();
         data.putExtra("totalItemCount", results[0]);

@@ -44,22 +44,22 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
 
     @Override
     protected void onPreExecute() {
-        Log.v("sengsational", "onPreExecute()..."); //Run order #01
+        Log.v(TAG, "onPreExecute()..."); //Run order #01
         // set-up a single nHttpclient
         if (nHttpclient != null) {
-            Log.e("sengsational", "Attempt to set-up more than one HttpClient!!");
+            Log.e(TAG, "Attempt to set-up more than one HttpClient!!");
         } else {
             try {
                 nCookieStore = new BasicCookieStore();
                 HttpClientBuilder clientBuilder = HttpClientBuilder.create();
                 nHttpclient = clientBuilder.setRedirectStrategy(new LaxRedirectStrategy()).setDefaultCookieStore(nCookieStore).build();
                 nHttpclient.log.enableDebug(true);
-                Log.v("sengsational", "nHttpclient object created."); //Run order #02
+                Log.v(TAG, "nHttpclient object created."); //Run order #02
             } catch (Throwable t) {//
-                Log.v("sengsational", "nHttpclient object NOT created. " + t.getMessage());
+                Log.v(TAG, "nHttpclient object NOT created. " + t.getMessage());
                 StringWriter sw = new StringWriter();
                 t.printStackTrace(new PrintWriter(sw));
-                Log.v("sengsational", sw.toString());
+                Log.v(TAG, sw.toString());
                 nListener.onError("client error");
                 nErrorMessage = "Problem with the http connection.";
             }
@@ -75,11 +75,11 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
         } catch (Exception e) {}
 
         if (success) {
-            Log.v("sengsational", "onPostExecute success: " + success);
+            Log.v(TAG, "onPostExecute success: " + success);
             nListener.onQuizPageSuccess(mAlreadyPassed, mQuizDateMs);
             nListener.onFinished();
         } else {
-            Log.v("sengsational", "onPostExecute fail. " + nErrorMessage);
+            Log.v(TAG, "onPostExecute fail. " + nErrorMessage);
             // DRS 20180823 - Comment this because often the quiz page is not there, and not supposed to be there.
             // nListener.onError(nErrorMessage);
         }
@@ -108,7 +108,7 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
             if(quizPage == null){
                 // DRS 20180823 - Comment this because often the quiz page is not there, and not supposed to be there.
                 //nListener.onError("quiz page not found");
-                Log.v("sengsational", "quiz page not found this time.");
+                Log.v(TAG, "quiz page not found this time.");
                 nErrorMessage = "Did not get to the quiz page.";
                 return true; // return true so that mProgressStacker will unwind
             }
@@ -116,7 +116,7 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
             mQuizDateMs = getQuizDateMsFromContent(quizPage);
             mAlreadyPassed = getDidPassQuizFromContent(quizPage);
         } catch (Exception e) {
-            Log.e("sengsational", LoadDataHelper.getInstance().getStackTraceString(e));
+            Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nErrorMessage = "Exception " + e.getMessage();
             return false;
         } finally {
@@ -162,7 +162,7 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
             HttpResponse quizResponse = LoadDataHelper.getInstance().sendQuizPost("https://www.saucerknurd.com/glassnite/quiz/", paramList, nHttpclient);
             quizPage = LoadDataHelper.getResultBuffer(quizResponse).toString(); //<<<<<<<<<Pull from response to get the page contents
         } catch (Exception e) {
-            Log.e("sengsational", "Could not get quizPage. " + e.getMessage());
+            Log.e(TAG, "Could not get quizPage. " + e.getMessage());
         }
         return quizPage;
     }
@@ -174,7 +174,7 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
                 return false;
             }
         } catch (Exception e) {
-            Log.e("sengsational", "Exception on pre-execute getSiteAccess. " + e.getMessage());
+            Log.e(TAG, "Exception on pre-execute getSiteAccess. " + e.getMessage());
             return false;
         }
         return true;
