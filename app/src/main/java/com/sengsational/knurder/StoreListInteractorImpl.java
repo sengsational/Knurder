@@ -181,7 +181,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                     nListener.sendStatusToast("Getting untapped list...", Toast.LENGTH_SHORT);
                     String untappdDataPage = pullUntappedDataPage(untappdDataUrlString, nHttpclient, nCookieStore);
                     if (null == untappdDataPage) {
-                        throw new Exception("not able to pull the untappdDataPage from " + untappdDataUrlString);
+                        throw new Exception("1not able to pull the untappdDataPage from " + untappdDataUrlString);
                         //nListener.onError("not able to pull the untappdDataPage from " + untappdDataUrlString);
                         //nErrorMessage = "Could not get the menu information from the location provided.";
                         //return false;
@@ -269,7 +269,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
                     Log.v(TAG, "Not pulling from untappd.");
                 }
             } catch (Throwable t) {
-                Log.v(TAG, "Unable to pull menu data from untappd. " + t.getMessage());
+                Log.v(TAG, "1Unable to pull menu data from untappd. " + t.getMessage());
             }
             /************* END: THIS IS TO PULL MENU DATA FROM UNTAPPD ***************/
 
@@ -333,7 +333,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             int updateCount = 0;
             String[] items = beersWebPage.split("\\},\\{");
             if (items.length > 1) {
-                Log.v(TAG, "The active list (including bottled) had " + items.length + " items.");
+                Log.v(TAG, "The active list (including bottled) had " + items.length + " items. (1)");
                 for (String string : items) {
                     SaucerItem modelItem = new SaucerItem();
                     modelItem.setStoreNameAndNumber(nStoreNumber, db);
@@ -439,7 +439,7 @@ public class StoreListInteractorImpl  extends AsyncTask<Void, Void, Boolean> imp
             ////////////////////////////////////////////////////////
             int updateCount = 0;
             if (saucerItemList.size() > 1) {
-                Log.v(TAG, "The active list (including bottled) had " + saucerItemList.size() + " items.");
+                Log.v(TAG, "The active list (including bottled) had " + saucerItemList.size() + " items. (2)");
                 for (SaucerItem modelItem : saucerItemList) {
                     modelItem.setStoreNameAndNumber(nStoreNumber, db);
                     modelItem.setActive(true);

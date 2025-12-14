@@ -1,4 +1,13 @@
 <androidx.viewpager.widget.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
                                    android:id="@+id/pager"
                                    android:layout_width="match_parent"
-                                   android:layout_height="match_parent" />
+                                   android:layout_height="match_parent"
+                                    android:layout_marginTop="45dp"
+                                    android:layout_marginBottom="40dp"
+
+    />
+    <!-- DRS 20251209 - THIS IS THE ONE THAT IS GETTING CALLED!!!!
+    android:fitsSystemWindows="true" << did not work here
+
+-->
+

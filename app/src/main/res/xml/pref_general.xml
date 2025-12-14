@@ -1,5 +1,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/preference_screen">>
+    android:id="@+id/preference_screen"
+    >
+
 
     <SwitchPreference
         android:defaultValue="false"

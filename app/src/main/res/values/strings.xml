@@ -151,7 +151,7 @@
     <!-- Strings related to Settings -->
 
     <string name="pref_title_dark_mode_setting">Dark Theme</string>
-    <string name="pref_description_dark_mode_setting">Display dark page backgrounds with light lettering rather than white page backgrounds
+    <string name="pref_description_dark_mode_setting">\nDisplay dark page backgrounds with light lettering rather than white page backgrounds
     </string>
 
     <string name="pref_title_hide_mix_setting">Hide Mixes</string>

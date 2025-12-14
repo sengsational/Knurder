@@ -28,6 +28,7 @@ public class KnurderApplication extends Application {
     private static Context mContext;
     private static Boolean mWebUpdateLocked = false;
     private static int denyCount = 0;
+    private static String nCardPin;
 
     public KnurderApplication() {
         Log.v(TAG, "KnurderApplication constructor.");
@@ -91,6 +92,14 @@ public class KnurderApplication extends Application {
         if (classNameGrand.equals(classNameParent)) classNameGrand = "..";
         if (classNameParent.equals(classNameCaller)) classNameParent = "..";
         Log.v(tag, "LogCallers: " + classNameCaller + "." + stackTrace[2].getMethodName() + "() called by " + classNameParent + "." + stackTrace[3].getMethodName() + "() called by " + classNameGrand + "." + stackTrace[4].getMethodName() + "()  - Comment: " + comment);
+    }
+
+    public static void setMemoryPin(String cardPin) {
+        nCardPin = cardPin;
+    }
+
+    public static String getMemoryPin() {
+        return nCardPin;
     }
 
     @Override

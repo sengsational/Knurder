@@ -45,11 +45,11 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
     }
 
     @Override
-    public void saveValidCardCredentials(final String cardNumber, final String cardPin, final String savePin, final String mou, final String storeNumber, final String userName, final String tastedCount) {
+    public void saveValidCardCredentials(final String cardNumber, final String cardPin, final String savePin, final String mou, final String storeNumber, final String userName, final String tastedCount, String emailAddress) {
         if (aActivity == null || aView == null) return;
         aActivity.runOnUiThread(new Runnable() {
             public void run() {
-                aView.saveValidCardCredentials(cardNumber, cardPin, savePin, mou, storeNumber, userName, tastedCount);
+                aView.saveValidCardCredentials(cardNumber, cardPin, savePin, mou, storeNumber, userName, tastedCount, emailAddress);
             }
         });
         if (aView == null) return;
@@ -123,8 +123,13 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
 
         // Save Successfully used credentials
         editor.putString(TopLevelActivity.SAVE_CARD_PIN, mSavePin);  // mSavePin is "Y" or "N"
-        if ("Y".equals(mSavePin)) editor.putString(TopLevelActivity.CARD_PIN, cardPin);
-        else editor.remove(TopLevelActivity.CARD_PIN);
+        if ("Y".equals(mSavePin)) {
+            editor.putString(TopLevelActivity.CARD_PIN, cardPin);
+            Log.v(TAG, "onSuccess() saving CARD_PIN preference");
+        } else {
+            editor.remove(TopLevelActivity.CARD_PIN);
+            Log.v(TAG, "onSuccess() removing CARD_PIN preference");
+        }
         editor.putString(TopLevelActivity.MOU, mMou);
         editor.putString(TopLevelActivity.CARD_NUMBER, cardNumber);
         editor.putString(TopLevelActivity.STORE_NUMBER_LOGON, storeNumberLogon);
@@ -135,6 +140,8 @@ public class WebResultListenerImpl implements WebResultListener, LoaderManager.L
             public void run() {
                 //aView.showMessage("Flagged beers placed into 'Brews on Queue'");
                 aView.setUserView();
+                Log.v(TAG, "about to set memoryPin " + aView.getClass().getName()  + (aView instanceof TopLevelActivity));
+                KnurderApplication.setMemoryPin(cardPin);
             }
         });
     }
@@ -285,7 +292,7 @@ interface WebResultListener {
     void onError(String message);
     void sendStatusToast(String message, int toastLength);
     void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount);
-    void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount);
+    void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount, String emailAddress);
     void saveValidStore(String storeNumber);
     void onStoreListSuccess(boolean nResetPresentation, boolean menuDataAdded);
     void onTastedListSuccess();

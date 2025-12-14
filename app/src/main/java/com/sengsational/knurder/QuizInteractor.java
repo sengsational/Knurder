@@ -152,9 +152,9 @@ public class QuizInteractor extends AsyncTask<Void, Void, Boolean> {
         List<NameValuePair> paramList = new ArrayList<NameValuePair>();
 
         paramList.add(new BasicNameValuePair("email", TopLevelActivity.prefs.getString(TopLevelActivity.EMAIL_ADDRESS, "")));
-        paramList.add(new BasicNameValuePair("UFO", TopLevelActivity.prefs.getString(TopLevelActivity.AUTHENTICATION_NAME, "")));
-        paramList.add(new BasicNameValuePair("FirstName", TopLevelActivity.prefs.getString(TopLevelActivity.FIRST_NAME, "")));
-        paramList.add(new BasicNameValuePair("LastName", TopLevelActivity.prefs.getString(TopLevelActivity.LAST_NAME, "")));
+        paramList.add(new BasicNameValuePair("UFO", TopLevelActivity.prefs.getString(TopLevelActivity.CARD_NUMBER, "")));
+        //paramList.add(new BasicNameValuePair("FirstName", TopLevelActivity.prefs.getString(TopLevelActivity.FIRST_NAME, "")));
+        //paramList.add(new BasicNameValuePair("LastName", TopLevelActivity.prefs.getString(TopLevelActivity.LAST_NAME, "")));
         paramList.add(new BasicNameValuePair("homestore", TopLevelActivity.prefs.getString(TopLevelActivity.STORE_NAME_LIST, "")));
 
         String quizPage = null;

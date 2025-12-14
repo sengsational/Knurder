@@ -17,4 +17,6 @@
     <color name="colorIconNonActiveLight">#FFCCCCCC</color>
     <color name="colorIconActiveLight">#3F51B5</color>
 
+    <color name="colorIdentify">#FF0000</color>
+
 </resources>

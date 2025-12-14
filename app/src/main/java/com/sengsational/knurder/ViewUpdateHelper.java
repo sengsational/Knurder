@@ -39,10 +39,10 @@ public class ViewUpdateHelper {
     }
     public static void setGlassShapeIconInView(ImageView imageViewToManage, String glassSize, Context mContext) {
         Log.v(TAG, "DEBUG: Using old method to set view.");
-        setGlassShapeIconInView(imageViewToManage, null, glassSize, null, mContext);
+        setGlassShapeIconInView(imageViewToManage, null, glassSize, null, "undefined", mContext);
     }
 
-    public static void setGlassShapeIconInView(ImageView imageViewToManage, TextView textViewToManage, String glassSize, String container, Context mContext) {
+    public static void setGlassShapeIconInView(ImageView imageViewToManage, TextView textViewToManage, String glassSize, String container, String beerName, Context mContext) {
         if (imageViewToManage == null) return;
         if(glassSize == null) glassSize = "0";
         //Log.v(TAG, "DEBUG: container [" + container +"]");
@@ -61,10 +61,12 @@ public class ViewUpdateHelper {
                     break;
                 case "10":
                 case "9":
+                case "6":
                     ViewUpdateHelper.setImage(imageViewToManage, R.mipmap.wine_glass, mContext);
                     imageViewToManage.setVisibility(View.VISIBLE);
                     break;
                 default:
+                    Log.v(TAG, "glass size " + glassSize + " was not found  for " + beerName);
                     ViewUpdateHelper.setImage(imageViewToManage, R.mipmap.pint_glass, mContext);
                     imageViewToManage.setVisibility(View.INVISIBLE);
             }

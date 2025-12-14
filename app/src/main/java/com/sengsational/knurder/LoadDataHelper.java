@@ -128,6 +128,9 @@ public class LoadDataHelper {
                 if (e.getMessage().contains("timed out")) {
                     throw new Exception(e.getMessage() + " after " + (CONNECTION_TIMEOUT_MS/1000) + " seconds. Try again.");
                 }
+                if (e.getMessage().contains("Trust anchor")) {
+                    throw new Exception("Please use 'About > EMAIL LOG' so I can update the certificate for " + url + ".");
+                }
             }
         }
 

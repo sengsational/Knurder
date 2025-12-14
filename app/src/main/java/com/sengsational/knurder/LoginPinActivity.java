@@ -162,7 +162,7 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
                 if(((CheckBox)v).isChecked()){
                     mPinView.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
                 }else{
-                    mPinView.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);                }
+                    mPinView.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);                }
             }
         });
 
@@ -245,7 +245,7 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
     }
 
     @Override
-    public void getMemberData() {
+    public void getMemberData(boolean quizCheck) {
         Log.e(TAG, "ERROR: Unexpected use of getMemeberData()");
     }
 
@@ -302,7 +302,7 @@ public class LoginPinActivity extends AppCompatActivity implements DataView {
     }
 
     @Override
-    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount, String emailAddress) {
         Log.e(TAG, "Unexpected call of LoginPinActivity.saveValidCardCredentials()");
     }
 

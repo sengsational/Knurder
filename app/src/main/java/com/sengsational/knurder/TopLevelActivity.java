@@ -186,18 +186,18 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 //    logonDialog.setTitle(getResources().getString(R.string.new_feature_alert_title_alt));
                 //    logonDialog.setMessage(Html.fromHtml("<p>" + getResources().getString(R.string.new_feature_alert_message_alt, storeName) + "</p>"));
                 //}
-                logonDialog.setMessage("REBUILDING KNURDER\n\nThey FINALLY put the original UFO member site out of it's misery, and moved the functionality to 'Tap-That-App'\n\nThat broke Knurder.\n\nI think I have most things working again.  Feel free and hit 'about' and let me know what's still broken.\n\nIf you want to help, find Knurder on github.");
-                logonDialog.setCancelable(true);
-                logonDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString(NEW_FEATURE_ALERT_MESSAGE, NEW_FEATURE_ALERT_DATE);
-                        //Additional tutorials affected
-                        editor.putBoolean(PREF_RATE_BEER_TUTORIAL, true);
-                        editor.apply();
-                        dialog.dismiss();
-                    }
-                });
+                //logonDialog.setMessage("REBUILDING KNURDER\n\nThey FINALLY put the original UFO member site out of it's misery, and moved the functionality to 'Tap-That-App'\n\nThat broke Knurder.\n\nI think I have most things working again.  Feel free and hit 'about' and let me know what's still broken.\n\nIf you want to help, find Knurder on github.");
+                //logonDialog.setCancelable(true);
+                //logonDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                //    public void onClick(DialogInterface dialog, int id) {
+                //        SharedPreferences.Editor editor = prefs.edit();
+                //        editor.putString(NEW_FEATURE_ALERT_MESSAGE, NEW_FEATURE_ALERT_DATE);
+                //        //Additional tutorials affected
+                //        editor.putBoolean(PREF_RATE_BEER_TUTORIAL, true);
+                //        editor.apply();
+                //        dialog.dismiss();
+                //    }
+                //});
                 Log.v(TAG, "onResume() showing dialog");
                 android.app.AlertDialog newFeatureAlert = logonDialog.create();
                 newFeatureAlert.show();
@@ -287,6 +287,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         // DRS 20161006 - Add 2 - Allow Change Location while logged-in
         locationTextView = ((TextView) findViewById(R.id.location_text));
         locationTextView.setText(prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
+        Log.v(TAG, "onCreate() set locationTextView " + prefs.getString(STORE_NAME_LIST, DEFAULT_STORE_NAME));
 
         userNameView = ((TextView) findViewById(R.id.userName));
         userNameView.setText(prefs.getString(USER_NAME, ""));
@@ -381,8 +382,31 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
             toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
                 @Override
                 public boolean onMenuItemClick(MenuItem item) {
-                    Log.v(TAG, "Toolbar Item Clicked with item: " + item.getItemId());
-                    switch (item.getItemId()) {
+                    // If user has "save pin switch" to false (IF CONFIGURED NOT TO SAVE PIN), clear any CARD_PIN that might be saved anywhere.
+                    if (!prefs.getBoolean("pin_switch", true)) {
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.remove(CARD_PIN);
+                        editor.apply();
+                        KnurderApplication.setMemoryPin("");
+                        Log.v(TAG, "Removed PIN from preferences and from working memory.");
+                    } else {
+                        Log.v(TAG, "save pin_switch (true means they want us to save the pin): " + prefs.getBoolean("pin_switch", true) + " " + prefs.getBoolean("pin_switch", false) + " CARD_PIN " + prefs.getString(TopLevelActivity.CARD_PIN, "not found in preferences.  In memory: " + KnurderApplication.getMemoryPin()));
+                    }
+
+                    int menuItemId = item.getItemId();
+
+                    if (menuItemId == R.id.load_active) {
+                        // Change use action if they can't do a refresh due to lack of PIN
+                        String pinToUse =  prefs.getString(TopLevelActivity.CARD_PIN, "");
+                        if (pinToUse.isEmpty()) pinToUse = KnurderApplication.getMemoryPin();
+                        if (pinToUse == null || pinToUse.isEmpty()) {
+                            Log.v(TAG, "We have no PIN.  Sending the user to logon.");
+                            menuItemId = R.id.logon;
+                        }
+                    }
+
+
+                    switch (menuItemId) {
                         case R.id.action_settings:
                             Intent settingsIntent = new Intent(TopLevelActivity.this, SettingsActivitySimple.class);
                             startActivityForResult(settingsIntent, SETTINGS_ACTIVITY);
@@ -506,7 +530,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                                 }
                             }
                             break;
-                        case R.id.scan_glass_size:
+                        case R.id.scan_glass_size: //THIS FUNCTION IS NO LONGER ACTIVE - We do not OCR any more
                             long lastListDate = prefs.getLong(TopLevelActivity.LAST_LIST_DATE, 0L);
                             //lastListDate = lastListDate - 99900000L; ///////////////////////////////////////TESTING<<<<<<<<<<<<<<
                             long msSinceRefreshList = new Date().getTime() - lastListDate;
@@ -523,7 +547,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                             String presentationMode = prefs.getString(TopLevelActivity.PRESENTATION_MODE,"");
                             if(USER_PRESENTATION.equals(presentationMode)) {
                                 Log.v(TAG, "MILESTONE: user selected R.id.load_active as a member.");
-                                getMemberData();
+                                getMemberData(false);
                             } else {
                                 Log.v(TAG, "MILESTONE: user selected R.id.load_active as a visitor.");
                                 getStoreList(resetPresentation, false);
@@ -708,8 +732,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 } else if (listType.equals("tastedList")) {
                     getTastedList();
                 } else if (listType.equals("memberData")){
-                    getMemberData();
-                    getStoreList(resetPresentation, checkForQuiz);
+                    getMemberData(checkForQuiz);
+                    //getStoreList(resetPresentation, checkForQuiz);
                 }
                 if (extraMessage != null) {
                     Intent intentOcrBase = new Intent(TopLevelActivity.this, OcrBase.class);
@@ -1065,7 +1089,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     // START NEXT ACTIVITY AFTER STORE SELECTED
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.v(TAG, "onActivityResult running with " + resultCode);
+        Log.v(TAG, "onActivityResult running with result: " + resultCode + " and request: " + requestCode) ;
         if (requestCode == SET_STORE_CALLBACK) {
             if (resultCode == RESULT_OK){
                 // need to load that saucer's beers and remove tasted if that needs to be done <<<< That was the FORMER IDEA, now we will not remove tasted
@@ -1086,9 +1110,9 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 Log.v(TAG, "saucerNameView.setText() onActivityResult()");
                 saucerNameView.setText(storeName);
                 if (USER_PRESENTATION.equals(prefs.getString(PRESENTATION_MODE, ""))){
-                    this.getMemberData();
+                    this.getMemberData(checkQuiz);
                 } else {
-                    getStoreList(resetPresentation, checkQuiz);
+                    getStoreList(resetPresentation, false);
                 }
             } else {
                 Log.v(TAG,"TLA.onActivityResult code: " + resultCode);
@@ -1107,7 +1131,12 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         } else if (requestCode  == UPDATE_GLASS_CALLBACK) {
             // Nothing to do here?
         } else if (requestCode == GET_MEMBER_DATA) {
-            getMemberData();
+            // DRS 20181028 - Don't check for quiz on location change
+            boolean checkQuiz = true;
+            try {checkQuiz = !"N".equals(data.getStringExtra("check_quiz"));} catch (Throwable t) {}
+            Log.v(TAG, "checkQuiz was " + checkQuiz);
+
+            getMemberData(checkQuiz);
             String presentationMode = KnurderApplication.getPresentationMode();
             if ("store-false".equals(presentationMode)) {
                 setToStorePresentation(false);
@@ -1115,6 +1144,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 Log.v(TAG, "TLA.onActivityResult() setToUserPresentation() GET_MEMBER_DATA");
                 setToUserPresentation();
             }
+        } else {
+            Log.v(TAG, "TLA.onActivityResult() nothing happened");
         }
         super.onActivityResult(requestCode, resultCode, data);
     }//onActivityResult
@@ -1138,6 +1169,8 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         // If the loginStoreName is different than the STORE_NAME, display the store name so the user knows they are displaying a different list
         if(!prefs.getString(STORE_NUMBER_LOGON,DEFAULT_STORE_NAME).equals(prefs.getString(STORE_NUMBER_LIST,DEFAULT_STORE_NAME))) {
             locationTextView.setVisibility(View.VISIBLE);
+            locationTextView.setText(StoreNameHelper.getInstance().getStoreNameFromNumber(prefs.getString(STORE_NUMBER_LIST,DEFAULT_STORE_NAME), null));
+            Log.v(TAG, "setToUserPresentation() set store name for store_number_list");
         } else {
             locationTextView.setVisibility(View.INVISIBLE);
         }
@@ -1518,14 +1551,11 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
 
     //////////////////////////////////////////////Methods I call on user action /////////////////////////////////////
     @Override public void getStoreList(boolean resetPresentation, boolean checkForQuiz) {
-        memberDataPresenter.getMemberData(prefs.getString(STORE_NUMBER_LOGON, "13888"), this);
+        memberDataPresenter.getMemberData(prefs.getString(STORE_NUMBER_LIST, "13888"), this);
 
-        boolean disableQuizInteractor = true;
-        if (!disableQuizInteractor) {
-            // If this person is logged in (in user presentation mode), hit the quiz interactor to see if there's a quiz
-            if (prefs.getString(PRESENTATION_MODE, "").equals(USER_PRESENTATION) && checkForQuiz) {
-                new QuizInteractor(TopLevelActivity.this).getQuizPageFromWeb(this);
-            }
+        // If this person is logged in (in user presentation mode), hit the quiz interactor to see if there's a quiz
+        if (prefs.getString(PRESENTATION_MODE, "").equals(USER_PRESENTATION) && checkForQuiz) {
+            new QuizInteractor(TopLevelActivity.this).getQuizPageFromWeb(this);
         }
     } // Data activity
 
@@ -1534,9 +1564,16 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         tastedListPresenter.getTastedList(prefs.getString(AUTHENTICATION_NAME, ""), prefs.getString(PASSWORD, ""), prefs.getString(MOU,"0"), savePasswordFromSwitch, prefs.getString(STORE_NUMBER_LOGON, "13888"));
     } // Data activity
 
-    @Override public void getMemberData() {
+    @Override public void getMemberData(boolean checkForQuiz) {
         String savePinFromSwitch = prefs.getBoolean("pin_switch", true)?"T":"F";
-        memberDataPresenter.getMemberData(prefs.getString(TopLevelActivity.CARD_NUMBER, ""), prefs.getString(TopLevelActivity.CARD_PIN, ""), prefs.getString(MOU,"0"), savePinFromSwitch, prefs.getString(STORE_NUMBER_LOGON, "13888"), this);
+        String pinToUse =  prefs.getString(TopLevelActivity.CARD_PIN, "");
+        if (pinToUse.isEmpty()) pinToUse = KnurderApplication.getMemoryPin();
+        if (pinToUse == null || pinToUse.isEmpty()) Log.v(TAG, "We have no PIN.  This logon will not work.");
+        memberDataPresenter.getMemberData(prefs.getString(TopLevelActivity.CARD_NUMBER, ""), pinToUse, prefs.getString(MOU,"0"), savePinFromSwitch, prefs.getString(STORE_NUMBER_LOGON, "13888"), this);
+        // If this person is logged in (in user presentation mode), hit the quiz interactor to see if there's a quiz
+        if (prefs.getString(PRESENTATION_MODE, "").equals(USER_PRESENTATION) && checkForQuiz) {
+            new QuizInteractor(TopLevelActivity.this).getQuizPageFromWeb(this);
+        }
     } // Data activity
 
     //////////////////////////////////////////Methods called by the listener////////////////
@@ -1554,7 +1591,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
     } // Called on successful login
 
     @Override
-    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount, String emailAddress) {
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
         editor.putString(TopLevelActivity.CARD_NUMBER, cardNumber);
         if ("T".equals(prefs.getString(TopLevelActivity.SAVE_CARD_PIN,"T"))) editor.putString(TopLevelActivity.CARD_PIN, cardPin);
@@ -1562,6 +1599,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
         editor.putString(TASTED_COUNT, tastedCount);
         editor.putString(USER_NAME, userName);
         editor.putString(MOU, mou);
+        editor.putString(EMAIL_ADDRESS, emailAddress);
         editor.apply();
     }
 
@@ -1676,7 +1714,7 @@ public class TopLevelActivity extends AppCompatActivity implements DataView {
                 browserIntent.setData(Uri.parse("http://www.saucerknurd.com/glassnite/beerknurd-glassnite.php?" +
                                 "homestore=" + prefs.getString(STORE_NAME_LIST, "Charlotte Flying Saucer") +
                                 "&email=" + prefs.getString(EMAIL_ADDRESS, "unknown@unknown.com") +
-                                "&UFO=" + prefs.getString(AUTHENTICATION_NAME, "106011") +
+                                "&UFO=" + prefs.getString(CARD_NUMBER, "106011") +
                                 "&FirstName=" + prefs.getString(FIRST_NAME, "Joe") +
                                 "&LastName=" + prefs.getString(LAST_NAME, ""))); // NOTE THAT THE LAST NAME HAS NOT BEEN PULLED FROM THE LOGIN PAGE!!!
                 startActivity(browserIntent);

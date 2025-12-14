@@ -386,7 +386,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
     @Override public void getTastedList() {/*no implementation needed*/}
 
     @Override
-    public void getMemberData() {
+    public void getMemberData(boolean quizCheck) {
         Log.e(TAG, "OcrBse.getMemberData() called unexpectedly.");
     }
 
@@ -396,7 +396,7 @@ public class OcrBase extends AppCompatActivity implements DataView {
     @Override public void saveValidCredentials(String authenticationName, String password, String savePassword, String mou, String storeNumber, String userName, String tastedCount) {/*no implementation needed*/}
 
     @Override
-    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount, String emailAddress) {
 
     }
 

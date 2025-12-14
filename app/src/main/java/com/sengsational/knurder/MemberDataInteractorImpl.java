@@ -231,7 +231,7 @@ public class MemberDataInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 
             if (!activePullFailed) {
                 // Insert the active beers into the database (or just update to active if record exists as a tasted record)
-                if (!loadActiveFromSite(beersWebPage)) {
+                if (!loadActiveFromSite(beersWebPage, listStoreNumber)) {
                     nListener.onError("active beer update error");
                     nErrorMessage = "Internal database error...";
                     Log.v(TAG, nErrorMessage);
@@ -280,7 +280,7 @@ public class MemberDataInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                 Map<String,String> userData = loadUserDataFromSite(tastedWebPage);
                 //userData [username=sengsational]
                 //userData [tasted_brew_count_this_round=129]
-                nListener.saveValidCardCredentials(nCardnumber, nCardPin, nSavePin, nMou, nStoreNumber, userData.get("username"), userData.get("tasted_brew_count_this_round"));
+                nListener.saveValidCardCredentials(nCardnumber, nCardPin, nSavePin, nMou, nStoreNumber, userData.get("username"), userData.get("tasted_brew_count_this_round"), userData.get("email_address"));
 
                 // Insert the tasted beers into the database (or just update to tasted if record exists as an active record)
                 boolean logoff = false;
@@ -359,26 +359,32 @@ public class MemberDataInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
                         // END NOTE: This code is duplicated in the refresh beer list "MenusPageInteractorImpl.doInBackground()
                     }
 
-                    // Pull store summary page for new arrivals
-                    nListener.sendStatusToast("Getting 'Just Landed'", Toast.LENGTH_SHORT);
-                    String storePage = pullStorePage(listStoreNumber);
-                    if (storePage == null) {
-                        Log.e(TAG,"Store Page not received. ") ;
-                    } else {
-                        if (!loadNewArrivalsFromSite(storePage)){
-                            Log.e(TAG,"New Arrivals not loaded.") ;
-                        }
-                    }
-
                     menuDataAdded = true;
                 } else {
                     Log.v(TAG, "Not pulling from untappd.");
                 }
             } catch (Throwable t) {
-                Log.v(TAG, "Unable to pull menu data from untappd. " + t.getMessage());
+                Log.v(TAG, "2Unable to pull menu data from untappd. " + t.getMessage());
+                if (t.getMessage().contains("not able to pull the untappdDataPage")){
+                    nListener.sendStatusToast("Please use 'About > EMAIL LOG' so I can know to fix Untappd access!", Toast.LENGTH_LONG);
+                }
             }
             /************* END: THIS IS TO PULL MENU DATA FROM UNTAPPD ***************/
 
+            try {
+                // Pull store summary page for new arrivals
+                nListener.sendStatusToast("Getting 'Just Landed'", Toast.LENGTH_SHORT);
+                String storePage = pullStorePage(listStoreNumber);
+                if (storePage == null) {
+                    Log.e(TAG,"Store Page not received. ") ;
+                } else {
+                    if (!loadNewArrivalsFromSite(storePage)){
+                        Log.e(TAG,"New Arrivals not loaded.") ;
+                    }
+                }
+            } catch (Throwable t) {
+                Log.v(TAG, "Unable to pull just landed. " + t.getMessage());
+            }
 
             if (!nStoreListOnly && !uploadUserReviews()) {
                 nListener.onError("Unable to upload user reviews.");
@@ -441,7 +447,7 @@ public class MemberDataInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
         return true;
     }
 
-    private boolean loadActiveFromSite(String beersWebPage) {
+    private boolean loadActiveFromSite(String beersWebPage, String listStoreNumber) {
         SQLiteDatabase db = null;
         try {
             UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(getContext()) ;
@@ -464,10 +470,10 @@ public class MemberDataInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
 
             String[] items = beersWebPage.split("\\},\\{");
             if (items.length > 1) {
-                Log.v(TAG, "The active list (including bottled) had " + items.length + " items.");
+                Log.v(TAG, "The active list (including bottled) had " + items.length + " items. (3)");
                 for (String string : items) {
                     SaucerItem modelItem = new SaucerItem();
-                    modelItem.setStoreNameAndNumber(nStoreNumber, db);
+                    modelItem.setStoreNameAndNumber(listStoreNumber, db);
                     // Load this item from the page into SaucerItem
                     //modelItem.clear();
                     modelItem.loadTta(string); // "name", "store_id",  "brew_id",  "brewer",  "city", "country", "container", "style","description","stars","reviews"
@@ -975,7 +981,7 @@ public class MemberDataInteractorImpl  extends AsyncTask<Void, Void, Boolean> im
         // MOU PROCESS DIFFERENCE
         if ("yes".equals(localMouString)) localCardNumString = "%mou" + nCardnumber + "=?";
 
-       String cardData = "%" + localStoreIdString + nCardnumber;
+        String cardData = "%" + localStoreIdString + nCardnumber;
         String localVarCharStoreIdString = StoreNameHelper.getVarCharacterStoreIdFromStoreNumber(nStoreNumber);
         try {
             String vistorMemberPage = LoadDataHelper.getPageContent("https://tapthatapp.beerknurd.com/kiosk.php?sid=" + nStoreNumber, null, nHttpclient, nCookieStore);                       //<<<<<<<<<GET INITIAL LOGIN FORM PAGE<<<<<<<<<<<<<<<<<<<

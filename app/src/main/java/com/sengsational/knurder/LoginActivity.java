@@ -234,7 +234,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
     }
 
     @Override
-    public void getMemberData() {
+    public void getMemberData(boolean quizCheck) {
         Log.e(TAG, "getMemberData called in LoginActivity");
 
     }
@@ -292,7 +292,7 @@ public class LoginActivity extends AppCompatActivity implements DataView {
     }
 
     @Override
-    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount) {
+    public void saveValidCardCredentials(String cardNumber, String cardPin, String savePin, String mou, String storeNumber, String userName, String tastedCount, String emailAddress) {
         Log.e(TAG, "Unexpected call of old saveValidCardCredentials()");
     }
 

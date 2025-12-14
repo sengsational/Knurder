@@ -212,6 +212,7 @@ public class CardnumberCredentialInteractor  extends AsyncTask<Void, Void, Boole
         } catch (Exception e) {
             Log.e(TAG, LoadDataHelper.getInstance().getStackTraceString(e));
             nErrorMessage = "Exception " + e.getMessage();
+            nListener.onError(nErrorMessage);
             return false;
         } finally {
             KnurderApplication.releaseWebUpdateLock(TAG);

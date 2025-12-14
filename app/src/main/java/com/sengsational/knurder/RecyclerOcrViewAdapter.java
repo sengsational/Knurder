@@ -108,7 +108,7 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
         viewHolder.tvFirst.setTextColor(ContextCompat.getColor(mContext, R.color.colorActivePrimary));
         viewHolder.tvSecond.setTextColor(ContextCompat.getColor(mContext, R.color.colorNonActiveSecondary));
 
-        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.imageViewToManage, viewHolder.textViewToManage, glassSize, "draught", mContext);
+        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.imageViewToManage, viewHolder.textViewToManage, glassSize, "draught", beerName, mContext);
 
         viewHolder.tvDatabaseKey.setText(databaseId+""); // This is the key from UFOLOCAL table (not UFO)
         viewHolder.tvUfoDatabaseKey.setText(ufoDatabaseId+""); // This is from the UFO table
@@ -202,7 +202,7 @@ public class RecyclerOcrViewAdapter extends CursorRecyclerViewAdapter<RecyclerOc
 
                         /** SET UPDATED FIELDS IN THE VIEW */
                         viewHolder.tvSecond.setText(buildDataLine(mUpdatedPrice, mUpdatedGlassSize, lastUpdated));
-                        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.imageViewToManage, viewHolder.textViewToManage, mUpdatedGlassSize, "draught", mContext);
+                        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.imageViewToManage, viewHolder.textViewToManage, mUpdatedGlassSize, "draught", "(undefined)", mContext);
 
                         /** UPDATE THE DATABASE  or INSERT IF DOESN'T EXIST */
                         UfoDatabaseAdapter ufoDatabaseAdapter = new UfoDatabaseAdapter(mContext) ;

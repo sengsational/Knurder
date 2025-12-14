@@ -92,7 +92,7 @@ public class MybCursorRecyclerViewAdapter extends CursorRecyclerViewAdapter<MybC
                 container = "nottap";
             }
         }
-        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.glassSize, viewHolder.ouncesText, modelItem.getGlassSize(), container, mContext);
+        ViewUpdateHelper.setGlassShapeIconInView(viewHolder.glassSize, viewHolder.ouncesText, modelItem.getGlassSize(), container, modelItem.getName(), mContext);
         String glassPrice = modelItem.getGlassPrice();
         if (glassPrice !=null && glassPrice.length() > 0) {
             viewHolder.glassPrice.setText("$" + glassPrice);

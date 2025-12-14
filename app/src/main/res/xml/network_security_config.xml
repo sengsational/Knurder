@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config>
-        <domain includeSubdomains="true">www.saucerknurd.com</domain>
+        <domain includeSubdomains="true">saucerknurd.com</domain>
         <trust-anchors>
-            <certificates src="@raw/www_saucerknurd_com"/>
+            <certificates src="@raw/imperva_com_pem"/>
         </trust-anchors>
     </domain-config>
     <domain-config>

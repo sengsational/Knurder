@@ -135,7 +135,7 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
             // Pull the page containing the list of beers
             String untappdDataPage = pullUntappedDataPage(untappdDataUrlString, nHttpclient, nCookieStore);
             if (null == untappdDataPage) {
-                nListener.onError("not able to pull the untappdDataPage from " + untappdDataUrlString);
+                nListener.onError("2not able to pull the untappdDataPage from " + untappdDataUrlString);
                 nErrorMessage = "Could not get the menu information from the location provided.";
                 return false;
             }
@@ -346,7 +346,10 @@ public class MenusPageInteractorImpl  extends AsyncTask<Void, Void, Boolean> {
                 Element priceElement = beer.getElementsByClass("price").first(); position=14;
                 if (priceElement != null) price = priceElement.text().replaceAll("\\\\", ""); position=15;
 
+                if (beerName.isEmpty()) continue;
+
                 UntappdItem untappdItem = new UntappdItem(beerName, breweryName, ounces, price, abv, beerNumber, breweryNumber, tapsOrBottles);
+                //Log.v(TAG, "DEBUG UNTAPPD PARSING: " + untappdItem);
                 //if (!tapsOrBottles.contains("taps")) {
                 //    Log.v(TAG, "DEBUG bottles: " + untappdItem.toString());
                 //}

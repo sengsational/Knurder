@@ -200,7 +200,7 @@ public class BeerSlideFragment extends Fragment {
         }
 
         Log.v(TAG, "BeerSlideFragment.onCreateView ");
-        ViewUpdateHelper.setGlassShapeIconInView((ImageView)rootView.findViewById(R.id.glass_icon_details), ouncesTextView, modelItem.glassSize, draughtOrBottle, this.getContext());
+        ViewUpdateHelper.setGlassShapeIconInView((ImageView)rootView.findViewById(R.id.glass_icon_details), ouncesTextView, modelItem.glassSize, draughtOrBottle, modelItem.getName(), this.getContext());
         //DRS 20231208 Check back
         //ViewUpdateHelper.setGlassShapeIconInView((ImageView)rootView.findViewById(R.id.glass_icon_details), modelItem.glassSize, this.getContext());
         ViewUpdateHelper.setGlassPriceInView((TextView)rootView.findViewById(R.id.glass_price_details), modelItem.glassPrice, this.getContext());

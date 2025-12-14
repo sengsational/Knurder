@@ -14,6 +14,12 @@
         tools:context="com.sengsational.knurder.BeerListActivity"
         tools:showIn="@layout/activity_beer_list">
 
+    <!-- DRS 20251209 - none of these worked here
+    android:layout_marginTop="45dp"
+    android:layout_marginBottom="40dp"
+    android:fitsSystemWindows="true"
+-->
+
 
         <androidx.viewpager.widget.ViewPager
             android:id="@+id/pager"

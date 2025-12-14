@@ -204,6 +204,10 @@ public class SaucerItem {
     }
 
     public void setContainer(String container) {
+        if (container != null) {
+            container = container.toLowerCase();
+            if (container.equals("keg")) container = "draught";
+        }
         this.container = container;
         if (mOverrideTap && "draught".equals(this.container)) this.container = "bottled"; //DRS 20160823 - improve data quality
     }
@@ -397,6 +401,8 @@ public class SaucerItem {
 
             this.abv = this.abv.replaceAll("[^\\d.]", "");
             if (this.abv.startsWith(".")) this.abv = this.abv.substring(1);
+            if (this.abv.indexOf(".") != this.abv.lastIndexOf(".")) this.abv = this.abv.substring(this.abv.indexOf(".") + 1);
+
             if (this.abv.trim().length() == 0) this.abv = "0";
             StringBuffer buf = new StringBuffer(description.toUpperCase());
 

@@ -16,7 +16,8 @@
         android:paddingTop="@dimen/activity_vertical_margin"
         android:id="@+id/beerRelativeLayout"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:context="com.sengsational.knurder.RateBeerActivity">
+        tools:context="com.sengsational.knurder.RateBeerActivity"
+        android:layout_marginTop="45dp"
         tools:showIn="@layout/activity_rate_beer">
 
         <TextView
